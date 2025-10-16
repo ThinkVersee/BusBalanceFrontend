@@ -1,39 +1,33 @@
 "use client";
 
-import { useState } from 'react';
-import axios from 'axios';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import axiosInstance from '@/config/axiosInstance';
+import { useAuth } from '@/hooks/useAuth';
 
 const LoginForm = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const { login, isLoading, error, isAuthenticated, clearError } = useAuth();
   const router = useRouter();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.push('/dashboard');
+    }
+  }, [isAuthenticated, router]);
+
+  useEffect(() => {
+    return () => {
+      // Clear error when component unmounts
+      clearError();
+    };
+  }, [clearError]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-    setIsLoading(true);
-
-    try {
-      const response = await axiosInstance.post('/login/', {
-        username,
-        password,
-      });
-
-      // Store tokens and user data
-      localStorage.setItem('access_token', response.data.access);
-      localStorage.setItem('refresh_token', response.data.refresh);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
-
-      // Redirect to dashboard
-      router.push('/dashboard');
-    } catch (err) {
-      setError(err.response?.data?.error || 'An error occurred during login');
-      setIsLoading(false);
-    }
+    clearError();
+    
+    await login({ username, password });
   };
 
   return (
@@ -43,7 +37,7 @@ const LoginForm = () => {
         
         {error && (
           <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
-            {error}
+            {typeof error === 'string' ? error : JSON.stringify(error)}
           </div>
         )}
 
