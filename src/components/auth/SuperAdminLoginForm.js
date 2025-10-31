@@ -19,14 +19,14 @@ const SuperAdminLoginForm = () => {
       const result = await login({ 
         username, 
         password, 
-        endpoint: '/admin/login/' // Pass superadmin-specific endpoint
+        endpoint: '/superadmin/login/'  
       });
 
       if (result.meta.requestStatus === 'fulfilled') {
-        router.push('/admin/dashboard');
+        router.push('/admin/');
       }
     } catch (err) {
-      // Error is handled by Redux
+     
     }
   };
 

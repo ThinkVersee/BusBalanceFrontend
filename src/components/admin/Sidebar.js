@@ -8,7 +8,7 @@ const Sidebar = () => {
 
   const menuItems = [
     { name: 'Dashboard', icon: LayoutDashboard, path: '/' },
-    { name: 'Companies', icon: Building2, path: '/companies' },
+    { name: 'Companies', icon: Building2, path: '/admin/companies' },
     { name: 'Subscription', icon: CreditCard, path: '/subscription' },
     { name: 'Subscribers', icon: Users, path: '/subscribers' },
   ];
