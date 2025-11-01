@@ -39,25 +39,35 @@ export const loginUser = createAsyncThunk(
   'auth/login',
   async ({ username, password, endpoint = '/login/' }, { rejectWithValue }) => {
     try {
-      const response = await axiosInstance.post(endpoint, {
-        username,
-        password,
-      });
-      
+      const response = await axiosInstance.post(endpoint, { username, password });
       const isSuperAdmin = endpoint.includes('superadmin') || endpoint.includes('admin');
-      
-      // Set cookies for middleware to read
-      setAuthCookies(response.data.tokens, isSuperAdmin);
-      
-      return { 
-        ...response.data, 
-        isSuperAdmin 
+      const data = response.data;
+
+      // ✅ Normalize tokens structure
+      const tokens = data.tokens
+        ? data.tokens
+        : { access: data.access, refresh: data.refresh };
+
+      // ✅ Store tokens in cookies/localStorage
+      setAuthCookies(tokens, isSuperAdmin);
+
+      // ✅ Store user object in localStorage
+      if (typeof window !== 'undefined' && data.user) {
+        localStorage.setItem('user', JSON.stringify(data.user));
+      }
+
+      // ✅ Return normalized payload
+      return {
+        user: data.user,
+        tokens,
+        isSuperAdmin,
       };
     } catch (error) {
       return rejectWithValue(error.response?.data || { error: 'Login failed' });
     }
   }
 );
+
 
 // Async thunk for logout
 export const logoutUser = createAsyncThunk(

@@ -11,7 +11,7 @@ const Sidebar = () => {
   const [isOpen, setIsOpen] = useState(false); // Mobile drawer state
 
   const menuItems = [
-    { name: 'Dashboard', icon: LayoutDashboard, path: '/' },
+    { name: 'Dashboard', icon: LayoutDashboard, path: '/admin/dashboard' },
     { name: 'Companies', icon: Building2, path: '/admin/companies' },
     { name: 'Subscription', icon: CreditCard, path: '/admin/subscription' },
     { name: 'Subscribers', icon: Users, path: '/admin/subscribers' },
