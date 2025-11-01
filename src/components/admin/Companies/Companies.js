@@ -1,18 +1,28 @@
-// src/components/admin/Companies/Companies.js
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import axiosInstance from '@/config/axiosInstance';
-import { Building2 } from 'lucide-react';
+import {
+  Building2,
+  Edit,
+  Trash2,
+  Ban,
+  CheckCircle,
+  XCircle,
+  Mail,
+} from 'lucide-react';
+import { createElement as h } from 'react';
 
-import { StatsCards } from './StatsCards';
-import { ActionBar } from './ActionBar';
-import { BusOwnerTable } from './BusOwnerTable';
-import { BusOwnerFormModal } from './BusOwnerFormModal';
-import { DeleteConfirmModal } from './DeleteConfirmModal';
+// ---------- COMMON COMPONENTS ----------
+import { StatsCards } from '@/components/common/StatsCards';
+import { ActionBar } from '@/components/common/ActionBar';
+import { GenericTable } from '@/components/common/GenericTable';
+import { FormModal } from '@/components/common/FormModal';
+import { DeleteConfirmModal } from '@/components/common/DeleteConfirmModal';
+import { BlockConfirmModal } from '@/components/common/BlockConfirmModal';
 
 const ownerSchema = z.object({
   name: z.string().min(2, 'Name is required'),
@@ -20,10 +30,48 @@ const ownerSchema = z.object({
   company_name: z.string().min(1, 'Company name required'),
   license_number: z.string().min(1, 'License required'),
   business_address: z.string().min(1, 'Address required'),
-  business_phone: z.string().regex(/^\+?[1-9]\d{9,14}$/, 'Invalid phone').optional().or(z.literal('')),
+  business_phone: z
+    .string()
+    .regex(/^\+?[1-9]\d{9,14}$/, 'Invalid phone')
+    .optional()
+    .or(z.literal('')),
   pan_number: z.string().optional(),
   gst_number: z.string().optional(),
 });
+
+/* --------------------------------------------------------------
+   FORM SECTIONS – used by the generic FormModal
+   -------------------------------------------------------------- */
+const busOwnerSections = [
+  {
+    title: 'User Information',
+    fields: [
+      { label: 'Name', name: 'name', required: true },
+      { label: 'Email', name: 'email', type: 'email', required: true },
+    ],
+  },
+  {
+    title: 'Business Information',
+    fields: [
+      { label: 'Company Name', name: 'company_name', required: true },
+      { label: 'License Number', name: 'license_number', required: true },
+      {
+        label: 'Business Address',
+        name: 'business_address',
+        type: 'textarea',
+        required: true,
+        colSpan: 'col-span-1 sm:col-span-2',
+      },
+      { label: 'Business Phone', name: 'business_phone', type: 'tel' },
+      { label: 'PAN Number', name: 'pan_number' },
+      {
+        label: 'GST Number',
+        name: 'gst_number',
+        colSpan: 'col-span-1 sm:col-span-2',
+      },
+    ],
+  },
+];
 
 export default function BusOwnerManagement() {
   const [owners, setOwners] = useState([]);
@@ -31,15 +79,24 @@ export default function BusOwnerManagement() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
   const [selectedOwner, setSelectedOwner] = useState(null);
+  const [blockAction, setBlockAction] = useState('');
   const [loading, setLoading] = useState(false);
   const [apiLoading, setApiLoading] = useState(false);
   const [apiError, setApiError] = useState(null);
 
-  const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm({
-    resolver: zodResolver(ownerSchema)
-  });
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setValue,
+    formState: { errors },
+  } = useForm({ resolver: zodResolver(ownerSchema) });
 
+  // -----------------------------------------------------------------
+  // FETCH OWNERS
+  // -----------------------------------------------------------------
   const fetchOwners = useCallback(async () => {
     setApiLoading(true);
     setApiError(null);
@@ -58,20 +115,32 @@ export default function BusOwnerManagement() {
     fetchOwners();
   }, [fetchOwners]);
 
+  // -----------------------------------------------------------------
+  // SEARCH FILTER
+  // -----------------------------------------------------------------
   useEffect(() => {
     const q = searchQuery.toLowerCase();
     const filtered = owners.filter(o =>
-      [o.name, o.company_name, o.email, o.license_number].some(field =>
-        field?.toLowerCase().includes(q)
+      [o.name, o.company_name, o.email, o.license_number].some(f =>
+        f?.toLowerCase().includes(q)
       )
     );
     setFilteredOwners(filtered);
   }, [searchQuery, owners]);
 
+  // -----------------------------------------------------------------
+  // FORM HELPERS
+  // -----------------------------------------------------------------
   const resetForm = () => {
     reset({
-      name: '', email: '', company_name: '', license_number: '',
-      business_address: '', business_phone: '', pan_number: '', gst_number: ''
+      name: '',
+      email: '',
+      company_name: '',
+      license_number: '',
+      business_address: '',
+      business_phone: '',
+      pan_number: '',
+      gst_number: '',
     });
     setSelectedOwner(null);
   };
@@ -81,7 +150,7 @@ export default function BusOwnerManagement() {
     setIsModalOpen(true);
   };
 
-  const handleEdit = (owner) => {
+  const handleEdit = owner => {
     setSelectedOwner(owner);
     setValue('name', owner.name);
     setValue('email', owner.email);
@@ -94,7 +163,10 @@ export default function BusOwnerManagement() {
     setIsModalOpen(true);
   };
 
-  const onSubmit = async (data) => {
+  // -----------------------------------------------------------------
+  // SUBMIT (ADD / EDIT)
+  // -----------------------------------------------------------------
+  const onSubmit = async data => {
     setLoading(true);
     try {
       if (selectedOwner) {
@@ -115,7 +187,10 @@ export default function BusOwnerManagement() {
     }
   };
 
-  const handleDelete = (owner) => {
+  // -----------------------------------------------------------------
+  // DELETE
+  // -----------------------------------------------------------------
+  const handleDelete = owner => {
     setSelectedOwner(owner);
     setIsDeleteModalOpen(true);
   };
@@ -125,87 +200,293 @@ export default function BusOwnerManagement() {
     try {
       await axiosInstance.delete(`/owners/bus-owners/${selectedOwner.id}/`);
       setOwners(prev => prev.filter(o => o.id !== selectedOwner.id));
-      setIsDeleteModalOpen(false);
-      setSelectedOwner(null);
+      setFilteredOwners(prev => prev.filter(o => o.id !== selectedOwner.id));
     } catch (e) {
       alert(e.response?.data?.detail || 'Delete failed');
+    } finally {
+      setIsDeleteModalOpen(false);
+      setSelectedOwner(null);
     }
   };
 
-  const handleBlock = async (owner) => {
+  // -----------------------------------------------------------------
+  // BLOCK / UNBLOCK
+  // -----------------------------------------------------------------
+  const openBlockModal = owner => {
+    setSelectedOwner(owner);
+    setBlockAction(owner.is_active ? 'block' : 'unblock');
+    setIsBlockModalOpen(true);
+  };
+
+  const confirmBlock = async () => {
+    if (!selectedOwner) return;
     try {
-      const { data } = await axiosInstance.post(`/owners/bus-owners/${owner.id}/block/`);
-      setOwners(prev => prev.map(o => o.id === owner.id ? { ...o, is_active: data.is_active } : o));
+      const { data } = await axiosInstance.post(
+        `/owners/bus-owners/${selectedOwner.id}/block/`
+      );
+      setOwners(prev =>
+        prev.map(o =>
+          o.id === selectedOwner.id ? { ...o, is_active: data.is_active } : o
+        )
+      );
+      setFilteredOwners(prev =>
+        prev.map(o =>
+          o.id === selectedOwner.id ? { ...o, is_active: data.is_active } : o
+        )
+      );
+    } catch (err) {
+      alert('Failed to update status');
+    } finally {
+      setIsBlockModalOpen(false);
+      setSelectedOwner(null);
+    }
+  };
+
+  // -----------------------------------------------------------------
+  // VERIFY
+  // -----------------------------------------------------------------
+  const handleVerify = async owner => {
+    try {
+      const { data } = await axiosInstance.post(
+        `/owners/bus-owners/${owner.id}/verify/`
+      );
+      setOwners(prev =>
+        prev.map(o =>
+          o.id === owner.id ? { ...o, is_verified: data.is_verified } : o
+        )
+      );
+      setFilteredOwners(prev =>
+        prev.map(o =>
+          o.id === owner.id ? { ...o, is_verified: data.is_verified } : o
+        )
+      );
     } catch (err) {
       console.error(err);
+      alert('Verification failed');
     }
   };
 
-  const handleVerify = async (owner) => {
-    try {
-      const { data } = await axiosInstance.post(`/owners/bus-owners/${owner.id}/verify/`);
-      setOwners(prev => prev.map(o => o.id === owner.id ? { ...o, is_verified: data.is_verified } : o));
-    } catch (err) {
-      console.error(err);
-    }
-  };
+  // -----------------------------------------------------------------
+  // TABLE COLUMNS (green Ban for unblock)
+  // -----------------------------------------------------------------
+  const columns = useMemo(
+    () => [
+      { header: 'Name', accessor: 'name' },
+      { header: 'Company', accessor: 'company_name' },
+      { header: 'Email', accessor: 'email' },
+      { header: 'License', accessor: 'license_number' },
+      {
+        header: 'Status',
+        cell: row =>
+          h(
+            'span',
+            {
+              className: `inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                row.is_active
+                  ? 'bg-green-100 text-green-800'
+                  : 'bg-red-100 text-red-800'
+              }`,
+            },
+            row.is_active ? h(CheckCircle, { size: 14 }) : h(Ban, { size: 14 }),
+            row.is_active ? 'Active' : 'Blocked'
+          ),
+      },
+      {
+        header: 'Verified',
+        cell: row =>
+          row.is_verified
+            ? h(
+                'span',
+                { className: 'text-green-600 font-medium flex items-center gap-1' },
+                h(CheckCircle, { size: 16 }),
+                'Yes'
+              )
+            : h(
+                'span',
+                { className: 'text-amber-600 font-medium flex items-center gap-1' },
+                h(XCircle, { size: 16 }),
+                'No'
+              ),
+      },
+      {
+        header: 'Actions',
+        cell: row =>
+          h(
+            'div',
+            { className: 'flex items-center gap-3' },
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-gray-50 p-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex items-center gap-3 mb-8">
-          <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center shadow-lg">
-            <Building2 className="text-white" size={24} />
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Bus Owner Management</h1>
-            <p className="text-gray-600 text-sm">Manage bus owners and their companies</p>
-          </div>
-        </div>
+            // Edit
+            h('button', {
+              onClick: () => handleEdit(row),
+              className: 'text-blue-600 hover:text-blue-800 transition-colors',
+              title: 'Edit',
+            }, h(Edit, { size: 16 })),
 
-        {apiError && (
-          <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-lg mb-4 text-sm">
-            {apiError}
-          </div>
-        )}
+            // Delete
+            h('button', {
+              onClick: () => handleDelete(row),
+              className: 'text-red-600 hover:text-red-800 transition-colors',
+              title: 'Delete',
+            }, h(Trash2, { size: 16 })),
 
-        <StatsCards
-          total={owners.length}
-          active={owners.filter(o => o.is_active).length}
-          verified={owners.filter(o => o.is_verified).length}
-        />
+            // Block / Unblock – SAME ICON, GREEN WHEN UNBLOCKING
+            h('button', {
+              onClick: () => openBlockModal(row),
+              className: `${
+                row.is_active
+                  ? 'text-orange-600 hover:text-orange-800'
+                  : 'text-green-600 hover:text-green-800'
+              } transition-colors`,
+              title: row.is_active ? 'Block this owner' : 'Unblock this owner',
+            }, h(Ban, {
+              size: 16,
+              className: row.is_active ? 'text-orange-600' : 'text-green-600',
+            })),
 
-        <ActionBar search={searchQuery} onSearch={setSearchQuery} onAdd={handleAdd} />
+            // Verify (only if not verified)
+            !row.is_verified &&
+              h('button', {
+                onClick: () => handleVerify(row),
+                className: 'text-purple-600 hover:text-purple-800 transition-colors',
+                title: 'Verify',
+              }, h(CheckCircle, { size: 16 }))
+          ),
+      },
+    ],
+    [handleEdit, handleDelete, openBlockModal, handleVerify]
+  );
 
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
-          <BusOwnerTable
-            owners={filteredOwners}
-            loading={apiLoading}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onBlock={handleBlock}
-            onVerify={handleVerify}
-          />
-        </div>
+  // -----------------------------------------------------------------
+  // PASSWORD HINT (shown only on Add)
+  // -----------------------------------------------------------------
+  const passwordHint = !selectedOwner
+    ? h(
+        'div',
+        {
+          className:
+            'col-span-1 sm:col-span-2 bg-blue-50 border border-blue-200 rounded-xl p-3 flex items-start gap-2',
+        },
+        h(Mail, { className: 'text-blue-600 mt-0.5 flex-shrink-0', size: 18 }),
+        h(
+          'div',
+          null,
+          h('p', { className: 'text-sm font-medium text-blue-900' }, 'Password will be auto-generated'),
+          h(
+            'p',
+            { className: 'text-xs text-blue-700 mt-0.5' },
+            'A secure random password will be created and emailed to the owner immediately after saving.'
+          )
+        )
+      )
+    : null;
 
-        <BusOwnerFormModal
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          selectedOwner={selectedOwner}
-          register={register}
-          errors={errors}
-          onSubmit={handleSubmit(onSubmit)}
-          loading={loading}
-        />
+  // -----------------------------------------------------------------
+  // RENDER
+  // -----------------------------------------------------------------
+  return h(
+    'div',
+    {
+      className:
+        'min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-gray-50 p-4 sm:p-6 lg:p-8',
+    },
+    h(
+      'div',
+      { className: 'max-w-7xl mx-auto' },
 
-        <DeleteConfirmModal
-          isOpen={isDeleteModalOpen}
-          onClose={() => setIsDeleteModalOpen(false)}
-          owner={selectedOwner}
-          onConfirm={confirmDelete}
-          loading={loading}
-        />
-      </div>
-    </div>
+      // HEADER
+      h(
+        'div',
+        { className: 'flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-8' },
+        h(
+          'div',
+          { className: 'flex items-center gap-3' },
+          h('div', {
+            className:
+              'w-12 h-12 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center shadow-lg',
+            children: h(Building2, { className: 'text-white', size: 24 }),
+          }),
+          h(
+            'div',
+            null,
+            h('h1', { className: 'text-2xl sm:text-3xl font-bold text-gray-900' }, 'Bus Owner Management'),
+            h('p', { className: 'text-gray-600 text-sm' }, 'Manage bus owners and their companies')
+          )
+        )
+      ),
+
+      // ERROR
+      apiError &&
+        h(
+          'div',
+          {
+            className:
+              'bg-red-50 border border-red-200 text-red-700 p-3 rounded-lg mb-4 text-sm',
+          },
+          apiError
+        ),
+
+      // STATS
+      h(StatsCards, {
+        total: owners.length,
+        active: owners.filter(o => o.is_active).length,
+        verified: owners.filter(o => o.is_verified).length,
+        label: 'Owners',
+      }),
+
+      // ACTION BAR
+      h(ActionBar, {
+        search: searchQuery,
+        onSearch: setSearchQuery,
+        onAdd: handleAdd,
+        addLabel: 'Add New Owner',
+        searchPlaceholder: 'Search by name, company, email, or license...',
+      }),
+
+      // TABLE
+      h(
+        'div',
+        { className: 'bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100' },
+        h(GenericTable, {
+          rows: filteredOwners,
+          columns,
+          loading: apiLoading,
+          emptyMessage: 'No bus owners found',
+        })
+      ),
+
+      // FORM MODAL – generic version
+      h(FormModal, {
+        isOpen: isModalOpen,
+        onClose: () => setIsModalOpen(false),
+        title: selectedOwner ? 'Edit Bus Owner' : 'Add New Bus Owner',
+        icon: Building2,
+        sections: busOwnerSections,
+        register,
+        errors,
+        onSubmit: handleSubmit(onSubmit),
+        loading,
+        submitLabel: selectedOwner ? 'Update' : 'Create & Email Password',
+        extraInfo: passwordHint,
+      }),
+
+      // DELETE MODAL
+      h(DeleteConfirmModal, {
+        isOpen: isDeleteModalOpen,
+        onClose: () => setIsDeleteModalOpen(false),
+        entity: selectedOwner,
+        onConfirm: confirmDelete,
+        loading,
+      }),
+
+      // BLOCK MODAL
+      h(BlockConfirmModal, {
+        isOpen: isBlockModalOpen,
+        onClose: () => setIsBlockModalOpen(false),
+        entity: selectedOwner,
+        action: blockAction,
+        onConfirm: confirmBlock,
+        loading: false,
+      })
+    )
   );
 }
