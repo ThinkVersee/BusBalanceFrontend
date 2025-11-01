@@ -2,8 +2,6 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
 import axiosInstance from '@/config/axiosInstance';
 import {
   Users,
@@ -11,9 +9,7 @@ import {
   Trash2,
   Ban,
   CheckCircle,
-  XCircle,
 } from 'lucide-react';
-import { createElement as h } from 'react';
 
 // ---------- COMMON COMPONENTS ----------
 import { StatsCards } from '@/components/common/StatsCards';
@@ -23,122 +19,120 @@ import { FormModal } from '@/components/common/FormModal';
 import { DeleteConfirmModal } from '@/components/common/DeleteConfirmModal';
 import { BlockConfirmModal } from '@/components/common/BlockConfirmModal';
 
-// ---------------------------------------------------------------------
-// Zod schema
-// ---------------------------------------------------------------------
-const subscriberSchema = z.object({
-  owner_id: z.coerce.number().int('Select owner'),
-  subscription_id: z.coerce.number().int('Select subscription plan'),
-});
-
-// ---------------------------------------------------------------------
-// FORM SECTIONS
-// ---------------------------------------------------------------------
-const subscriberSections = [
-  {
-    title: 'Subscriber Details',
-    fields: [
-      { label: 'Owner ID', name: 'owner_id', type: 'number', required: true },
-      {
-        label: 'Subscription ID',
-        name: 'subscription_id',
-        type: 'number',
-        required: true,
-      },
-    ],
-  },
-];
-
-export default function SubscriberManagement() {
+export default function SubscribersManagement() {
+  /* ------------------------------------------------------------------ */
+  /*  STATE                                                             */
+  /* ------------------------------------------------------------------ */
   const [subs, setSubs] = useState([]);
-  const [filtered, setFiltered] = useState([]);
-  const [search, setSearch] = useState('');
-  const [modalOpen, setModalOpen] = useState(false);
-  const [delOpen, setDelOpen] = useState(false);
-  const [blockOpen, setBlockOpen] = useState(false);
+  const [filteredSubs, setFilteredSubs] = useState([]);
+  const [owners, setOwners] = useState([]);
+  const [subscriptions, setSubscriptions] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [isBlockOpen, setIsBlockOpen] = useState(false);
   const [selected, setSelected] = useState(null);
   const [blockAction, setBlockAction] = useState('');
   const [loading, setLoading] = useState(false);
   const [apiLoading, setApiLoading] = useState(false);
   const [apiError, setApiError] = useState(null);
 
-  const {
-    register,
-    handleSubmit,
-    reset,
-    setValue,
-    formState: { errors },
-  } = useForm({ resolver: zodResolver(subscriberSchema) });
+  const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm();
 
-  // -----------------------------------------------------------------
-  // FETCH SUBSCRIBERS
-  // -----------------------------------------------------------------
-  const fetchSubs = useCallback(async () => {
+  /* ------------------------------------------------------------------ */
+  /*  FETCH DATA                                                       */
+  /* ------------------------------------------------------------------ */
+  const fetchOwners = useCallback(async () => {
+    try {
+      const { data } = await axiosInstance.get('/owners/bus-owners/');
+      setOwners(data);
+    } catch (e) {
+      console.error(e);
+    }
+  }, []);
+
+  const fetchSubscriptions = useCallback(async () => {
+    try {
+      const { data } = await axiosInstance.get('/superadmin/subscriptions/');
+      setSubscriptions(data);
+    } catch (e) {
+      console.error(e);
+    }
+  }, []);
+
+  const fetchSubscribers = useCallback(async () => {
     setApiLoading(true);
     setApiError(null);
     try {
       const { data } = await axiosInstance.get('/superadmin/subscribers/');
-      setSubs(data);
-      setFiltered(data);
+      const normalized = data.map(s => ({
+        ...s,
+        owner_name: s.owner?.name || s.owner_name || '—',
+        subscription_name: s.subscription?.plan_name || s.subscription_name || '—',
+      }));
+      setSubs(normalized);
+      setFilteredSubs(normalized);
     } catch (e) {
-      setApiError(e.response?.data?.detail || e.message || 'Failed to load subscribers');
+      setApiError(e.response?.data?.detail || e.message || 'Failed to load');
     } finally {
       setApiLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchSubs();
-  }, [fetchSubs]);
+    fetchOwners();
+    fetchSubscriptions();
+    fetchSubscribers();
+  }, [fetchOwners, fetchSubscriptions, fetchSubscribers]);
 
-  // -----------------------------------------------------------------
-  // SEARCH
-  // -----------------------------------------------------------------
+  /* ------------------------------------------------------------------ */
+  /*  SEARCH                                                            */
+  /* ------------------------------------------------------------------ */
   useEffect(() => {
-    const q = search.toLowerCase();
-    const res = subs.filter((s) =>
-      [s.owner_name, s.subscription_name]
-        .some((f) => String(f || '').toLowerCase().includes(q))
+    const q = searchQuery.toLowerCase();
+    const filtered = subs.filter(s =>
+      [s.owner_name, s.subscription_name].some(f => f?.toLowerCase().includes(q))
     );
-    setFiltered(res);
-  }, [search, subs]);
+    setFilteredSubs(filtered);
+  }, [searchQuery, subs]);
 
-  // -----------------------------------------------------------------
-  // FORM HELPERS
-  // -----------------------------------------------------------------
+  /* ------------------------------------------------------------------ */
+  /*  FORM HELPERS                                                     */
+  /* ------------------------------------------------------------------ */
   const resetForm = () => {
-    reset({
-      owner_id: '',
-      subscription_id: '',
-    });
+    reset({ owner_id: '', subscription_id: '' });
     setSelected(null);
   };
 
   const openAdd = () => {
     resetForm();
-    setModalOpen(true);
+    setIsModalOpen(true);
   };
 
-  const openEdit = (sub) => {
+  const openEdit = sub => {
     setSelected(sub);
-    setValue('owner_id', sub.owner?.id || '');
-    setValue('subscription_id', sub.subscription?.id || '');
-    setModalOpen(true);
+    setValue('owner_id', sub.owner?.id ?? sub.owner_id);
+    setValue('subscription_id', sub.subscription?.id ?? sub.subscription_id);
+    setIsModalOpen(true);
   };
 
-  // -----------------------------------------------------------------
-  // SUBMIT
-  // -----------------------------------------------------------------
-  const onSubmit = async (data) => {
+  /* ------------------------------------------------------------------ */
+  /*  SUBMIT                                                           */
+  /* ------------------------------------------------------------------ */
+  const onSubmit = async data => {
     setLoading(true);
     try {
+      const payload = {
+        owner_id: Number(data.owner_id),
+        subscription_id: Number(data.subscription_id),
+      };
       if (selected) {
-        await axiosInstance.put(`/superadmin/subscribers/${selected.id}/`, data);
+        await axiosInstance.put(`/superadmin/subscribers/${selected.id}/`, payload);
       } else {
-        await axiosInstance.post('/superadmin/subscribers/', data);
+        await axiosInstance.post('/superadmin/subscribers/', payload);
       }
-      await fetchSubs();
-      setModalOpen(false);
+      await fetchSubscribers();
+      setIsModalOpen(false);
       resetForm();
     } catch (e) {
       const msg = e.response?.data
@@ -150,62 +144,85 @@ export default function SubscriberManagement() {
     }
   };
 
-  // -----------------------------------------------------------------
-  // DELETE
-  // -----------------------------------------------------------------
-  const openDelete = (sub) => {
+  /* ------------------------------------------------------------------ */
+  /*  DELETE                                                           */
+  /* ------------------------------------------------------------------ */
+  const openDelete = sub => {
     setSelected(sub);
-    setDelOpen(true);
+    setIsDeleteOpen(true);
   };
 
   const confirmDelete = async () => {
     if (!selected) return;
     try {
       await axiosInstance.delete(`/superadmin/subscribers/${selected.id}/`);
-      setSubs((prev) => prev.filter((s) => s.id !== selected.id));
-      setFiltered((prev) => prev.filter((s) => s.id !== selected.id));
+      setSubs(prev => prev.filter(s => s.id !== selected.id));
+      setFilteredSubs(prev => prev.filter(s => s.id !== selected.id));
     } catch (e) {
       alert(e.response?.data?.detail || 'Delete failed');
     } finally {
-      setDelOpen(false);
+      setIsDeleteOpen(false);
       setSelected(null);
     }
   };
 
-  // -----------------------------------------------------------------
-  // BLOCK / UNBLOCK
-  // -----------------------------------------------------------------
-  const openBlock = (sub) => {
+  /* ------------------------------------------------------------------ */
+  /*  BLOCK / UNBLOCK                                                  */
+  /* ------------------------------------------------------------------ */
+  const openBlock = sub => {
     setSelected(sub);
     setBlockAction(sub.is_active ? 'block' : 'unblock');
-    setBlockOpen(true);
+    setIsBlockOpen(true);
   };
 
   const confirmBlock = async () => {
     if (!selected) return;
     try {
-      const { data } = await axiosInstance.patch(`/superadmin/subscribers/${selected.id}/toggle-status/`);
-      setSubs((prev) =>
-        prev.map((s) =>
-          s.id === selected.id ? { ...s, is_active: data.is_active } : s
-        )
+      const { data } = await axiosInstance.patch(
+        `/superadmin/subscribers/${selected.id}/toggle-status/`
       );
-      setFiltered((prev) =>
-        prev.map((s) =>
-          s.id === selected.id ? { ...s, is_active: data.is_active } : s
-        )
-      );
+      const updated = { ...selected, is_active: data.is_active };
+      setSubs(prev => prev.map(s => (s.id === selected.id ? updated : s)));
+      setFilteredSubs(prev => prev.map(s => (s.id === selected.id ? updated : s)));
     } catch (e) {
       alert('Failed to update status');
     } finally {
-      setBlockOpen(false);
+      setIsBlockOpen(false);
       setSelected(null);
     }
   };
 
-  // -----------------------------------------------------------------
-  // TABLE COLUMNS
-  // -----------------------------------------------------------------
+  /* ------------------------------------------------------------------ */
+  /*  FORM SECTIONS                                                    */
+  /* ------------------------------------------------------------------ */
+  const subscriberSections = [
+    {
+      title: 'Subscriber Details',
+      fields: [
+        {
+          label: 'Owner',
+          name: 'owner_id',
+          type: 'select',
+          required: true,
+          options: owners.map(o => ({ value: o.id, label: o.name })),
+        },
+        {
+          label: 'Subscription',
+          name: 'subscription_id',
+          type: 'select',
+          required: true,
+          options: subscriptions.map(s => ({
+            value: s.id,
+            label: `${s.plan_name} (${s.billing_cycle} months)`,
+          })),
+        },
+      ],
+    },
+  ];
+
+  /* ------------------------------------------------------------------ */
+  /*  TABLE COLUMNS                                                    */
+  /* ------------------------------------------------------------------ */
   const columns = useMemo(
     () => [
       { header: 'Owner', accessor: 'owner_name' },
@@ -214,156 +231,148 @@ export default function SubscriberManagement() {
       { header: 'End Date', accessor: 'end_date' },
       {
         header: 'Status',
-        cell: (row) =>
-          h(
-            'span',
-            {
-              className: `inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                row.is_active
-                  ? 'bg-green-100 text-green-800'
-                  : 'bg-red-100 text-red-800'
-              }`,
-            },
-            row.is_active ? h(CheckCircle, { size: 14 }) : h(XCircle, { size: 14 }),
-            row.is_active ? 'Active' : 'Blocked'
-          ),
+        cell: row => (
+          <span
+            className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${
+              row.is_active
+                ? 'bg-green-100 text-green-800'
+                : 'bg-red-100 text-red-800'
+            }`}
+          >
+            {row.is_active ? <CheckCircle size={14} /> : <Ban size={14} />}
+            {row.is_active ? 'Active' : 'Blocked'}
+          </span>
+        ),
       },
       {
         header: 'Actions',
-        cell: (row) =>
-          h(
-            'div',
-            { className: 'flex items-center gap-3' },
-            // Edit
-            h(
-              'button',
-              {
-                onClick: () => openEdit(row),
-                className: 'text-blue-600 hover:text-blue-800 transition-colors',
-                title: 'Edit',
-              },
-              h(Edit, { size: 16 })
-            ),
-            // Delete
-            h(
-              'button',
-              {
-                onClick: () => openDelete(row),
-                className: 'text-red-600 hover:text-red-800 transition-colors',
-                title: 'Delete',
-              },
-              h(Trash2, { size: 16 })
-            ),
-            // Block
-            h(
-              'button',
-              {
-                onClick: () => openBlock(row),
-                className: `${
-                  row.is_active
-                    ? 'text-orange-600 hover:text-orange-800'
-                    : 'text-green-600 hover:text-green-800'
-                } transition-colors`,
-                title: row.is_active ? 'Block' : 'Unblock',
-              },
-              h(Ban, { size: 16 })
-            )
-          ),
+        cell: row => (
+          <div className="flex items-center gap-3">
+            {/* Edit */}
+            <button
+              onClick={() => openEdit(row)}
+              className="text-blue-600 hover:text-blue-800 transition-colors"
+              title="Edit"
+            >
+              <Edit size={16} />
+            </button>
+
+            {/* Delete */}
+            <button
+              onClick={() => openDelete(row)}
+              className="text-red-600 hover:text-red-800 transition-colors"
+              title="Delete"
+            >
+              <Trash2 size={16} />
+            </button>
+
+            {/* Block / Unblock */}
+            <button
+              onClick={() => openBlock(row)}
+              className={`${
+                row.is_active
+                  ? 'text-orange-600 hover:text-orange-800'
+                  : 'text-green-600 hover:text-green-800'
+              } transition-colors`}
+              title={row.is_active ? 'Block subscriber' : 'Unblock subscriber'}
+            >
+              <Ban size={16} />
+            </button>
+          </div>
+        ),
       },
     ],
-    []
+    [openEdit, openDelete, openBlock]
   );
 
-  // -----------------------------------------------------------------
-  // RENDER
-  // -----------------------------------------------------------------
-  return h(
-    'div',
-    {
-      className:
-        'min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-gray-50 p-4 sm:p-6 lg:p-8',
-    },
-    h(
-      'div',
-      { className: 'max-w-7xl mx-auto' },
+  /* ------------------------------------------------------------------ */
+  /*  RENDER                                                           */
+  /* ------------------------------------------------------------------ */
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-gray-50 p-4 sm:p-6 lg:p-8">
+      <div className="max-w-7xl mx-auto">
 
-      // HEADER
-      h(
-        'div',
-        { className: 'flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-8' },
-        h(
-          'div',
-          { className: 'flex items-center gap-3' },
-          h('div', {
-            className:
-              'w-12 h-12 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center shadow-lg',
-            children: h(Users, { className: 'text-white', size: 24 }),
-          }),
-          h(
-            'div',
-            null,
-            h('h1', { className: 'text-2xl sm:text-3xl font-bold text-gray-900' }, 'Subscribers Management'),
-            h('p', { className: 'text-gray-600 text-sm' }, 'Manage bus owner subscriptions and status')
-          )
-        )
-      ),
+        {/* HEADER */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-8">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center shadow-lg">
+              <Users className="text-white" size={24} />
+            </div>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Subscribers</h1>
+              <p className="text-gray-600 text-sm">Manage which owners are subscribed to which plans</p>
+            </div>
+          </div>
+        </div>
 
-      apiError &&
-        h('div', { className: 'bg-red-50 border border-red-200 text-red-700 p-3 rounded-lg mb-4 text-sm' }, apiError),
+        {/* ERROR */}
+        {apiError && (
+          <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-lg mb-4 text-sm">
+            {apiError}
+          </div>
+        )}
 
-      h(StatsCards, {
-        total: subs.length,
-        active: subs.filter((s) => s.is_active).length,
-        verified: 0,
-        label: 'Subscribers',
-      }),
+        {/* STATS */}
+        <StatsCards
+          total={subs.length}
+          active={subs.filter(s => s.is_active).length}
+          label="Subscribers"
+        />
 
-      h(ActionBar, {
-        search,
-        onSearch: setSearch,
-        onAdd: openAdd,
-        addLabel: 'Add Subscriber',
-        searchPlaceholder: 'Search by owner or plan',
-      }),
+        {/* ACTION BAR */}
+        <ActionBar
+          search={searchQuery}
+          onSearch={setSearchQuery}
+          onAdd={openAdd}
+          addLabel="Add Subscriber"
+          searchPlaceholder="Search by owner or plan..."
+        />
 
-      h('div', { className: 'bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100' },
-        h(GenericTable, {
-          rows: filtered,
-          columns,
-          loading: apiLoading,
-          emptyMessage: 'No subscribers found',
-        })
-      ),
+        {/* TABLE */}
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
+          <GenericTable
+            rows={filteredSubs}
+            columns={columns}
+            loading={apiLoading}
+            emptyMessage="No subscribers found"
+          />
+        </div>
 
-      h(FormModal, {
-        isOpen: modalOpen,
-        onClose: () => setModalOpen(false),
-        title: selected ? 'Edit Subscriber' : 'Add New Subscriber',
-        icon: Users,
-        sections: subscriberSections,
-        register,
-        errors,
-        onSubmit: handleSubmit(onSubmit),
-        loading,
-        submitLabel: selected ? 'Update Subscriber' : 'Create Subscriber',
-      }),
+        {/* FORM MODAL */}
+        <FormModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          title={selected ? 'Edit Subscriber' : 'Add Subscriber'}
+          icon={Users}
+          sections={subscriberSections}
+          register={register}
+          errors={errors}
+          onSubmit={handleSubmit(onSubmit)}
+          loading={loading}
+          submitLabel={selected ? 'Update' : 'Create'}
+        />
 
-      h(DeleteConfirmModal, {
-        isOpen: delOpen,
-        onClose: () => setDelOpen(false),
-        entity: selected,
-        onConfirm: confirmDelete,
-        loading,
-      }),
+        {/* DELETE MODAL */}
+        <DeleteConfirmModal
+          isOpen={isDeleteOpen}
+          onClose={() => setIsDeleteOpen(false)}
+          entity={selected}
+          entityName={selected?.owner_name}
+          onConfirm={confirmDelete}
+          loading={loading}
+        />
 
-      h(BlockConfirmModal, {
-        isOpen: blockOpen,
-        onClose: () => setBlockOpen(false),
-        entity: selected,
-        action: blockAction,
-        onConfirm: confirmBlock,
-        loading: false,
-      })
-    )
+        {/* BLOCK MODAL */}
+        <BlockConfirmModal
+          isOpen={isBlockOpen}
+          onClose={() => setIsBlockOpen(false)}
+          entity={selected}
+          entityName={selected?.owner_name}
+          action={blockAction}
+          onConfirm={confirmBlock}
+          loading={false}
+        />
+      </div>
+    </div>
   );
 }

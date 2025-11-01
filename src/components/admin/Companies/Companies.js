@@ -14,7 +14,6 @@ import {
   XCircle,
   Mail,
 } from 'lucide-react';
-import { createElement as h } from 'react';
 
 // ---------- COMMON COMPONENTS ----------
 import { StatsCards } from '@/components/common/StatsCards';
@@ -267,7 +266,7 @@ export default function BusOwnerManagement() {
   };
 
   // -----------------------------------------------------------------
-  // TABLE COLUMNS (green Ban for unblock)
+  // TABLE COLUMNS
   // -----------------------------------------------------------------
   const columns = useMemo(
     () => [
@@ -277,80 +276,84 @@ export default function BusOwnerManagement() {
       { header: 'License', accessor: 'license_number' },
       {
         header: 'Status',
-        cell: row =>
-          h(
-            'span',
-            {
-              className: `inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                row.is_active
-                  ? 'bg-green-100 text-green-800'
-                  : 'bg-red-100 text-red-800'
-              }`,
-            },
-            row.is_active ? h(CheckCircle, { size: 14 }) : h(Ban, { size: 14 }),
-            row.is_active ? 'Active' : 'Blocked'
-          ),
+        cell: row => (
+          <span
+            className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${
+              row.is_active
+                ? 'bg-green-100 text-green-800'
+                : 'bg-red-100 text-red-800'
+            }`}
+          >
+            {row.is_active ? <CheckCircle size={14} /> : <Ban size={14} />}
+            {row.is_active ? 'Active' : 'Blocked'}
+          </span>
+        ),
       },
       {
         header: 'Verified',
         cell: row =>
-          row.is_verified
-            ? h(
-                'span',
-                { className: 'text-green-600 font-medium flex items-center gap-1' },
-                h(CheckCircle, { size: 16 }),
-                'Yes'
-              )
-            : h(
-                'span',
-                { className: 'text-amber-600 font-medium flex items-center gap-1' },
-                h(XCircle, { size: 16 }),
-                'No'
-              ),
+          row.is_verified ? (
+            <span className="text-green-600 font-medium flex items-center gap-1">
+              <CheckCircle size={16} />
+              Yes
+            </span>
+          ) : (
+            <span className="text-amber-600 font-medium flex items-center gap-1">
+              <XCircle size={16} />
+              No
+            </span>
+          ),
       },
       {
         header: 'Actions',
-        cell: row =>
-          h(
-            'div',
-            { className: 'flex items-center gap-3' },
+        cell: row => (
+          <div className="flex items-center gap-3">
+            {/* Edit */}
+            <button
+              onClick={() => handleEdit(row)}
+              className="text-blue-600 hover:text-blue-800 transition-colors"
+              title="Edit"
+            >
+              <Edit size={16} />
+            </button>
 
-            // Edit
-            h('button', {
-              onClick: () => handleEdit(row),
-              className: 'text-blue-600 hover:text-blue-800 transition-colors',
-              title: 'Edit',
-            }, h(Edit, { size: 16 })),
+            {/* Delete */}
+            <button
+              onClick={() => handleDelete(row)}
+              className="text-red-600 hover:text-red-800 transition-colors"
+              title="Delete"
+            >
+              <Trash2 size={16} />
+            </button>
 
-            // Delete
-            h('button', {
-              onClick: () => handleDelete(row),
-              className: 'text-red-600 hover:text-red-800 transition-colors',
-              title: 'Delete',
-            }, h(Trash2, { size: 16 })),
-
-            // Block / Unblock – SAME ICON, GREEN WHEN UNBLOCKING
-            h('button', {
-              onClick: () => openBlockModal(row),
-              className: `${
+            {/* Block / Unblock */}
+            <button
+              onClick={() => openBlockModal(row)}
+              className={`${
                 row.is_active
                   ? 'text-orange-600 hover:text-orange-800'
                   : 'text-green-600 hover:text-green-800'
-              } transition-colors`,
-              title: row.is_active ? 'Block this owner' : 'Unblock this owner',
-            }, h(Ban, {
-              size: 16,
-              className: row.is_active ? 'text-orange-600' : 'text-green-600',
-            })),
+              } transition-colors`}
+              title={row.is_active ? 'Block this owner' : 'Unblock this owner'}
+            >
+              <Ban
+                size={16}
+                className={row.is_active ? 'text-orange-600' : 'text-green-600'}
+              />
+            </button>
 
-            // Verify (only if not verified)
-            !row.is_verified &&
-              h('button', {
-                onClick: () => handleVerify(row),
-                className: 'text-purple-600 hover:text-purple-800 transition-colors',
-                title: 'Verify',
-              }, h(CheckCircle, { size: 16 }))
-          ),
+            {/* Verify (only if not verified) */}
+            {!row.is_verified && (
+              <button
+                onClick={() => handleVerify(row)}
+                className="text-purple-600 hover:text-purple-800 transition-colors"
+                title="Verify"
+              >
+                <CheckCircle size={16} />
+              </button>
+            )}
+          </div>
+        ),
       },
     ],
     [handleEdit, handleDelete, openBlockModal, handleVerify]
@@ -359,134 +362,106 @@ export default function BusOwnerManagement() {
   // -----------------------------------------------------------------
   // PASSWORD HINT (shown only on Add)
   // -----------------------------------------------------------------
-  const passwordHint = !selectedOwner
-    ? h(
-        'div',
-        {
-          className:
-            'col-span-1 sm:col-span-2 bg-blue-50 border border-blue-200 rounded-xl p-3 flex items-start gap-2',
-        },
-        h(Mail, { className: 'text-blue-600 mt-0.5 flex-shrink-0', size: 18 }),
-        h(
-          'div',
-          null,
-          h('p', { className: 'text-sm font-medium text-blue-900' }, 'Password will be auto-generated'),
-          h(
-            'p',
-            { className: 'text-xs text-blue-700 mt-0.5' },
-            'A secure random password will be created and emailed to the owner immediately after saving.'
-          )
-        )
-      )
-    : null;
+  const passwordHint = !selectedOwner ? (
+    <div className="col-span-1 sm:col-span-2 bg-blue-50 border border-blue-200 rounded-xl p-3 flex items-start gap-2">
+      <Mail className="text-blue-600 mt-0.5 flex-shrink-0" size={18} />
+      <div>
+        <p className="text-sm font-medium text-blue-900">Password will be auto-generated</p>
+        <p className="text-xs text-blue-700 mt-0.5">
+          A secure random password will be created and emailed to the owner immediately after saving.
+        </p>
+      </div>
+    </div>
+  ) : null;
 
   // -----------------------------------------------------------------
   // RENDER
   // -----------------------------------------------------------------
-  return h(
-    'div',
-    {
-      className:
-        'min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-gray-50 p-4 sm:p-6 lg:p-8',
-    },
-    h(
-      'div',
-      { className: 'max-w-7xl mx-auto' },
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-gray-50 p-4 sm:p-6 lg:p-8">
+      <div className="max-w-7xl mx-auto">
 
-      // HEADER
-      h(
-        'div',
-        { className: 'flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-8' },
-        h(
-          'div',
-          { className: 'flex items-center gap-3' },
-          h('div', {
-            className:
-              'w-12 h-12 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center shadow-lg',
-            children: h(Building2, { className: 'text-white', size: 24 }),
-          }),
-          h(
-            'div',
-            null,
-            h('h1', { className: 'text-2xl sm:text-3xl font-bold text-gray-900' }, 'Bus Owner Management'),
-            h('p', { className: 'text-gray-600 text-sm' }, 'Manage bus owners and their companies')
-          )
-        )
-      ),
+        {/* HEADER */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-8">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center shadow-lg">
+              <Building2 className="text-white" size={24} />
+            </div>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Bus Owner Management</h1>
+              <p className="text-gray-600 text-sm">Manage bus owners and their companies</p>
+            </div>
+          </div>
+        </div>
 
-      // ERROR
-      apiError &&
-        h(
-          'div',
-          {
-            className:
-              'bg-red-50 border border-red-200 text-red-700 p-3 rounded-lg mb-4 text-sm',
-          },
-          apiError
-        ),
+        {/* ERROR */}
+        {apiError && (
+          <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-lg mb-4 text-sm">
+            {apiError}
+          </div>
+        )}
 
-      // STATS
-      h(StatsCards, {
-        total: owners.length,
-        active: owners.filter(o => o.is_active).length,
-        verified: owners.filter(o => o.is_verified).length,
-        label: 'Owners',
-      }),
+        {/* STATS */}
+        <StatsCards
+          total={owners.length}
+          active={owners.filter(o => o.is_active).length}
+          verified={owners.filter(o => o.is_verified).length}
+          label="Owners"
+        />
 
-      // ACTION BAR
-      h(ActionBar, {
-        search: searchQuery,
-        onSearch: setSearchQuery,
-        onAdd: handleAdd,
-        addLabel: 'Add New Owner',
-        searchPlaceholder: 'Search by name, company, email, or license...',
-      }),
+        {/* ACTION BAR */}
+        <ActionBar
+          search={searchQuery}
+          onSearch={setSearchQuery}
+          onAdd={handleAdd}
+          addLabel="Add New Owner"
+          searchPlaceholder="Search by name, company, email, or license..."
+        />
 
-      // TABLE
-      h(
-        'div',
-        { className: 'bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100' },
-        h(GenericTable, {
-          rows: filteredOwners,
-          columns,
-          loading: apiLoading,
-          emptyMessage: 'No bus owners found',
-        })
-      ),
+        {/* TABLE */}
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
+          <GenericTable
+            rows={filteredOwners}
+            columns={columns}
+            loading={apiLoading}
+            emptyMessage="No bus owners found"
+          />
+        </div>
 
-      // FORM MODAL – generic version
-      h(FormModal, {
-        isOpen: isModalOpen,
-        onClose: () => setIsModalOpen(false),
-        title: selectedOwner ? 'Edit Bus Owner' : 'Add New Bus Owner',
-        icon: Building2,
-        sections: busOwnerSections,
-        register,
-        errors,
-        onSubmit: handleSubmit(onSubmit),
-        loading,
-        submitLabel: selectedOwner ? 'Update' : 'Create & Email Password',
-        extraInfo: passwordHint,
-      }),
+        {/* FORM MODAL */}
+        <FormModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          title={selectedOwner ? 'Edit Bus Owner' : 'Add New Bus Owner'}
+          icon={Building2}
+          sections={busOwnerSections}
+          register={register}
+          errors={errors}
+          onSubmit={handleSubmit(onSubmit)}
+          loading={loading}
+          submitLabel={selectedOwner ? 'Update' : 'Create & Email Password'}
+          extraInfo={passwordHint}
+        />
 
-      // DELETE MODAL
-      h(DeleteConfirmModal, {
-        isOpen: isDeleteModalOpen,
-        onClose: () => setIsDeleteModalOpen(false),
-        entity: selectedOwner,
-        onConfirm: confirmDelete,
-        loading,
-      }),
+        {/* DELETE MODAL */}
+        <DeleteConfirmModal
+          isOpen={isDeleteModalOpen}
+          onClose={() => setIsDeleteModalOpen(false)}
+          entity={selectedOwner}
+          onConfirm={confirmDelete}
+          loading={loading}
+        />
 
-      // BLOCK MODAL
-      h(BlockConfirmModal, {
-        isOpen: isBlockModalOpen,
-        onClose: () => setIsBlockModalOpen(false),
-        entity: selectedOwner,
-        action: blockAction,
-        onConfirm: confirmBlock,
-        loading: false,
-      })
-    )
+        {/* BLOCK MODAL */}
+        <BlockConfirmModal
+          isOpen={isBlockModalOpen}
+          onClose={() => setIsBlockModalOpen(false)}
+          entity={selectedOwner}
+          action={blockAction}
+          onConfirm={confirmBlock}
+          loading={false}
+        />
+      </div>
+    </div>
   );
 }
