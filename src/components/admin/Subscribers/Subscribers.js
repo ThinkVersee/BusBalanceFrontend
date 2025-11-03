@@ -16,8 +16,8 @@ import { StatsCards } from '@/components/common/StatsCards';
 import { ActionBar } from '@/components/common/ActionBar';
 import { GenericTable } from '@/components/common/GenericTable';
 import { FormModal } from '@/components/common/FormModal';
-import { DeleteConfirmModal } from '@/components/common/DeleteConfirmModal';
-import { BlockConfirmModal } from '@/components/common/BlockConfirmModal';
+import {ConfirmModal } from '@/components/common/ConfirmModal';
+
 
 export default function SubscribersManagement() {
   /* ------------------------------------------------------------------ */
@@ -506,24 +506,46 @@ useEffect(() => {
         />
 
         {/* DELETE MODAL */}
-        <DeleteConfirmModal
+                {/* DELETE MODAL */}
+        <ConfirmModal
           isOpen={isDeleteOpen}
-          onClose={() => setIsDeleteOpen(false)}
-          entity={selected}
-          entityName={selected?.owner_name}
+          onClose={() => {
+            setIsDeleteOpen(false);
+            setSelected(null);
+          }}
           onConfirm={confirmDelete}
           loading={loading}
-        />
-
-        {/* BLOCK MODAL */}
-        <BlockConfirmModal
-          isOpen={isBlockOpen}
-          onClose={() => setIsBlockOpen(false)}
+          title="Delete Subscriber?"
+          message="Are you sure you want to delete {name}'s subscription? This cannot be undone."
+          confirmText="Delete"
+          cancelText="Cancel"
+          confirmVariant="danger"
+          icon={Trash2}
           entity={selected}
           entityName={selected?.owner_name}
-          action={blockAction}
+        />
+
+        {/* BLOCK / UNBLOCK MODAL */}
+        <ConfirmModal
+          isOpen={isBlockOpen}
+          onClose={() => {
+            setIsBlockOpen(false);
+            setSelected(null);
+          }}
           onConfirm={confirmBlock}
           loading={false}
+          title={blockAction === 'block' ? 'Block Subscriber?' : 'Unblock Subscriber?'}
+          message={
+            blockAction === 'block'
+              ? 'Are you sure you want to block {name}? They will lose access.'
+              : 'Are you sure you want to unblock {name}? They will regain access.'
+          }
+          confirmText={blockAction === 'block' ? 'Block' : 'Unblock'}
+          cancelText="Cancel"
+          confirmVariant={blockAction === 'block' ? 'warning' : 'success'}
+          icon={Ban}
+          entity={selected}
+          entityName={selected?.owner_name}
         />
       </div>
     </div>

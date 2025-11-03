@@ -20,8 +20,8 @@ import { StatsCards } from '@/components/common/StatsCards';
 import { ActionBar } from '@/components/common/ActionBar';
 import { GenericTable } from '@/components/common/GenericTable';
 import { FormModal } from '@/components/common/FormModal';
-import { DeleteConfirmModal } from '@/components/common/DeleteConfirmModal';
-import { BlockConfirmModal } from '@/components/common/BlockConfirmModal';
+import { ConfirmModal } from '@/components/common/ConfirmModal';
+ 
 
 const ownerSchema = z.object({
   name: z.string().min(2, 'Name is required'),
@@ -444,22 +444,45 @@ export default function BusOwnerManagement() {
         />
 
         {/* DELETE MODAL */}
-        <DeleteConfirmModal
+<ConfirmModal
           isOpen={isDeleteModalOpen}
-          onClose={() => setIsDeleteModalOpen(false)}
-          entity={selectedOwner}
+          onClose={() => {
+            setIsDeleteModalOpen(false);
+            setSelectedOwner(null);
+          }}
           onConfirm={confirmDelete}
           loading={loading}
+          title="Delete Owner?"
+          message="Are you sure you want to delete {name}? This cannot be undone."
+          confirmText="Delete"
+          cancelText="Cancel"
+          confirmVariant="danger"
+          icon={Trash2}
+          entity={selectedOwner}
+          entityName={selectedOwner?.name}
         />
 
         {/* BLOCK MODAL */}
-        <BlockConfirmModal
+        <ConfirmModal
           isOpen={isBlockModalOpen}
-          onClose={() => setIsBlockModalOpen(false)}
-          entity={selectedOwner}
-          action={blockAction}
+          onClose={() => {
+            setIsBlockModalOpen(false);
+            setSelectedOwner(null);
+          }}
           onConfirm={confirmBlock}
           loading={false}
+          title={blockAction === 'block' ? 'Block Owner?' : 'Unblock Owner?'}
+          message={
+            blockAction === 'block'
+              ? 'Are you sure you want to block {name}? They will lose access.'
+              : 'Are you sure you want to unblock {name}? They will regain access.'
+          }
+          confirmText={blockAction === 'block' ? 'Block' : 'Unblock'}
+          cancelText="Cancel"
+          confirmVariant={blockAction === 'block' ? 'warning' : 'success'}
+          icon={Ban}
+          entity={selectedOwner}
+          entityName={selectedOwner?.name}
         />
       </div>
     </div>

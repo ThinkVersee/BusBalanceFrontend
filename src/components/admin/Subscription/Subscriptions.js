@@ -18,8 +18,8 @@ import { StatsCards } from '@/components/common/StatsCards';
 import { ActionBar } from '@/components/common/ActionBar';
 import { GenericTable } from '@/components/common/GenericTable';
 import { FormModal } from '@/components/common/FormModal';
-import { DeleteConfirmModal } from '@/components/common/DeleteConfirmModal';
-import { BlockConfirmModal } from '@/components/common/BlockConfirmModal';
+import {  ConfirmModal } from '@/components/common/ConfirmModal';
+
 
 // ---------------------------------------------------------------------
 // Zod schema
@@ -337,24 +337,45 @@ export default function SubscriptionManagement() {
         />
 
         {/* DELETE MODAL */}
-        <DeleteConfirmModal
+<ConfirmModal
           isOpen={delOpen}
-          onClose={() => setDelOpen(false)}
-          entity={selected}
-          entityName={selected?.plan_name}
+          onClose={() => {
+            setDelOpen(false);
+            setSelected(null);
+          }}
           onConfirm={confirmDelete}
           loading={loading}
-        />
-
-        {/* BLOCK MODAL */}
-        <BlockConfirmModal
-          isOpen={blockOpen}
-          onClose={() => setBlockOpen(false)}
+          title="Delete Plan?"
+          message="Are you sure you want to delete {name}? This cannot be undone."
+          confirmText="Delete"
+          cancelText="Cancel"
+          confirmVariant="danger"
+          icon={Trash2}
           entity={selected}
           entityName={selected?.plan_name}
-          action={blockAction}
+        />
+
+        {/* BLOCK / UNBLOCK MODAL */}
+        <ConfirmModal
+          isOpen={blockOpen}
+          onClose={() => {
+            setBlockOpen(false);
+            setSelected(null);
+          }}
           onConfirm={confirmBlock}
           loading={false}
+          title={blockAction === 'block' ? 'Block Plan?' : 'Unblock Plan?'}
+          message={
+            blockAction === 'block'
+              ? 'Are you sure you want to block {name}? It will no longer be available.'
+              : 'Are you sure you want to unblock {name}? It will become available again.'
+          }
+          confirmText={blockAction === 'block' ? 'Block' : 'Unblock'}
+          cancelText="Cancel"
+          confirmVariant={blockAction === 'block' ? 'warning' : 'success'}
+          icon={Ban}
+          entity={selected}
+          entityName={selected?.plan_name}
         />
       </div>
     </div>
