@@ -18,15 +18,19 @@ const LoginForm = () => {
   }, [isAuthenticated, router]);
 
   useEffect(() => {
-    return () => {
-      clearError();
-    };
+    return () => clearError();
   }, [clearError]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     clearError();
-    await login({ username, password });
+
+    // Explicitly use normal login endpoint
+    await login({
+      username,
+      password,
+      endpoint: '/login/', // ← CRITICAL: Force correct endpoint
+    });
   };
 
   return (
@@ -34,22 +38,18 @@ const LoginForm = () => {
       <div className="absolute inset-0 bg-black opacity-20"></div>
       
       <div className="relative w-full max-w-md">
-        {/* Glass morphism card */}
         <div className="bg-white/95 backdrop-blur-lg p-8 rounded-2xl shadow-2xl border border-white/20">
-          {/* Logo/Icon */}
           <div className="flex justify-center mb-6">
             <div className="w-16 h-16 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-full flex items-center justify-center shadow-lg">
               <LogIn className="w-8 h-8 text-white" />
             </div>
           </div>
 
-          {/* Title */}
           <h2 className="text-3xl font-bold mb-2 text-center bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
             Welcome Back
           </h2>
           <p className="text-center text-gray-600 mb-8">Sign in to continue to your account</p>
 
-          {/* Error Message */}
           {error && (
             <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-lg animate-pulse">
               <div className="flex items-center">
@@ -57,15 +57,13 @@ const LoginForm = () => {
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                 </svg>
                 <span className="text-sm font-medium">
-                  {typeof error === 'string' ? error : JSON.stringify(error)}
+                  {typeof error === 'string' ? error : error.detail || 'Login failed. Please check your credentials.'}
                 </span>
               </div>
             </div>
           )}
 
-          {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Username Input */}
             <div>
               <label htmlFor="username" className="block text-sm font-semibold text-gray-700 mb-2">
                 Username
@@ -86,7 +84,6 @@ const LoginForm = () => {
               </div>
             </div>
 
-            {/* Password Input */}
             <div>
               <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2">
                 Password
@@ -109,33 +106,21 @@ const LoginForm = () => {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition duration-200"
                 >
-                  {showPassword ? (
-                    <EyeOff className="h-5 w-5" />
-                  ) : (
-                    <Eye className="h-5 w-5" />
-                  )}
+                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
               </div>
             </div>
 
-            {/* Remember & Forgot */}
             <div className="flex items-center justify-between">
               <div className="flex items-center">
-                <input
-                  id="remember"
-                  type="checkbox"
-                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                />
-                <label htmlFor="remember" className="ml-2 block text-sm text-gray-700">
-                  Remember me
-                </label>
+                <input id="remember" type="checkbox" className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" />
+                <label htmlFor="remember" className="ml-2 block text-sm text-gray-700">Remember me</label>
               </div>
               <a href="/forgot-password" className="text-sm font-medium text-indigo-600 hover:text-indigo-500 transition duration-200">
                 Forgot password?
               </a>
             </div>
 
-            {/* Submit Button */}
             <button
               type="submit"
               disabled={isLoading}
@@ -157,14 +142,12 @@ const LoginForm = () => {
             </button>
           </form>
 
-          {/* Divider */}
           <div className="mt-6 flex items-center">
             <div className="flex-1 border-t border-gray-300"></div>
             <span className="px-4 text-sm text-gray-500">or</span>
             <div className="flex-1 border-t border-gray-300"></div>
           </div>
 
-          {/* Register Link */}
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
               Don't have an account?{' '}
@@ -175,7 +158,6 @@ const LoginForm = () => {
           </div>
         </div>
 
-        {/* Decorative elements */}
         <div className="absolute -top-4 -left-4 w-24 h-24 bg-purple-400 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse"></div>
         <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-indigo-400 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse animation-delay-2000"></div>
       </div>
