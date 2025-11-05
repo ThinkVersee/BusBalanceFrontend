@@ -23,14 +23,12 @@ axiosInstance.interceptors.request.use(
       console.log('%c[Axios] Using NORMAL USER access token:', 'color: #2563eb', token);
     }
 
-    // Attach Authorization header if token exists
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     } else {
       console.warn('%c[Axios] No access token found in localStorage', 'color: #ef4444');
     }
 
-    // Log request details
     console.log('%c[Axios Request]', 'color: #10b981', {
       method: config.method?.toUpperCase(),
       url: config.url,
@@ -60,10 +58,12 @@ axiosInstance.interceptors.response.use(
   },
   async (error) => {
     const originalRequest = error.config;
+
+    // Safe logging even if error.response is undefined
     console.error('%c[Axios Response Error]', 'color: #ef4444', {
       url: originalRequest?.url,
-      status: error.response?.status,
-      data: error.response?.data,
+      status: error.response?.status ?? 'No response',
+      data: error.response?.data ?? error.message,
     });
 
     // Handle token expiration (401)
@@ -73,21 +73,19 @@ axiosInstance.interceptors.response.use(
       try {
         const user = JSON.parse(localStorage.getItem('user'));
         let refreshToken = null;
-        let refreshUrl = null;
+        let refreshUrl = `${process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, '')}/token/refresh/`; // fixed double slash
 
         if (user?.is_superuser) {
           refreshToken = localStorage.getItem('superadmin_refresh_token');
-          refreshUrl = `${process.env.NEXT_PUBLIC_API_URL}/superadmin/token/refresh/`;
           console.log('%c[Axios] Refreshing SUPERADMIN token...', 'color: #d97706');
         } else {
           refreshToken = localStorage.getItem('refresh_token');
-          refreshUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/token/refresh/`;
           console.log('%c[Axios] Refreshing USER token...', 'color: #2563eb');
         }
 
         const response = await axios.post(refreshUrl, { refresh: refreshToken });
-
         const { access } = response.data;
+
         if (user?.is_superuser) {
           localStorage.setItem('superadmin_access_token', access);
           console.log('%c[Axios] New SUPERADMIN access token stored', 'color: #d97706', access);
@@ -96,7 +94,6 @@ axiosInstance.interceptors.response.use(
           console.log('%c[Axios] New USER access token stored', 'color: #2563eb', access);
         }
 
-        // Update header with new token
         originalRequest.headers.Authorization = `Bearer ${access}`;
         console.log('%c[Axios] Retrying original request with new token', 'color: #10b981');
 

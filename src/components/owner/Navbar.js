@@ -91,7 +91,7 @@ const Navbar = () => {
                 className="w-full text-left px-4 py-2 hover:bg-gray-50 text-red-600 text-sm"
                 onClick={() => {
                   localStorage.clear();
-                  window.location.href = '/admin/login'; 
+                  window.location.href = '/login'; 
                 }}
               >
                 Logout

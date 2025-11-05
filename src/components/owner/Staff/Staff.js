@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import axiosInstance from '@/config/axiosInstance';
-import { Users, Edit, Trash2, CheckCircle, XCircle } from 'lucide-react';
+import { Users, Edit, Trash2, CheckCircle, XCircle, Ban } from 'lucide-react';
 
 import { StatsCards } from '@/components/common/StatsCards';
 import { ActionBar } from '@/components/common/ActionBar';
@@ -14,36 +14,22 @@ import { FormModal } from '@/components/common/FormModal';
 import { ConfirmModal } from '@/components/common/ConfirmModal';
 
 /* ------------------------------------------------------------------
-   1. ZOD SCHEMA – mirrors BusEmployee (employee_id & owner omitted)
+   1. ZOD SCHEMA
    ------------------------------------------------------------------ */
 const employeeSchema = z.object({
   name: z.string().min(1, 'Full name is required'),
   email: z.string().email('Invalid email').optional().or(z.literal('')),
-  phone: z.string()
-    .regex(/^\d{10}$/, 'Phone must be exactly 10 digits')
-    .optional()
-    .or(z.literal('')),
-
+  phone: z.string().regex(/^\d{10}$/, 'Phone must be exactly 10 digits').optional().or(z.literal('')),
   employee_type: z.enum(['DRIVER', 'CONDUCTOR', 'MANAGER', 'CLEANER', 'MECHANIC']),
   date_of_birth: z.string().optional(),
   blood_group: z.string().max(5).optional(),
   emergency_contact_name: z.string().optional(),
-  emergency_contact_phone: z.string()
-    .regex(/^\d{10,15}$/, 'Invalid phone')
-    .optional()
-    .or(z.literal('')),
+  emergency_contact_phone: z.string().regex(/^\d{10,15}$/, 'Invalid phone').optional().or(z.literal('')),
   address: z.string().optional(),
-  salary: z.coerce
-    .number()
-    .positive('Salary must be positive')
-    .optional()
-    .or(z.literal('')),
+  salary: z.coerce.number().positive('Salary must be positive').optional().or(z.literal('')),
   license_number: z.string().optional(),
   license_expiry: z.string().optional(),
-  aadhar_number: z.string()
-    .regex(/^\d{12}$/, 'Aadhar must be 12 digits')
-    .optional()
-    .or(z.literal('')),
+  aadhar_number: z.string().regex(/^\d{12}$/, 'Aadhar must be 12 digits').optional().or(z.literal('')),
   is_active_employee: z.boolean().default(true),
   date_of_joining: z.string().min(1, 'Joining date required'),
 }).refine(
@@ -53,14 +39,11 @@ const employeeSchema = z.object({
     }
     return true;
   },
-  {
-    message: 'License number & expiry are required for drivers',
-    path: ['license_number'],
-  }
+  { message: 'License number & expiry required for drivers', path: ['license_number'] }
 );
 
 /* ------------------------------------------------------------------
-   2. FORM SECTIONS (employee_id hidden, joining date auto-filled)
+   2. FORM SECTIONS
    ------------------------------------------------------------------ */
 const employeeSections = () => [
   {
@@ -97,7 +80,7 @@ const employeeSections = () => [
         name: 'date_of_joining',
         type: 'date',
         required: true,
-        disabled: true, // auto-filled
+        disabled: true,
       },
     ],
   },
@@ -127,9 +110,10 @@ export default function StaffManagement() {
   const [search, setSearch] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const [toggleOpen, setToggleOpen] = useState(false);
+  const [blockOpen, setBlockOpen] = useState(false);
   const [selected, setSelected] = useState(null);
-  const [toggleTarget, setToggleTarget] = useState(null);
+  const [blockTarget, setBlockTarget] = useState(null);
+  const [blockAction, setBlockAction] = useState(''); // 'block' or 'unblock'
   const [loading, setLoading] = useState(false);
   const [apiLoading, setApiLoading] = useState(false);
   const [apiError, setApiError] = useState(null);
@@ -145,15 +129,10 @@ export default function StaffManagement() {
     resolver: zodResolver(employeeSchema),
   });
 
-  const watchedRole = watch('employee_type');
-
-  /* --------------------------------------------------------------
-     Owner ID – must be set in axiosInstance.defaults.ownerId
-     -------------------------------------------------------------- */
   const currentOwnerId = axiosInstance.defaults.ownerId;
 
   /* --------------------------------------------------------------
-     FETCH ALL EMPLOYEES
+     FETCH EMPLOYEES
      -------------------------------------------------------------- */
   const fetchEmployees = useCallback(async () => {
     setApiLoading(true);
@@ -174,12 +153,12 @@ export default function StaffManagement() {
   }, [fetchEmployees]);
 
   /* --------------------------------------------------------------
-     SEARCH FILTER
+     SEARCH
      -------------------------------------------------------------- */
   useEffect(() => {
     const q = search.toLowerCase();
     const res = employees.filter((e) =>
-      [e.user?.name, e.email, e.phone, e.employee_id, e.employee_type, e.owner?.name]
+      [e.user?.name, e.user?.email, e.user?.phone, e.employee_id, e.employee_type]
         .some(f => f?.toString().toLowerCase().includes(q))
     );
     setFiltered(res);
@@ -238,7 +217,7 @@ export default function StaffManagement() {
   };
 
   /* --------------------------------------------------------------
-     SUBMIT – employee_id generated on backend, owner only on create
+     SUBMIT (Create / Edit)
      -------------------------------------------------------------- */
   const onSubmit = async (data) => {
     setLoading(true);
@@ -247,7 +226,7 @@ export default function StaffManagement() {
         user: {
           name: data.name,
           email: data.email || null,
-          phone: data.phone || null,
+          phone: data.phone || "",
         },
         employee_type: data.employee_type,
         date_of_birth: data.date_of_birth || null,
@@ -261,7 +240,6 @@ export default function StaffManagement() {
         aadhar_number: data.aadhar_number || null,
         is_active_employee: data.is_active_employee,
         date_of_joining: data.date_of_joining,
-        // owner only on create
         ...(selected ? {} : { owner: currentOwnerId }),
       };
 
@@ -274,10 +252,9 @@ export default function StaffManagement() {
       await fetchEmployees();
       closeModal();
     } catch (e) {
-      const msg =
-        e.response?.data
-          ? Object.values(e.response.data).flat().join(', ')
-          : e.message || 'Save failed';
+      const msg = e.response?.data
+        ? Object.values(e.response.data).flat().join(', ')
+        : e.message || 'Save failed';
       alert(msg);
     } finally {
       setLoading(false);
@@ -291,6 +268,7 @@ export default function StaffManagement() {
     setSelected(emp);
     setDeleteOpen(true);
   };
+
   const confirmDelete = async () => {
     if (!selected) return;
     try {
@@ -306,86 +284,82 @@ export default function StaffManagement() {
   };
 
   /* --------------------------------------------------------------
-     TOGGLE ACTIVE
+     BLOCK / UNBLOCK (PATCH on same URL)
      -------------------------------------------------------------- */
-  const openToggle = (emp) => {
-    setToggleTarget(emp);
-    setToggleOpen(true);
+  const openBlockModal = (emp) => {
+    setBlockTarget(emp);
+    setBlockAction(emp.is_active_employee ? 'block' : 'unblock');
+    setBlockOpen(true);
   };
-  const confirmToggle = async () => {
-    if (!toggleTarget) return;
+
+  const confirmBlock = async () => {
+    if (!blockTarget) return;
     try {
-      const { data } = await axiosInstance.patch(
-        `/employees/staff/${toggleTarget.id}/`,
-        { is_active_employee: !toggleTarget.is_active_employee }
+      const { data } = await axiosInstance.put(
+        `/employees/staff/${blockTarget.id}/toggle-active/`,
+        { is_active_employee: !blockTarget.is_active_employee }
       );
+
       setEmployees(prev =>
         prev.map(e =>
-          e.id === toggleTarget.id ? { ...e, is_active_employee: data.is_active_employee } : e
+          e.id === blockTarget.id
+            ? { ...e, is_active_employee: data.is_active_employee }
+            : e
         )
       );
       setFiltered(prev =>
         prev.map(e =>
-          e.id === toggleTarget.id ? { ...e, is_active_employee: data.is_active_employee } : e
+          e.id === blockTarget.id
+            ? { ...e, is_active_employee: data.is_active_employee }
+            : e
         )
       );
-    } catch {
-      alert('Failed to update status');
+    } catch (e) {
+      alert(e.response?.data?.detail || 'Failed to update status');
     } finally {
-      setToggleOpen(false);
-      setToggleTarget(null);
+      setBlockOpen(false);
+      setBlockTarget(null);
     }
   };
 
   /* --------------------------------------------------------------
-     TABLE COLUMNS
+     TABLE COLUMNS – Matches Companies Page
      -------------------------------------------------------------- */
   const columns = useMemo(
     () => [
-      { header: 'Name', accessor: 'user.name' },
       {
         header: 'Employee ID',
-        cell: (row) => (
-          <span className="font-mono text-sm">{row.employee_id || '—'}</span>
-        ),
+        cell: (row) => <span className="font-mono text-sm">{row.employee_id || '—'}</span>,
+      },
+      {
+        header: 'Name',
+        accessor: (row) => row.user?.name || '—',
       },
       { header: 'Role', accessor: 'employee_type' },
       {
-        header: 'Owner',
-        cell: (row) => row.owner?.name || 'Global',
+        header: 'Phone',
+        accessor: (row) => row.user?.phone || '—',
       },
       {
-        header: 'Active',
+        header: 'Status',
         cell: (row) => (
-          <div className="flex items-center gap-2">
-            <span
-              className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                row.is_active_employee
-                  ? 'bg-green-100 text-green-800'
-                  : 'bg-red-100 text-red-800'
-              }`}
-            >
-              {row.is_active_employee ? <CheckCircle size={14} /> : <XCircle size={14} />}
-              {row.is_active_employee ? 'Yes' : 'No'}
-            </span>
-            <button
-              onClick={() => openToggle(row)}
-              className={`p-1 rounded transition-colors ${
-                row.is_active_employee
-                  ? 'text-green-600 hover:text-green-800'
-                  : 'text-red-600 hover:text-red-800'
-              }`}
-              title={row.is_active_employee ? 'Deactivate' : 'Activate'}
-            >
-              {row.is_active_employee ? <CheckCircle size={16} /> : <XCircle size={16} />}
-            </button>
-          </div>
+          <span
+            className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${
+              row.is_active_employee
+                ? 'bg-green-100 text-green-800'
+                : 'bg-red-100 text-red-800'
+            }`}
+          >
+            {row.is_active_employee ? <CheckCircle size={14} /> : <Ban size={14} />}
+            {row.is_active_employee ? 'Active' : 'Blocked'}
+          </span>
         ),
       },
       {
         header: 'Actions',
         cell: (row) => (
           <div className="flex items-center gap-3">
+            {/* Edit */}
             <button
               onClick={() => openEdit(row)}
               className="text-blue-600 hover:text-blue-800 transition-colors"
@@ -393,12 +367,27 @@ export default function StaffManagement() {
             >
               <Edit size={16} />
             </button>
+
+            {/* Delete */}
             <button
               onClick={() => openDelete(row)}
               className="text-red-600 hover:text-red-800 transition-colors"
               title="Delete"
             >
               <Trash2 size={16} />
+            </button>
+
+            {/* Block / Unblock */}
+            <button
+              onClick={() => openBlockModal(row)}
+              className={`transition-colors ${
+                row.is_active_employee
+                  ? 'text-orange-600 hover:text-orange-800'
+                  : 'text-green-600 hover:text-green-800'
+              }`}
+              title={row.is_active_employee ? 'Block this employee' : 'Unblock this employee'}
+            >
+              <Ban size={16} />
             </button>
           </div>
         ),
@@ -451,7 +440,7 @@ export default function StaffManagement() {
           onSearch={setSearch}
           onAdd={openAdd}
           addLabel="Add New Employee"
-          searchPlaceholder="Search by name, ID, role, owner..."
+          searchPlaceholder="Search by name, ID, role, phone..."
         />
 
         {/* TABLE */}
@@ -481,10 +470,7 @@ export default function StaffManagement() {
         {/* DELETE CONFIRM */}
         <ConfirmModal
           isOpen={deleteOpen}
-          onClose={() => {
-            setDeleteOpen(false);
-            setSelected(null);
-          }}
+          onClose={() => { setDeleteOpen(false); setSelected(null); }}
           onConfirm={confirmDelete}
           loading={loading}
           title="Delete Employee?"
@@ -493,31 +479,24 @@ export default function StaffManagement() {
           cancelText="Cancel"
           confirmVariant="danger"
           icon={Trash2}
-          entity={selected}
-          entityName={selected?.user?.name}
         />
 
-        {/* TOGGLE ACTIVE CONFIRM */}
+        {/* BLOCK / UNBLOCK CONFIRM */}
         <ConfirmModal
-          isOpen={toggleOpen}
-          onClose={() => {
-            setToggleOpen(false);
-            setToggleTarget(null);
-          }}
-          onConfirm={confirmToggle}
+          isOpen={blockOpen}
+          onClose={() => { setBlockOpen(false); setBlockTarget(null); }}
+          onConfirm={confirmBlock}
           loading={false}
-          title={toggleTarget?.is_active_employee ? 'Deactivate Employee?' : 'Activate Employee?'}
+          title={blockAction === 'block' ? 'Block Employee?' : 'Unblock Employee?'}
           message={
-            toggleTarget?.is_active_employee
-              ? `Deactivate ${toggleTarget?.user?.name}?`
-              : `Activate ${toggleTarget?.user?.name}?`
+            blockAction === 'block'
+              ? `Are you sure you want to block ${blockTarget?.user?.name || ''}? They will lose access.`
+              : `Are you sure you want to unblock ${blockTarget?.user?.name || ''}? They will regain access.`
           }
-          confirmText={toggleTarget?.is_active_employee ? 'Deactivate' : 'Activate'}
+          confirmText={blockAction === 'block' ? 'Block' : 'Unblock'}
           cancelText="Cancel"
-          confirmVariant={toggleTarget?.is_active_employee ? 'warning' : 'success'}
-          icon={toggleTarget?.is_active_employee ? XCircle : CheckCircle}
-          entity={toggleTarget}
-          entityName={toggleTarget?.user?.name}
+          confirmVariant={blockAction === 'block' ? 'warning' : 'success'}
+          icon={Ban}
         />
       </div>
     </div>

@@ -1,4 +1,3 @@
-// pages/BusManagement.js
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -14,9 +13,8 @@ import { GenericTable } from '@/components/common/GenericTable';
 import { FormModal } from '@/components/common/FormModal';
 import { ConfirmModal } from '@/components/common/ConfirmModal';
 
-// ---------- ZOD SCHEMA ----------
+// ---------- ZOD SCHEMA (NO owner_id) ----------
 const busSchema = z.object({
-  owner_id: z.coerce.number({ invalid_type_error: 'Select a valid owner' }).int().positive('Select a valid owner'),
   registration_number: z.string().min(1, 'Registration number required').max(20, 'Max 20 characters'),
   bus_name: z.string().min(1, 'Bus name required'),
   route: z.string().min(1, 'Primary route required'),
@@ -35,22 +33,11 @@ const busSchema = z.object({
   is_operational: z.boolean().default(true),
 });
 
-// ---------- FORM SECTIONS ----------
-const busSections = (owners) => [
+// ---------- FORM SECTIONS (NO owner dropdown) ----------
+const busSections = () => [
   {
-    title: 'Owner & Basic Info',
+    title: 'Basic Info',
     fields: [
-      {
-        label: 'Bus Owner',
-        name: 'owner_id',
-        type: 'select',
-        required: true,
-        options: [
-          { value: '', label: '— Select Owner —' },
-          ...owners.map(o => ({ value: o.id, label: `${o.name} (${o.company_name || 'Individual'})` }))
-        ],
-        colSpan: 'col-span-1 sm:col-span-2',
-      },
       { label: 'Registration Number', name: 'registration_number', required: true },
       { label: 'Bus Name', name: 'bus_name', required: true },
       { label: 'Primary Route', name: 'route', required: true, colSpan: 'col-span-1 sm:col-span-2' },
@@ -96,7 +83,6 @@ const busSections = (owners) => [
 
 export default function BusManagement() {
   const [buses, setBuses] = useState([]);
-  const [owners, setOwners] = useState([]);
   const [filteredBuses, setFilteredBuses] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -108,6 +94,8 @@ export default function BusManagement() {
   const [apiLoading, setApiLoading] = useState(false);
   const [apiError, setApiError] = useState(null);
 
+  const currentOwnerId = axiosInstance.defaults.ownerId; // From login
+
   const {
     register,
     handleSubmit,
@@ -118,7 +106,6 @@ export default function BusManagement() {
     resolver: zodResolver(busSchema),
     defaultValues: {
       is_operational: true,
-      owner_id: '',
       registration_number: '',
       bus_name: '',
       route: '',
@@ -126,18 +113,8 @@ export default function BusManagement() {
   });
 
   // -----------------------------------------------------------------
-  // FETCH DATA
+  // FETCH BUSES (only owner's buses)
   // -----------------------------------------------------------------
-  const fetchOwners = useCallback(async () => {
-    try {
-      const { data } = await axiosInstance.get('/owners/bus-owners/');
-      setOwners(data || []);
-    } catch (e) {
-      console.error('Failed to fetch owners:', e);
-      setApiError('Failed to load bus owners');
-    }
-  }, []);
-
   const fetchBuses = useCallback(async () => {
     setApiLoading(true);
     setApiError(null);
@@ -148,16 +125,14 @@ export default function BusManagement() {
     } catch (e) {
       const msg = e.response?.data?.detail || e.message || 'Failed to load buses';
       setApiError(msg);
-      console.error(msg);
     } finally {
       setApiLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchOwners();
     fetchBuses();
-  }, [fetchOwners, fetchBuses]);
+  }, [fetchBuses]);
 
   // -----------------------------------------------------------------
   // SEARCH FILTER
@@ -176,8 +151,6 @@ export default function BusManagement() {
         bus.route,
         bus.manufacturer,
         bus.model,
-        bus.owner?.name,
-        bus.owner?.company_name
       ].some(field => field?.toLowerCase().includes(q))
     );
     setFilteredBuses(filtered);
@@ -188,7 +161,6 @@ export default function BusManagement() {
   // -----------------------------------------------------------------
   const resetForm = () => {
     reset({
-      owner_id: '',
       registration_number: '',
       bus_name: '',
       route: '',
@@ -216,7 +188,6 @@ export default function BusManagement() {
 
   const handleEdit = (bus) => {
     setSelectedBus(bus);
-    setValue('owner_id', bus.owner?.id || '');
     setValue('registration_number', bus.registration_number || '');
     setValue('bus_name', bus.bus_name || '');
     setValue('route', bus.route || '');
@@ -237,18 +208,16 @@ export default function BusManagement() {
   };
 
   // -----------------------------------------------------------------
-  // SUBMIT HANDLER
+  // SUBMIT (Create / Edit)
   // -----------------------------------------------------------------
   const onSubmit = async (data) => {
     setLoading(true);
     try {
       const payload = {
-        owner_id: Number(data.owner_id),
         registration_number: data.registration_number.trim(),
         bus_name: data.bus_name.trim(),
         route: data.route.trim(),
         is_operational: data.is_operational,
-        // Only include non-empty optional fields
         ...(data.bus_type && { bus_type: data.bus_type }),
         ...(data.manufacturer?.trim() && { manufacturer: data.manufacturer.trim() }),
         ...(data.model?.trim() && { model: data.model.trim() }),
@@ -261,6 +230,9 @@ export default function BusManagement() {
         ...(data.insurance_number?.trim() && { insurance_number: data.insurance_number.trim() }),
         ...(data.insurance_expiry && { insurance_expiry: data.insurance_expiry }),
         ...(data.fitness_certificate_expiry && { fitness_certificate_expiry: data.fitness_certificate_expiry }),
+
+        // Only on CREATE
+        ...(!selectedBus && { owner: currentOwnerId }),
       };
 
       if (selectedBus) {
@@ -273,9 +245,8 @@ export default function BusManagement() {
       setIsModalOpen(false);
       resetForm();
     } catch (e) {
-      const errors = e.response?.data;
-      const msg = errors
-        ? Object.values(errors).flat().join(', ')
+      const msg = e.response?.data
+        ? Object.values(e.response.data).flat().join(', ')
         : e.message || 'Operation failed';
       alert(msg);
     } finally {
@@ -284,7 +255,7 @@ export default function BusManagement() {
   };
 
   // -----------------------------------------------------------------
-  // DELETE HANDLER
+  // DELETE
   // -----------------------------------------------------------------
   const openDelete = (bus) => {
     setSelectedBus(bus);
@@ -306,7 +277,7 @@ export default function BusManagement() {
   };
 
   // -----------------------------------------------------------------
-  // TOGGLE OPERATIONAL STATUS
+  // TOGGLE OPERATIONAL
   // -----------------------------------------------------------------
   const openToggleConfirm = (bus) => {
     setToggleTarget(bus);
@@ -319,9 +290,8 @@ export default function BusManagement() {
       const { data } = await axiosInstance.patch(`/buses/buses/${toggleTarget.id}/`, {
         is_operational: !toggleTarget.is_operational,
       });
-      const updated = data.is_operational;
-      setBuses(prev => prev.map(b => b.id === toggleTarget.id ? { ...b, is_operational: updated } : b));
-      setFilteredBuses(prev => prev.map(b => b.id === toggleTarget.id ? { ...b, is_operational: updated } : b));
+      setBuses(prev => prev.map(b => b.id === toggleTarget.id ? { ...b, is_operational: data.is_operational } : b));
+      setFilteredBuses(prev => prev.map(b => b.id === toggleTarget.id ? { ...b, is_operational: data.is_operational } : b));
     } catch (e) {
       alert('Failed to update status');
     } finally {
@@ -336,7 +306,6 @@ export default function BusManagement() {
   const columns = useMemo(() => [
     { header: 'Reg. No.', accessor: 'registration_number' },
     { header: 'Name', accessor: 'bus_name' },
-    { header: 'Owner', cell: row => <span className="text-sm">{row.owner?.name || '—'}</span> },
     { header: 'Route', accessor: 'route', cell: row => <span className="text-sm">{row.route || '—'}</span> },
     {
       header: 'Type',
@@ -406,7 +375,7 @@ export default function BusManagement() {
             </div>
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Bus Management</h1>
-              <p className="text-gray-600 text-sm">Manage buses, owners, documents, and operational status</p>
+              <p className="text-gray-600 text-sm">Manage your buses and operational status</p>
             </div>
           </div>
         </div>
@@ -419,14 +388,11 @@ export default function BusManagement() {
         )}
 
         {/* Stats */}
-  
-{/* Stats */}
-<StatsCards
-  total={buses.length}
-  operational={buses.filter(b => b.is_operational).length}
-  label="Buses"
-/>
-
+        <StatsCards
+          total={buses.length}
+          operational={buses.filter(b => b.is_operational).length}
+          label="Buses"
+        />
 
         {/* Action Bar */}
         <ActionBar
@@ -434,7 +400,7 @@ export default function BusManagement() {
           onSearch={setSearchQuery}
           onAdd={handleAdd}
           addLabel="Add New Bus"
-          searchPlaceholder="Search by reg. no., name, owner, route..."
+          searchPlaceholder="Search by reg. no., name, route..."
         />
 
         {/* Table */}
@@ -453,7 +419,7 @@ export default function BusManagement() {
           onClose={() => { setIsModalOpen(false); resetForm(); }}
           title={selectedBus ? 'Edit Bus' : 'Add New Bus'}
           icon={Bus}
-          sections={busSections(owners)}
+          sections={busSections()}
           register={register}
           errors={errors}
           onSubmit={handleSubmit(onSubmit)}
@@ -461,7 +427,7 @@ export default function BusManagement() {
           submitLabel={selectedBus ? 'Update' : 'Create Bus'}
         />
 
-        {/* Delete Confirm Modal */}
+        {/* Delete Confirm */}
         <ConfirmModal
           isOpen={isDeleteOpen}
           onClose={() => { setIsDeleteOpen(false); setSelectedBus(null); }}
@@ -475,7 +441,7 @@ export default function BusManagement() {
           icon={Trash2}
         />
 
-        {/* Toggle Operational Confirm Modal */}
+        {/* Toggle Operational */}
         <ConfirmModal
           isOpen={isToggleOpOpen}
           onClose={() => { setIsToggleOpOpen(false); setToggleTarget(null); }}

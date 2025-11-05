@@ -12,9 +12,18 @@ const LoginForm = () => {
   const router = useRouter();
 
   useEffect(() => {
-    if (isAuthenticated) {
-      router.push('/dashboard');
-    }
+ if (isAuthenticated) {
+  const user = JSON.parse(localStorage.getItem('user'));
+
+  if (user?.is_superuser) {
+    router.push('/admin/');
+  } else if (user?.is_owner) {
+    router.push('/owner/');
+  } else {
+    router.push('/employee');
+  }
+}
+
   }, [isAuthenticated, router]);
 
   useEffect(() => {
@@ -25,11 +34,11 @@ const LoginForm = () => {
     e.preventDefault();
     clearError();
 
-    // Explicitly use normal login endpoint
+  
     await login({
       username,
       password,
-      endpoint: '/login/', // ← CRITICAL: Force correct endpoint
+      endpoint: '/login/', 
     });
   };
 
