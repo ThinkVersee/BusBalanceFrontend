@@ -13,45 +13,77 @@ import { GenericTable } from '@/components/common/GenericTable';
 import { FormModal } from '@/components/common/FormModal';
 import { ConfirmModal } from '@/components/common/ConfirmModal';
 
-// ---------------------------------------------------------------------
-// ZOD SCHEMA – NO owner_id, employee_id, date_of_joining
-// ---------------------------------------------------------------------
+/* ------------------------------------------------------------------
+   1. ZOD SCHEMA – mirrors BusEmployee (employee_id & owner omitted)
+   ------------------------------------------------------------------ */
 const employeeSchema = z.object({
+  name: z.string().min(1, 'Full name is required'),
+  email: z.string().email('Invalid email').optional().or(z.literal('')),
+  phone: z.string()
+    .regex(/^\d{10}$/, 'Phone must be exactly 10 digits')
+    .optional()
+    .or(z.literal('')),
+
   employee_type: z.enum(['DRIVER', 'CONDUCTOR', 'MANAGER', 'CLEANER', 'MECHANIC']),
-  salary: z.coerce.number().optional(),
   date_of_birth: z.string().optional(),
   blood_group: z.string().max(5).optional(),
   emergency_contact_name: z.string().optional(),
-  emergency_contact_phone: z.string().max(15).optional(),
+  emergency_contact_phone: z.string()
+    .regex(/^\d{10,15}$/, 'Invalid phone')
+    .optional()
+    .or(z.literal('')),
   address: z.string().optional(),
+  salary: z.coerce
+    .number()
+    .positive('Salary must be positive')
+    .optional()
+    .or(z.literal('')),
   license_number: z.string().optional(),
   license_expiry: z.string().optional(),
-  aadhar_number: z.string().max(12).optional(),
+  aadhar_number: z.string()
+    .regex(/^\d{12}$/, 'Aadhar must be 12 digits')
+    .optional()
+    .or(z.literal('')),
   is_active_employee: z.boolean().default(true),
+  date_of_joining: z.string().min(1, 'Joining date required'),
 }).refine(
-  (data) =>
-    data.employee_type !== 'DRIVER' ||
-    (data.license_number?.trim() && data.license_expiry),
+  (data) => {
+    if (data.employee_type === 'DRIVER') {
+      return !!data.license_number && !!data.license_expiry;
+    }
+    return true;
+  },
   {
-    message: 'License number & expiry required for drivers',
+    message: 'License number & expiry are required for drivers',
     path: ['license_number'],
   }
 );
 
-// ---------------------------------------------------------------------
-// FORM SECTIONS – CLEAN, NO OWNER/ID/JOINING
-// ---------------------------------------------------------------------
-const employeeSections = [
+/* ------------------------------------------------------------------
+   2. FORM SECTIONS (employee_id hidden, joining date auto-filled)
+   ------------------------------------------------------------------ */
+const employeeSections = () => [
   {
-    title: 'Basic Info',
+    title: 'Personal Information',
+    fields: [
+      { label: 'Full Name *', name: 'name', required: true },
+      { label: 'Email', name: 'email', type: 'email' },
+      { label: 'Phone', name: 'phone', type: 'tel' },
+      { label: 'Date of Birth', name: 'date_of_birth', type: 'date' },
+      { label: 'Blood Group', name: 'blood_group' },
+      { label: 'Aadhar Number', name: 'aadhar_number' },
+    ],
+  },
+  {
+    title: 'Employment Details',
     fields: [
       {
-        label: 'Employee Type',
+        label: 'Role *',
         name: 'employee_type',
         type: 'select',
         required: true,
         options: [
-          { value: '', label: '— Select Type —' },
+          { value: '', label: '— Select Role —' },
           { value: 'DRIVER', label: 'Driver' },
           { value: 'CONDUCTOR', label: 'Conductor' },
           { value: 'MANAGER', label: 'Manager' },
@@ -59,53 +91,44 @@ const employeeSections = [
           { value: 'MECHANIC', label: 'Mechanic' },
         ],
       },
-    ],
-  },
-  {
-    title: 'Personal Details',
-    fields: [
-      { label: 'Date of Birth', name: 'date_of_birth', type: 'date' },
-      { label: 'Blood Group', name: 'blood_group', placeholder: 'e.g. O+' },
-      { label: 'Emergency Contact Name', name: 'emergency_contact_name' },
-      { label: 'Emergency Contact Phone', name: 'emergency_contact_phone' },
-      { label: 'Address', name: 'address', type: 'textarea' },
-    ],
-  },
-  {
-    title: 'Employment',
-    fields: [
-      { label: 'Salary (₹)', name: 'salary', type: 'number' },
-    ],
-  },
-  {
-    title: 'Documents',
-    fields: [
-      { label: 'Aadhar Number', name: 'aadhar_number' },
+      { label: 'Salary', name: 'salary', type: 'number', step: '0.01' },
       {
-        label: 'License Number (Driver only)',
-        name: 'license_number',
-        placeholder: 'Required for drivers',
-      },
-      {
-        label: 'License Expiry (Driver only)',
-        name: 'license_expiry',
+        label: 'Joining Date *',
+        name: 'date_of_joining',
         type: 'date',
+        required: true,
+        disabled: true, // auto-filled
       },
+    ],
+  },
+  {
+    title: 'License (Driver only)',
+    fields: [
+      { label: 'License Number', name: 'license_number' },
+      { label: 'License Expiry', name: 'license_expiry', type: 'date' },
+    ],
+  },
+  {
+    title: 'Address & Emergency',
+    fields: [
+      { label: 'Address', name: 'address', type: 'textarea' },
+      { label: 'Emergency Contact Name', name: 'emergency_contact_name' },
+      { label: 'Emergency Contact Phone', name: 'emergency_contact_phone', type: 'tel' },
     ],
   },
 ];
 
-// ---------------------------------------------------------------------
-// MAIN COMPONENT
-// ---------------------------------------------------------------------
-export default function EmployeeManagement() {
+/* ------------------------------------------------------------------
+   3. MAIN COMPONENT
+   ------------------------------------------------------------------ */
+export default function StaffManagement() {
   const [employees, setEmployees] = useState([]);
-  const [filteredEmployees, setFilteredEmployees] = useState([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const [isToggleOpen, setIsToggleOpen] = useState(false);
-  const [selectedEmp, setSelectedEmp] = useState(null);
+  const [filtered, setFiltered] = useState([]);
+  const [search, setSearch] = useState('');
+  const [modalOpen, setModalOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [toggleOpen, setToggleOpen] = useState(false);
+  const [selected, setSelected] = useState(null);
   const [toggleTarget, setToggleTarget] = useState(null);
   const [loading, setLoading] = useState(false);
   const [apiLoading, setApiLoading] = useState(false);
@@ -120,35 +143,27 @@ export default function EmployeeManagement() {
     formState: { errors },
   } = useForm({
     resolver: zodResolver(employeeSchema),
-    defaultValues: {
-      employee_type: '',
-      salary: '',
-      date_of_birth: '',
-      blood_group: '',
-      emergency_contact_name: '',
-      emergency_contact_phone: '',
-      address: '',
-      license_number: '',
-      license_expiry: '',
-      aadhar_number: '',
-      is_active_employee: true,
-    },
   });
 
-  const employeeType = watch('employee_type');
+  const watchedRole = watch('employee_type');
 
-  // -----------------------------------------------------------------
-  // FETCH EMPLOYEES
-  // -----------------------------------------------------------------
+  /* --------------------------------------------------------------
+     Owner ID – must be set in axiosInstance.defaults.ownerId
+     -------------------------------------------------------------- */
+  const currentOwnerId = axiosInstance.defaults.ownerId;
+
+  /* --------------------------------------------------------------
+     FETCH ALL EMPLOYEES
+     -------------------------------------------------------------- */
   const fetchEmployees = useCallback(async () => {
     setApiLoading(true);
     setApiError(null);
     try {
       const { data } = await axiosInstance.get('/employees/staff/');
-      setEmployees(data || []);
-      setFilteredEmployees(data || []);
+      setEmployees(data);
+      setFiltered(data);
     } catch (e) {
-      setApiError(e.response?.data?.detail || 'Failed to load employees');
+      setApiError(e.response?.data?.detail || e.message || 'Failed to load staff');
     } finally {
       setApiLoading(false);
     }
@@ -158,222 +173,351 @@ export default function EmployeeManagement() {
     fetchEmployees();
   }, [fetchEmployees]);
 
-  // -----------------------------------------------------------------
-  // SEARCH
-  // -----------------------------------------------------------------
+  /* --------------------------------------------------------------
+     SEARCH FILTER
+     -------------------------------------------------------------- */
   useEffect(() => {
-    const q = searchQuery.toLowerCase().trim();
-    if (!q) {
-      setFilteredEmployees(employees);
-      return;
-    }
-    const filtered = employees.filter((emp) =>
-      [emp.employee_id, emp.user?.name, emp.employee_type]
-        .some(f => f?.toLowerCase().includes(q))
+    const q = search.toLowerCase();
+    const res = employees.filter((e) =>
+      [e.user?.name, e.email, e.phone, e.employee_id, e.employee_type, e.owner?.name]
+        .some(f => f?.toString().toLowerCase().includes(q))
     );
-    setFilteredEmployees(filtered);
-  }, [searchQuery, employees]);
+    setFiltered(res);
+  }, [search, employees]);
 
-  // -----------------------------------------------------------------
-  // FORM HANDLERS
-  // -----------------------------------------------------------------
-  const resetForm = () => {
-    reset();
-    setSelectedEmp(null);
+  /* --------------------------------------------------------------
+     FORM HELPERS
+     -------------------------------------------------------------- */
+  const today = new Date().toISOString().split('T')[0];
+
+  const openAdd = () => {
+    reset({
+      name: '',
+      email: '',
+      phone: '',
+      employee_type: '',
+      date_of_birth: '',
+      blood_group: '',
+      emergency_contact_name: '',
+      emergency_contact_phone: '',
+      address: '',
+      salary: '',
+      license_number: '',
+      license_expiry: '',
+      aadhar_number: '',
+      is_active_employee: true,
+      date_of_joining: today,
+    });
+    setSelected(null);
+    setModalOpen(true);
   };
 
-  const handleAdd = () => {
-    resetForm();
-    setIsModalOpen(true);
-  };
-
-  const handleEdit = (emp) => {
-    setSelectedEmp(emp);
+  const openEdit = (emp) => {
+    setSelected(emp);
+    setValue('name', emp.user?.name || '');
+    setValue('email', emp.user?.email || '');
+    setValue('phone', emp.user?.phone || '');
     setValue('employee_type', emp.employee_type);
-    setValue('salary', emp.salary || '');
     setValue('date_of_birth', emp.date_of_birth || '');
     setValue('blood_group', emp.blood_group || '');
     setValue('emergency_contact_name', emp.emergency_contact_name || '');
     setValue('emergency_contact_phone', emp.emergency_contact_phone || '');
     setValue('address', emp.address || '');
+    setValue('salary', emp.salary ?? '');
     setValue('license_number', emp.license_number || '');
     setValue('license_expiry', emp.license_expiry || '');
     setValue('aadhar_number', emp.aadhar_number || '');
-    setValue('is_active_employee', emp.is_active_employee ?? true);
-    setIsModalOpen(true);
+    setValue('is_active_employee', emp.is_active_employee);
+    setValue('date_of_joining', emp.date_of_joining);
+    setModalOpen(true);
   };
 
-  // -----------------------------------------------------------------
-  // SUBMIT – NO owner/id/joining
-  // -----------------------------------------------------------------
+  const closeModal = () => {
+    setModalOpen(false);
+    setSelected(null);
+  };
+
+  /* --------------------------------------------------------------
+     SUBMIT – employee_id generated on backend, owner only on create
+     -------------------------------------------------------------- */
   const onSubmit = async (data) => {
     setLoading(true);
     try {
       const payload = {
+        user: {
+          name: data.name,
+          email: data.email || null,
+          phone: data.phone || null,
+        },
         employee_type: data.employee_type,
+        date_of_birth: data.date_of_birth || null,
+        blood_group: data.blood_group || null,
+        emergency_contact_name: data.emergency_contact_name || null,
+        emergency_contact_phone: data.emergency_contact_phone || null,
+        address: data.address || null,
+        salary: data.salary ? Number(data.salary) : null,
+        license_number: data.license_number || null,
+        license_expiry: data.license_expiry || null,
+        aadhar_number: data.aadhar_number || null,
         is_active_employee: data.is_active_employee,
-        ...(data.salary && { salary: Number(data.salary) }),
-        ...(data.date_of_birth && { date_of_birth: data.date_of_birth }),
-        ...(data.blood_group?.trim() && { blood_group: data.blood_group.trim() }),
-        ...(data.emergency_contact_name?.trim() && { emergency_contact_name: data.emergency_contact_name.trim() }),
-        ...(data.emergency_contact_phone?.trim() && { emergency_contact_phone: data.emergency_contact_phone.trim() }),
-        ...(data.address?.trim() && { address: data.address.trim() }),
-        ...(data.license_number?.trim() && { license_number: data.license_number.trim() }),
-        ...(data.license_expiry && { license_expiry: data.license_expiry }),
-        ...(data.aadhar_number?.trim() && { aadhar_number: data.aadhar_number.trim() }),
+        date_of_joining: data.date_of_joining,
+        // owner only on create
+        ...(selected ? {} : { owner: currentOwnerId }),
       };
 
-      if (selectedEmp) {
-        await axiosInstance.put(`/employees/staff/${selectedEmp.id}/`, payload);
+      if (selected) {
+        await axiosInstance.put(`/employees/staff/${selected.id}/`, payload);
       } else {
         await axiosInstance.post('/employees/staff/', payload);
       }
 
       await fetchEmployees();
-      setIsModalOpen(false);
-      resetForm();
+      closeModal();
     } catch (e) {
-      alert(Object.values(e.response?.data || {}).flat().join(', ') || 'Failed');
+      const msg =
+        e.response?.data
+          ? Object.values(e.response.data).flat().join(', ')
+          : e.message || 'Save failed';
+      alert(msg);
     } finally {
       setLoading(false);
     }
   };
 
-  // -----------------------------------------------------------------
-  // DELETE & TOGGLE
-  // -----------------------------------------------------------------
+  /* --------------------------------------------------------------
+     DELETE
+     -------------------------------------------------------------- */
   const openDelete = (emp) => {
-    setSelectedEmp(emp);
-    setIsDeleteOpen(true);
+    setSelected(emp);
+    setDeleteOpen(true);
   };
-
   const confirmDelete = async () => {
-    await axiosInstance.delete(`/employees/staff/${selectedEmp.id}/`);
-    await fetchEmployees();
-    setIsDeleteOpen(false);
-    setSelectedEmp(null);
+    if (!selected) return;
+    try {
+      await axiosInstance.delete(`/employees/staff/${selected.id}/`);
+      setEmployees(prev => prev.filter(e => e.id !== selected.id));
+      setFiltered(prev => prev.filter(e => e.id !== selected.id));
+    } catch (e) {
+      alert(e.response?.data?.detail || 'Delete failed');
+    } finally {
+      setDeleteOpen(false);
+      setSelected(null);
+    }
   };
 
-  const openToggleConfirm = (emp) => {
+  /* --------------------------------------------------------------
+     TOGGLE ACTIVE
+     -------------------------------------------------------------- */
+  const openToggle = (emp) => {
     setToggleTarget(emp);
-    setIsToggleOpen(true);
+    setToggleOpen(true);
   };
-
   const confirmToggle = async () => {
-    await axiosInstance.patch(`/employees/staff/${toggleTarget.id}/toggle-active/`, {});
-    await fetchEmployees();
-    setIsToggleOpen(false);
-    setToggleTarget(null);
+    if (!toggleTarget) return;
+    try {
+      const { data } = await axiosInstance.patch(
+        `/employees/staff/${toggleTarget.id}/`,
+        { is_active_employee: !toggleTarget.is_active_employee }
+      );
+      setEmployees(prev =>
+        prev.map(e =>
+          e.id === toggleTarget.id ? { ...e, is_active_employee: data.is_active_employee } : e
+        )
+      );
+      setFiltered(prev =>
+        prev.map(e =>
+          e.id === toggleTarget.id ? { ...e, is_active_employee: data.is_active_employee } : e
+        )
+      );
+    } catch {
+      alert('Failed to update status');
+    } finally {
+      setToggleOpen(false);
+      setToggleTarget(null);
+    }
   };
 
-  // -----------------------------------------------------------------
-  // TABLE COLUMNS
-  // -----------------------------------------------------------------
-  const columns = useMemo(() => [
-    { header: 'Emp ID', accessor: 'employee_id' },
-    { header: 'Name', cell: (row) => row.user?.name || '—' },
-    { header: 'Type', cell: (row) => row.employee_type },
-    { header: 'Joining', accessor: 'date_of_joining' },
-    {
-      header: 'Active',
-      cell: (row) => (
-        <div className="flex items-center gap-2">
-          <span className={`px-2 py-1 rounded-full text-xs ${row.is_active_employee ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-            {row.is_active_employee ? 'Yes' : 'No'}
-          </span>
-          <button onClick={() => openToggleConfirm(row)} className="p-1">
-            {row.is_active_employee ? <CheckCircle size={16} className="text-green-600" /> : <XCircle size={16} className="text-red-600" />}
-          </button>
-        </div>
-      ),
-    },
-    {
-      header: 'Actions',
-      cell: (row) => (
-        <div className="flex gap-2">
-          <button onClick={() => handleEdit(row)} className="text-blue-600"><Edit size={16} /></button>
-          <button onClick={() => openDelete(row)} className="text-red-600"><Trash2 size={16} /></button>
-        </div>
-      ),
-    },
-  ], []);
+  /* --------------------------------------------------------------
+     TABLE COLUMNS
+     -------------------------------------------------------------- */
+  const columns = useMemo(
+    () => [
+      { header: 'Name', accessor: 'user.name' },
+      {
+        header: 'Employee ID',
+        cell: (row) => (
+          <span className="font-mono text-sm">{row.employee_id || '—'}</span>
+        ),
+      },
+      { header: 'Role', accessor: 'employee_type' },
+      {
+        header: 'Owner',
+        cell: (row) => row.owner?.name || 'Global',
+      },
+      {
+        header: 'Active',
+        cell: (row) => (
+          <div className="flex items-center gap-2">
+            <span
+              className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                row.is_active_employee
+                  ? 'bg-green-100 text-green-800'
+                  : 'bg-red-100 text-red-800'
+              }`}
+            >
+              {row.is_active_employee ? <CheckCircle size={14} /> : <XCircle size={14} />}
+              {row.is_active_employee ? 'Yes' : 'No'}
+            </span>
+            <button
+              onClick={() => openToggle(row)}
+              className={`p-1 rounded transition-colors ${
+                row.is_active_employee
+                  ? 'text-green-600 hover:text-green-800'
+                  : 'text-red-600 hover:text-red-800'
+              }`}
+              title={row.is_active_employee ? 'Deactivate' : 'Activate'}
+            >
+              {row.is_active_employee ? <CheckCircle size={16} /> : <XCircle size={16} />}
+            </button>
+          </div>
+        ),
+      },
+      {
+        header: 'Actions',
+        cell: (row) => (
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => openEdit(row)}
+              className="text-blue-600 hover:text-blue-800 transition-colors"
+              title="Edit"
+            >
+              <Edit size={16} />
+            </button>
+            <button
+              onClick={() => openDelete(row)}
+              className="text-red-600 hover:text-red-800 transition-colors"
+              title="Delete"
+            >
+              <Trash2 size={16} />
+            </button>
+          </div>
+        ),
+      },
+    ],
+    []
+  );
 
-  // -----------------------------------------------------------------
-  // RENDER
-  // -----------------------------------------------------------------
+  /* --------------------------------------------------------------
+     RENDER
+     -------------------------------------------------------------- */
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-gray-50 p-4 sm:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto">
-        <div className="flex items-center gap-4 mb-8">
-          <div className="w-12 h-12 bg-indigo-600 rounded-xl flex items-center justify-center">
-            <Users className="text-white" />
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold">Employee Management</h1>
-            <p className="text-gray-600">Add and manage your staff</p>
+
+        {/* HEADER */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-8">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-gradient-to-br from-teal-600 to-teal-700 rounded-xl flex items-center justify-center shadow-lg">
+              <Users className="text-white" size={24} />
+            </div>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+                Staff Management
+              </h1>
+              <p className="text-gray-600 text-sm">
+                Manage drivers, conductors, mechanics, cleaners & managers
+              </p>
+            </div>
           </div>
         </div>
 
-        {apiError && <div className="bg-red-50 text-red-700 p-4 rounded mb-4">{apiError}</div>}
+        {/* API ERROR */}
+        {apiError && (
+          <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-lg mb-4 text-sm">
+            {apiError}
+          </div>
+        )}
 
+        {/* STATS */}
         <StatsCards
           total={employees.length}
-          operational={employees.filter(e => e.is_active_employee).length}
-          label="Total Staff"
-          operationalLabel="Active"
+          active={employees.filter(e => e.is_active_employee).length}
+          label="Employees"
         />
 
+        {/* ACTION BAR */}
         <ActionBar
-          search={searchQuery}
-          onSearch={setSearchQuery}
-          onAdd={handleAdd}
-          addLabel="Add Employee"
-          searchPlaceholder="Search by ID, name, type..."
+          search={search}
+          onSearch={setSearch}
+          onAdd={openAdd}
+          addLabel="Add New Employee"
+          searchPlaceholder="Search by name, ID, role, owner..."
         />
 
-        <GenericTable
-          rows={filteredEmployees}
-          columns={columns}
-          loading={apiLoading}
-          emptyMessage="No employees yet. Click 'Add Employee' to start."
-        />
+        {/* TABLE */}
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
+          <GenericTable
+            rows={filtered}
+            columns={columns}
+            loading={apiLoading}
+            emptyMessage="No employees found"
+          />
+        </div>
 
-        {/* ADD / EDIT MODAL */}
+        {/* FORM MODAL */}
         <FormModal
-          isOpen={isModalOpen}
-          onClose={() => { setIsModalOpen(false); resetForm(); }}
-          title={selectedEmp ? 'Edit Employee' : 'Add New Employee'}
+          isOpen={modalOpen}
+          onClose={closeModal}
+          title={selected ? 'Edit Employee' : 'Add New Employee'}
           icon={Users}
-          sections={employeeSections}
+          sections={employeeSections()}
           register={register}
           errors={errors}
           onSubmit={handleSubmit(onSubmit)}
           loading={loading}
-          submitLabel={selectedEmp ? 'Update' : 'Create'}
+          submitLabel={selected ? 'Update' : 'Create Employee'}
         />
 
         {/* DELETE CONFIRM */}
         <ConfirmModal
-          isOpen={isDeleteOpen}
-          onClose={() => { setIsDeleteOpen(false); setSelectedEmp(null); }}
+          isOpen={deleteOpen}
+          onClose={() => {
+            setDeleteOpen(false);
+            setSelected(null);
+          }}
           onConfirm={confirmDelete}
+          loading={loading}
           title="Delete Employee?"
-          message={`Delete ${selectedEmp?.user?.name || ''} (${selectedEmp?.employee_id})?`}
+          message={`Are you sure you want to delete ${selected?.user?.name || ''}? This cannot be undone.`}
           confirmText="Delete"
+          cancelText="Cancel"
           confirmVariant="danger"
           icon={Trash2}
+          entity={selected}
+          entityName={selected?.user?.name}
         />
 
-        {/* TOGGLE ACTIVE */}
+        {/* TOGGLE ACTIVE CONFIRM */}
         <ConfirmModal
-          isOpen={isToggleOpen}
-          onClose={() => { setIsToggleOpen(false); setToggleTarget(null); }}
+          isOpen={toggleOpen}
+          onClose={() => {
+            setToggleOpen(false);
+            setToggleTarget(null);
+          }}
           onConfirm={confirmToggle}
-          title={toggleTarget?.is_active_employee ? 'Deactivate?' : 'Activate?'}
-          message={`${toggleTarget?.is_active_employee ? 'Deactivate' : 'Activate'} ${toggleTarget?.user?.name}?`}
+          loading={false}
+          title={toggleTarget?.is_active_employee ? 'Deactivate Employee?' : 'Activate Employee?'}
+          message={
+            toggleTarget?.is_active_employee
+              ? `Deactivate ${toggleTarget?.user?.name}?`
+              : `Activate ${toggleTarget?.user?.name}?`
+          }
           confirmText={toggleTarget?.is_active_employee ? 'Deactivate' : 'Activate'}
+          cancelText="Cancel"
           confirmVariant={toggleTarget?.is_active_employee ? 'warning' : 'success'}
           icon={toggleTarget?.is_active_employee ? XCircle : CheckCircle}
+          entity={toggleTarget}
+          entityName={toggleTarget?.user?.name}
         />
       </div>
     </div>
