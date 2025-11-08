@@ -80,11 +80,8 @@ axiosInstance.interceptors.response.use(
           console.log('%c[Axios] Refreshing SUPERADMIN token...', 'color: #d97706');
         } else {
           refreshToken = localStorage.getItem('refresh_token');
-<<<<<<< HEAD
           console.log('%c[Axios] Refreshing USER token...', 'color: #2563eb');
-=======
           refreshUrl = `${process.env.NEXT_PUBLIC_API_URL}/token/refresh/`;
->>>>>>> 4618057 (fix-(employee)-finance mangement model and design created)
         }
 
         const response = await axios.post(refreshUrl, { refresh: refreshToken });
