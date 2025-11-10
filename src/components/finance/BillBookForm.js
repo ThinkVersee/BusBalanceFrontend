@@ -16,6 +16,7 @@ import {
   X,
 } from "lucide-react";
 import axiosInstance from "@/config/axiosInstance";
+import { ConfirmModal } from "@/components/common/ConfirmModal";
 
 export default function BillBookForm() {
   const [activeTab, setActiveTab] = useState("new");
@@ -41,6 +42,13 @@ export default function BillBookForm() {
   const [filterDate, setFilterDate] = useState("");
   const [filterBus, setFilterBus] = useState("");
 
+  // Delete modal states
+  const [deleteCatOpen, setDeleteCatOpen] = useState(false);
+  const [deleteCatTarget, setDeleteCatTarget] = useState(null); // { id, type }
+  const [deleteRecOpen, setDeleteRecOpen] = useState(false);
+  const [deleteRecTarget, setDeleteRecTarget] = useState(null); // id
+
+  // Fetch buses & categories
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -82,6 +90,7 @@ export default function BillBookForm() {
     fetchData();
   }, []);
 
+  // Fetch records when on records tab or filters change
   useEffect(() => {
     if (activeTab === "records") fetchRecords();
   }, [activeTab, filterDate, filterBus]);
@@ -103,6 +112,7 @@ export default function BillBookForm() {
     }
   };
 
+  // Update amount in category
   const updateIncomeAmount = (id, value) => {
     setIncomeCategories((prev) =>
       prev.map((cat) => (cat.id === id ? { ...cat, amount: value } : cat))
@@ -115,6 +125,7 @@ export default function BillBookForm() {
     );
   };
 
+  // Add new category
   const addNewCategory = async (type) => {
     if (!newCategoryName.trim()) return;
     try {
@@ -141,36 +152,58 @@ export default function BillBookForm() {
     }
   };
 
-  const deleteCategory = async (id, type) => {
-    if (!confirm("Delete this category permanently?")) return;
+  // Open delete category modal
+  const openDeleteCategory = (id, type) => {
+    setDeleteCatTarget({ id, type });
+    setDeleteCatOpen(true);
+  };
+
+  // Confirm delete category
+  const confirmDeleteCategory = async () => {
+    if (!deleteCatTarget) return;
     try {
-      await axiosInstance.delete(`/finance/categories/${id}`);
-      if (type === "INCOME") {
-        setIncomeCategories((prev) => prev.filter((c) => c.id !== id));
+      await axiosInstance.delete(`/finance/categories/${deleteCatTarget.id}/`);
+      if (deleteCatTarget.type === "INCOME") {
+        setIncomeCategories((prev) => prev.filter((c) => c.id !== deleteCatTarget.id));
       } else {
-        setExpenseCategories((prev) => prev.filter((c) => c.id !== id));
+        setExpenseCategories((prev) => prev.filter((c) => c.id !== deleteCatTarget.id));
       }
     } catch (err) {
       alert(err.response?.data?.detail || "Failed to delete category");
+    } finally {
+      setDeleteCatOpen(false);
+      setDeleteCatTarget(null);
     }
   };
 
-  const deleteRecord = async (id) => {
-    if (!confirm("Delete this transaction?")) return;
+  // Open delete transaction modal
+  const openDeleteRecord = (id) => {
+    setDeleteRecTarget(id);
+    setDeleteRecOpen(true);
+  };
+
+  // Confirm delete transaction
+  const confirmDeleteRecord = async () => {
+    if (!deleteRecTarget) return;
     try {
-      await axiosInstance.delete(`/finance/transactions/${id}`);
-      setRecords((prev) => prev.filter((r) => r.id !== id));
+      await axiosInstance.delete(`/finance/transactions/${deleteRecTarget}/`);
+      setRecords((prev) => prev.filter((r) => r.id !== deleteRecTarget));
     } catch (err) {
       alert(err.response?.data?.detail || "Failed to delete record");
+    } finally {
+      setDeleteRecOpen(false);
+      setDeleteRecTarget(null);
     }
   };
 
+  // Calculate totals
   const calculateTotal = (cats) =>
     cats.reduce((sum, c) => sum + (parseFloat(c.amount) || 0), 0);
   const totalIncome = calculateTotal(incomeCategories);
   const totalExpense = calculateTotal(expenseCategories);
   const balance = totalIncome - totalExpense;
 
+  // Save all transactions
   const handleSave = async () => {
     const transactions = [];
     incomeCategories.forEach((cat) => {
@@ -211,6 +244,7 @@ export default function BillBookForm() {
     }
   };
 
+  // Group records by date
   const groupedRecords = Array.isArray(records)
     ? records.reduce((acc, r) => {
         if (!acc[r.date]) acc[r.date] = [];
@@ -262,8 +296,7 @@ export default function BillBookForm() {
                   : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
               }`}
             >
-              <FileText size={18} /> 
-              <span>New Entry</span>
+              <FileText size={18} /> <span>New Entry</span>
             </button>
             <button
               onClick={() => setActiveTab("records")}
@@ -273,8 +306,7 @@ export default function BillBookForm() {
                   : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
               }`}
             >
-              <Eye size={18} /> 
-              <span>Records</span>
+              <Eye size={18} /> <span>Records</span>
             </button>
           </div>
         </div>
@@ -381,7 +413,7 @@ export default function BillBookForm() {
                         className="w-24 sm:w-32 px-2 sm:px-3 py-2 text-sm border border-gray-300 rounded-md text-right focus:ring-2 focus:ring-green-500 focus:border-transparent"
                       />
                       <button
-                        onClick={() => deleteCategory(cat.id, "INCOME")}
+                        onClick={() => openDeleteCategory(cat.id, "INCOME")}
                         className="p-1 text-gray-400 hover:text-red-600 flex-shrink-0"
                       >
                         <Trash2 size={16} />
@@ -460,7 +492,7 @@ export default function BillBookForm() {
                         className="w-24 sm:w-32 px-2 sm:px-3 py-2 text-sm border border-gray-300 rounded-md text-right focus:ring-2 focus:ring-red-500 focus:border-transparent"
                       />
                       <button
-                        onClick={() => deleteCategory(cat.id, "EXPENSE")}
+                        onClick={() => openDeleteCategory(cat.id, "EXPENSE")}
                         className="p-1 text-gray-400 hover:text-red-600 flex-shrink-0"
                       >
                         <Trash2 size={16} />
@@ -676,7 +708,7 @@ export default function BillBookForm() {
                               </td>
                               <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-right text-sm">
                                 <button
-                                  onClick={() => deleteRecord(r.id)}
+                                  onClick={() => openDeleteRecord(r.id)}
                                   className="p-1 text-red-600 hover:text-red-800"
                                 >
                                   <Trash2 size={16} />
@@ -718,6 +750,39 @@ export default function BillBookForm() {
           )}
         </div>
       )}
+
+      {/* Confirm Modals */}
+      <ConfirmModal
+        isOpen={deleteCatOpen}
+        onClose={() => {
+          setDeleteCatOpen(false);
+          setDeleteCatTarget(null);
+        }}
+        onConfirm={confirmDeleteCategory}
+        title="Delete Category?"
+        message={`Are you sure you want to delete this ${
+          deleteCatTarget?.type === "INCOME" ? "income" : "expense"
+        } category? This cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        confirmVariant="danger"
+        icon={Trash2}
+      />
+
+      <ConfirmModal
+        isOpen={deleteRecOpen}
+        onClose={() => {
+          setDeleteRecOpen(false);
+          setDeleteRecTarget(null);
+        }}
+        onConfirm={confirmDeleteRecord}
+        title="Delete Transaction?"
+        message="Are you sure you want to delete this transaction? This cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        confirmVariant="danger"
+        icon={Trash2}
+      />
     </div>
   );
 }
