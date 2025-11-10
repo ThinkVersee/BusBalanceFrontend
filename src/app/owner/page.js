@@ -1,18 +1,30 @@
 'use client';
 
-// import BusOwnerManagement from '@/components/admin/Companies/Companies';
+import { useState } from 'react';
+import OwnerDashboard from '@/components/owner/Dashboard/Dashboard';
 import Navbar from '@/components/owner/Navbar';
 import Sidebar from '@/components/owner/Sidebar';
 
-export default function OwnerPage() {
+export default function DashboardPage() {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
   return (
-    <div className="flex">
-      <Sidebar />
-      <div className="flex-1 ml-64">
-        <Navbar />
-        {/* <div className="mt-16 p-8">
-          <BusOwnerManagement />
-        </div> */}
+    <div className="min-h-screen bg-gray-50">      
+      <Sidebar 
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+      />
+      
+      <div className="md:ml-64">                     
+        <Navbar 
+          onMenuToggle={() => setIsSidebarOpen(true)}
+        />
+        
+        <main className="pt-16">                    
+          <div className="max-w-full px-4 sm:px-6 lg:px-8 py-6">   
+            <OwnerDashboard />
+          </div>
+        </main>
       </div>
     </div>
   );
