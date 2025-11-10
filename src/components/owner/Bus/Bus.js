@@ -368,17 +368,24 @@ export default function BusManagement() {
       <div className="max-w-7xl mx-auto">
 
         {/* Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-8">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-indigo-600 to-indigo-700 rounded-xl flex items-center justify-center shadow-lg">
-              <Bus className="text-white" size={24} />
-            </div>
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Bus Management</h1>
-              <p className="text-gray-600 text-sm">Manage your buses and operational status</p>
-            </div>
-          </div>
-        </div>
+       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6 sm:mb-8">
+  <div className="flex items-center gap-3 flex-1 min-w-0">
+    {/* Icon - scales down on mobile */}
+    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-indigo-600 to-indigo-700 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
+      <Bus className="text-white w-5 h-5 sm:w-6 sm:h-6" />
+    </div>
+
+    {/* Text Content */}
+    <div className="min-w-0 flex-1">
+      <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 truncate">
+        Bus Management
+      </h1>
+      <p className="text-gray-600 text-xs sm:text-sm mt-0.5 line-clamp-2">
+        Manage your buses and operational status
+      </p>
+    </div>
+  </div>
+</div>
 
         {/* API Error */}
         {apiError && (

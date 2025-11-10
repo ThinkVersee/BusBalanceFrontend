@@ -10,32 +10,42 @@ export const ActionBar = ({
   searchPlaceholder = 'Search...',
 }) => (
   <div className="bg-white rounded-xl shadow-sm p-4 sm:p-5 mb-6 border border-gray-100">
-    <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-0">
+    <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-stretch sm:items-center">
+      
+      {/* SEARCH BAR - Full width on mobile, flexible on desktop */}
+      <div className="flex-1 min-w-0">
+        <SearchBar
+          value={search}
+          onChange={onSearch}
+          placeholder={searchPlaceholder}
+        />
+      </div>
 
-      {/* SEARCH */}
-      <SearchBar
-        value={search}
-        onChange={onSearch}
-        placeholder={searchPlaceholder}
-      />
-
-      {/* ADD BUTTON */}
+      {/* ADD BUTTON - Full width on mobile, auto on desktop */}
       <button
         onClick={onAdd}
         disabled={onAddDisabled}
         className={`
-          w-full sm:w-auto sm:ml-4 flex justify-center items-center gap-2
-          bg-gradient-to-r from-blue-600 to-blue-700 text-white px-5 py-3 rounded-xl
-          hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg shadow-blue-600/30
-          ${onAddDisabled ? 'opacity-50 cursor-not-allowed' : ''}
+          flex justify-center items-center gap-2 px-5 py-2.5 rounded-lg font-medium text-sm
+          bg-gradient-to-r from-blue-600 to-blue-700 text-white
+          hover:from-blue-700 hover:to-blue-800 transition-all duration-200
+          shadow-md hover:shadow-lg
+          w-full sm:w-auto
+          ${onAddDisabled ? 'opacity-60 cursor-not-allowed' : ''}
         `.trim().replace(/\s+/g, ' ')}
       >
         {onAddDisabled ? (
-          <Loader2 size={20} className="animate-spin" />
+          <>
+            <Loader2 size={18} className="animate-spin" />
+            <span>Loading...</span>
+          </>
         ) : (
-          <Plus size={20} />
+          <>
+            <Plus size={18} />
+            <span className="hidden sm:inline">{addLabel}</span>
+            <span className="sm:hidden">Add</span>
+          </>
         )}
-        <span>{onAddDisabled ? 'Loading...' : addLabel}</span>
       </button>
     </div>
   </div>
