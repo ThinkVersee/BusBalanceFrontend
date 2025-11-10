@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
-import { Eye, EyeOff, Bus, DollarSign } from 'lucide-react';
+import { Eye, EyeOff, Bus, DollarSign ,Loader2} from 'lucide-react';
 
 const LoginForm = () => {
   const [username, setUsername] = useState(''); // Changed from email
@@ -50,22 +50,19 @@ const LoginForm = () => {
       <div className="w-full max-w-md">
         <div className="bg-white p-12 rounded-3xl shadow-sm">
           {/* Bus-Themed Logo */}
-          <div className="flex justify-center mb-12">
-            <div className="flex items-center gap-3">
-              <div className="relative">
-                <div className="w-12 h-12 bg-gradient-to-br from-yellow-400 to-yellow-500 rounded-xl flex items-center justify-center shadow-md">
+         <div className="text-center mb-8">
+          <div className="flex justify-center mb-4">
+            <div className="bg-gradient-to-r from-blue-500 to-cyan-400 p-2 rounded-xl shadow-md">
+              <div className="bg-white p-2 rounded-lg">
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-cyan-300 rounded-lg flex items-center justify-center">
                   <Bus className="w-7 h-7 text-white" />
                 </div>
-                <div className="absolute -top-1 -right-1 w-6 h-6 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-lg border-2 border-white">
-                  <DollarSign className="w-4 h-4 text-white" />
-                </div>
-              </div>
-              <div className="text-2xl font-bold">
-                <span className="text-gray-800">BUS</span>
-                <span className="text-gray-400 font-normal text-sm tracking-widest ml-1">BALANCE</span>
               </div>
             </div>
           </div>
+          <h1 className="text-2xl font-bold text-gray-900">BUS BALANCE</h1>
+        </div>
+
 
           {/* Title */}
           <h2 className="text-2xl font-semibold mb-8 text-gray-900">Login</h2>
@@ -130,16 +127,26 @@ const LoginForm = () => {
             <button
               onClick={handleSubmit}
               disabled={isLoading}
-              className={`w-full bg-blue-600 text-white font-medium py-3 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-200 ${
-                isLoading ? 'opacity-50 cursor-not-allowed' : ''
-              }`}
+              className={`w-full bg-blue-600 text-white font-medium py-3 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-200 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
             >
               {isLoading ? (
                 <span className="flex items-center justify-center">
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
+                  <button
+                    onClick={handleSubmit}
+                    disabled={isLoading}
+                    className={`w-full bg-blue-600 text-white font-medium py-3 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-200 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''
+                      }`}
+                  >
+                    {isLoading ? (
+                      <span className="flex items-center justify-center">
+                        <Loader2 className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" />
+                        Logging in...
+                      </span>
+                    ) : (
+                      'Login'
+                    )}
+                  </button>
                   Logging in...
                 </span>
               ) : (
