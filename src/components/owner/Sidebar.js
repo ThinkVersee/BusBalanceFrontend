@@ -14,7 +14,7 @@ const Sidebar = () => {
     { name: 'Dashboard', icon: LayoutDashboard, path: '/owner/dashboard' },
     { name: 'Bus Management', icon: Building2, path: '/owner/bus' },
     { name: 'Staff Management', icon: CreditCard, path: '/owner/staff' },
-    { name: 'Expenses', icon: Users, path: '/owner/expenses' },
+    { name: 'Expenses', icon: Users, path: '/owner/expense' },
   ];
 
   const NavLinks = () => (
