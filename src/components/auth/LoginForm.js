@@ -2,139 +2,136 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
-import { Eye, EyeOff, Lock, User, LogIn } from 'lucide-react';
+import { Eye, EyeOff, Bus, DollarSign } from 'lucide-react';
 
 const LoginForm = () => {
-  const [username, setUsername] = useState('');
+  const [username, setUsername] = useState(''); // Changed from email
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const { login, isLoading, error, isAuthenticated, clearError } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
- if (isAuthenticated) {
-  const user = JSON.parse(localStorage.getItem('user'));
+    if (isAuthenticated) {
+      const user = JSON.parse(localStorage.getItem('user'));
 
-  if (user?.is_superuser) {
-    router.push('/admin/');
-  } else if (user?.is_owner) {
-    router.push('/owner/');
-  } else {
-    router.push('/employee');
-  }
-}
-
+      if (user?.is_superuser) {
+        router.push('/admin/');
+      } else if (user?.is_owner) {
+        router.push('/owner/');
+      } else {
+        router.push('/employee');
+      }
+    }
   }, [isAuthenticated, router]);
 
   useEffect(() => {
     return () => clearError();
   }, [clearError]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
     clearError();
 
-  
     await login({
-      username,
+      username, // Now using username
       password,
-      endpoint: '/login/', 
+      endpoint: '/login/',
     });
   };
 
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      handleSubmit();
+    }
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 p-4">
-      <div className="absolute inset-0 bg-black opacity-20"></div>
-      
-      <div className="relative w-full max-w-md">
-        <div className="bg-white/95 backdrop-blur-lg p-8 rounded-2xl shadow-2xl border border-white/20">
-          <div className="flex justify-center mb-6">
-            <div className="w-16 h-16 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-full flex items-center justify-center shadow-lg">
-              <LogIn className="w-8 h-8 text-white" />
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="w-full max-w-md">
+        <div className="bg-white p-12 rounded-3xl shadow-sm">
+          {/* Bus-Themed Logo */}
+          <div className="flex justify-center mb-12">
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <div className="w-12 h-12 bg-gradient-to-br from-yellow-400 to-yellow-500 rounded-xl flex items-center justify-center shadow-md">
+                  <Bus className="w-7 h-7 text-white" />
+                </div>
+                <div className="absolute -top-1 -right-1 w-6 h-6 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-lg border-2 border-white">
+                  <DollarSign className="w-4 h-4 text-white" />
+                </div>
+              </div>
+              <div className="text-2xl font-bold">
+                <span className="text-gray-800">BUS</span>
+                <span className="text-gray-400 font-normal text-sm tracking-widest ml-1">BALANCE</span>
+              </div>
             </div>
           </div>
 
-          <h2 className="text-3xl font-bold mb-2 text-center bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-            Welcome Back
-          </h2>
-          <p className="text-center text-gray-600 mb-8">Sign in to continue to your account</p>
+          {/* Title */}
+          <h2 className="text-2xl font-semibold mb-8 text-gray-900">Login</h2>
 
+          {/* Error Message */}
           {error && (
-            <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-lg animate-pulse">
-              <div className="flex items-center">
-                <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                </svg>
-                <span className="text-sm font-medium">
-                  {typeof error === 'string' ? error : error.detail || 'Login failed. Please check your credentials.'}
-                </span>
-              </div>
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+              {typeof error === 'string' ? error : error.detail || 'Login failed. Please check your credentials.'}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Form */}
+          <div className="space-y-6">
             <div>
-              <label htmlFor="username" className="block text-sm font-semibold text-gray-700 mb-2">
+              <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
                 Username
               </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <User className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  type="text"
-                  id="username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200 bg-white"
-                  placeholder="Enter your username"
-                  required
-                />
-              </div>
+              <input
+                type="text"
+                id="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                onKeyPress={handleKeyPress}
+                className="block w-full px-4 py-3 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 bg-gray-50"
+                placeholder="Enter username..."
+                required
+                autoComplete="username"
+              />
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
                 Password
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400" />
-                </div>
                 <input
                   type={showPassword ? "text" : "password"}
                   id="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200 bg-white"
-                  placeholder="Enter your password"
+                  onKeyPress={handleKeyPress}
+                  className="block w-full px-4 py-3 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 bg-gray-50"
+                  placeholder="Enter password..."
                   required
+                  autoComplete="current-password"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition duration-200"
+                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 transition duration-200"
                 >
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
               </div>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <input id="remember" type="checkbox" className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" />
-                <label htmlFor="remember" className="ml-2 block text-sm text-gray-700">Remember me</label>
+              <div className="mt-2 text-right">
+                <a href="/forgot-password" className="text-sm text-blue-600 hover:text-blue-700 transition duration-200">
+                  Forgot password?
+                </a>
               </div>
-              <a href="/forgot-password" className="text-sm font-medium text-indigo-600 hover:text-indigo-500 transition duration-200">
-                Forgot password?
-              </a>
             </div>
 
             <button
-              type="submit"
+              onClick={handleSubmit}
               disabled={isLoading}
-              className={`w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold py-3 px-4 rounded-lg hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transform transition duration-200 shadow-lg hover:shadow-xl ${
-                isLoading ? 'opacity-50 cursor-not-allowed' : 'hover:scale-[1.02] active:scale-[0.98]'
+              className={`w-full bg-blue-600 text-white font-medium py-3 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-200 ${
+                isLoading ? 'opacity-50 cursor-not-allowed' : ''
               }`}
             >
               {isLoading ? (
@@ -146,29 +143,11 @@ const LoginForm = () => {
                   Logging in...
                 </span>
               ) : (
-                'Sign In'
+                'Login'
               )}
             </button>
-          </form>
-
-          <div className="mt-6 flex items-center">
-            <div className="flex-1 border-t border-gray-300"></div>
-            <span className="px-4 text-sm text-gray-500">or</span>
-            <div className="flex-1 border-t border-gray-300"></div>
-          </div>
-
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
-              Don't have an account?{' '}
-              <a href="/register" className="font-semibold text-indigo-600 hover:text-indigo-500 transition duration-200">
-                Create account
-              </a>
-            </p>
           </div>
         </div>
-
-        <div className="absolute -top-4 -left-4 w-24 h-24 bg-purple-400 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse"></div>
-        <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-indigo-400 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse animation-delay-2000"></div>
       </div>
     </div>
   );
