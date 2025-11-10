@@ -1,5 +1,4 @@
 "use client";
-
 import { useState, useEffect } from "react";
 import {
   Plus,
@@ -14,9 +13,151 @@ import {
   TrendingDown,
   DollarSign,
   X,
+  Upload,
+  CheckCircle,
+  AlertCircle,
 } from "lucide-react";
 import axiosInstance from "@/config/axiosInstance";
-import { ConfirmModal } from "@/components/common/ConfirmModal";
+
+// === Reusable File Upload Component ===
+function FileUploadSection({ type, onUploadSuccess }) {
+  const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [error, setError] = useState("");
+  const [file, setFile] = useState(null);
+
+  const handleFileChange = (e) => {
+    const f = e.target.files?.[0];
+    if (f && f.size <= 10 * 1024 * 1024) {
+      setFile(f);
+      setError("");
+    } else {
+      setError("File must be ≤ 10 MB");
+    }
+  };
+
+  const uploadToS3 = async () => {
+    if (!file) return;
+
+    setUploading(true);
+    setProgress(0);
+    setError("");
+
+    try {
+      // 1. Get presigned URL
+      const presignedRes = await axiosInstance.post("/finance/upload-presigned/", {
+        file_name: file.name,
+        file_type: file.type || "application/octet-stream",
+        transaction_type: type,
+      });
+
+      const { presigned, file_url } = presignedRes.data;
+
+      // 2. Build FormData exactly as S3 expects
+      const formData = new FormData();
+      Object.entries(presigned.fields).forEach(([k, v]) => {
+        formData.append(k, v);
+      });
+      formData.append("file", file);
+
+      // 3. Upload with progress
+      await new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", presigned.url, true);
+
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) {
+            const percent = Math.round((e.loaded / e.total) * 100);
+            setProgress(percent);
+          }
+        };
+
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) resolve();
+          else reject(new Error(`Upload failed (${xhr.status})`));
+        };
+
+        xhr.onerror = () => reject(new Error("Network error"));
+        xhr.send(formData);
+      });
+
+      // 4. Notify parent
+      onUploadSuccess?.({ file_name: file.name, file_url, transaction_type: type });
+
+      setFile(null);
+      setProgress(0);
+    } catch (err) {
+      setError(err.response?.data?.error || err.message || "Upload failed");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div className="mt-4 p-4 border rounded-lg bg-gray-50">
+      <div className="flex items-center gap-2 mb-2">
+        <Upload size={18} className="text-blue-600" />
+        <h4 className="font-medium text-sm">
+          {type === "INCOME" ? "Income" : "Expense"} Attachments
+        </h4>
+      </div>
+
+      <div className="flex flex-col sm:flex-row gap-2">
+        <input
+          type="file"
+          accept="image/*,application/pdf"
+          onChange={handleFileChange}
+          disabled={uploading}
+          className="flex-1 text-sm file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-sm file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+        />
+        {file && (
+          <button
+            onClick={uploadToS3}
+            disabled={uploading}
+            className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center gap-1"
+          >
+            {uploading ? (
+              <>
+                <span className="animate-pulse">Uploading…</span>
+                <span>{progress}%</span>
+              </>
+            ) : (
+              <>
+                <Upload size={16} />
+                Upload
+              </>
+            )}
+          </button>
+        )}
+        {file && (
+          <button
+            onClick={() => {
+              setFile(null);
+              setProgress(0);
+              setError("");
+            }}
+            className="p-1.5 text-gray-500 hover:text-gray-700"
+          >
+            <X size={16} />
+          </button>
+        )}
+      </div>
+
+      {error && (
+        <div className="mt-2 flex items-center gap-1 text-red-600 text-xs">
+          <AlertCircle size={14} />
+          {error}
+        </div>
+      )}
+      {progress === 100 && !uploading && (
+        <div className="mt-2 flex items-center gap-1 text-green-600 text-xs">
+          <CheckCircle size={14} />
+          Upload complete
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function BillBookForm() {
   const [activeTab, setActiveTab] = useState("new");
@@ -24,31 +165,20 @@ export default function BillBookForm() {
     date: new Date().toISOString().split("T")[0],
     bus: "",
   });
-
   const [ownedBuses, setOwnedBuses] = useState([]);
   const [incomeCategories, setIncomeCategories] = useState([]);
   const [expenseCategories, setExpenseCategories] = useState([]);
-
   const [showAddIncome, setShowAddIncome] = useState(false);
   const [showAddExpense, setShowAddExpense] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
-
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
-
   const [records, setRecords] = useState([]);
   const [loadingRecords, setLoadingRecords] = useState(false);
   const [filterDate, setFilterDate] = useState("");
   const [filterBus, setFilterBus] = useState("");
 
-  // Delete modal states
-  const [deleteCatOpen, setDeleteCatOpen] = useState(false);
-  const [deleteCatTarget, setDeleteCatTarget] = useState(null); // { id, type }
-  const [deleteRecOpen, setDeleteRecOpen] = useState(false);
-  const [deleteRecTarget, setDeleteRecTarget] = useState(null); // id
-
-  // Fetch buses & categories
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -57,9 +187,7 @@ export default function BillBookForm() {
           axiosInstance.get("/finance/buses/"),
           axiosInstance.get("/finance/categories/"),
         ]);
-
         setOwnedBuses(busRes.data);
-
         const income = catRes.data
           .filter((c) => c.transaction_type === "INCOME")
           .map((c) => ({
@@ -68,7 +196,6 @@ export default function BillBookForm() {
             amount: "",
             transaction_type: "INCOME",
           }));
-
         const expense = catRes.data
           .filter((c) => c.transaction_type === "EXPENSE")
           .map((c) => ({
@@ -77,7 +204,6 @@ export default function BillBookForm() {
             amount: "",
             transaction_type: "EXPENSE",
           }));
-
         setIncomeCategories(income);
         setExpenseCategories(expense);
       } catch (err) {
@@ -86,11 +212,9 @@ export default function BillBookForm() {
         setLoading(false);
       }
     };
-
     fetchData();
   }, []);
 
-  // Fetch records when on records tab or filters change
   useEffect(() => {
     if (activeTab === "records") fetchRecords();
   }, [activeTab, filterDate, filterBus]);
@@ -101,7 +225,6 @@ export default function BillBookForm() {
       const params = {};
       if (filterDate) params.date = filterDate;
       if (filterBus) params.bus = filterBus;
-
       const res = await axiosInstance.get("/finance/transactions/report/", { params });
       setRecords(res.data.transactions || []);
     } catch (err) {
@@ -112,7 +235,6 @@ export default function BillBookForm() {
     }
   };
 
-  // Update amount in category
   const updateIncomeAmount = (id, value) => {
     setIncomeCategories((prev) =>
       prev.map((cat) => (cat.id === id ? { ...cat, amount: value } : cat))
@@ -125,7 +247,6 @@ export default function BillBookForm() {
     );
   };
 
-  // Add new category
   const addNewCategory = async (type) => {
     if (!newCategoryName.trim()) return;
     try {
@@ -152,58 +273,36 @@ export default function BillBookForm() {
     }
   };
 
-  // Open delete category modal
-  const openDeleteCategory = (id, type) => {
-    setDeleteCatTarget({ id, type });
-    setDeleteCatOpen(true);
-  };
-
-  // Confirm delete category
-  const confirmDeleteCategory = async () => {
-    if (!deleteCatTarget) return;
+  const deleteCategory = async (id, type) => {
+    if (!confirm("Delete this category permanently?")) return;
     try {
-      await axiosInstance.delete(`/finance/categories/${deleteCatTarget.id}/`);
-      if (deleteCatTarget.type === "INCOME") {
-        setIncomeCategories((prev) => prev.filter((c) => c.id !== deleteCatTarget.id));
+      await axiosInstance.delete(`/finance/categories/${id}`);
+      if (type === "INCOME") {
+        setIncomeCategories((prev) => prev.filter((c) => c.id !== id));
       } else {
-        setExpenseCategories((prev) => prev.filter((c) => c.id !== deleteCatTarget.id));
+        setExpenseCategories((prev) => prev.filter((c) => c.id !== id));
       }
     } catch (err) {
       alert(err.response?.data?.detail || "Failed to delete category");
-    } finally {
-      setDeleteCatOpen(false);
-      setDeleteCatTarget(null);
     }
   };
 
-  // Open delete transaction modal
-  const openDeleteRecord = (id) => {
-    setDeleteRecTarget(id);
-    setDeleteRecOpen(true);
-  };
-
-  // Confirm delete transaction
-  const confirmDeleteRecord = async () => {
-    if (!deleteRecTarget) return;
+  const deleteRecord = async (id) => {
+    if (!confirm("Delete this transaction?")) return;
     try {
-      await axiosInstance.delete(`/finance/transactions/${deleteRecTarget}/`);
-      setRecords((prev) => prev.filter((r) => r.id !== deleteRecTarget));
+      await axiosInstance.delete(`/finance/transactions/${id}`);
+      setRecords((prev) => prev.filter((r) => r.id !== id));
     } catch (err) {
       alert(err.response?.data?.detail || "Failed to delete record");
-    } finally {
-      setDeleteRecOpen(false);
-      setDeleteRecTarget(null);
     }
   };
 
-  // Calculate totals
   const calculateTotal = (cats) =>
     cats.reduce((sum, c) => sum + (parseFloat(c.amount) || 0), 0);
   const totalIncome = calculateTotal(incomeCategories);
   const totalExpense = calculateTotal(expenseCategories);
   const balance = totalIncome - totalExpense;
 
-  // Save all transactions
   const handleSave = async () => {
     const transactions = [];
     incomeCategories.forEach((cat) => {
@@ -226,9 +325,7 @@ export default function BillBookForm() {
         });
       }
     });
-
     if (transactions.length === 0) return alert("Please enter at least one amount.");
-
     setSaving(true);
     try {
       await axiosInstance.post("/finance/transactions/bulk/", transactions);
@@ -244,7 +341,6 @@ export default function BillBookForm() {
     }
   };
 
-  // Group records by date
   const groupedRecords = Array.isArray(records)
     ? records.reduce((acc, r) => {
         if (!acc[r.date]) acc[r.date] = [];
@@ -296,7 +392,8 @@ export default function BillBookForm() {
                   : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
               }`}
             >
-              <FileText size={18} /> <span>New Entry</span>
+              <FileText size={18} />
+              <span>New Entry</span>
             </button>
             <button
               onClick={() => setActiveTab("records")}
@@ -306,7 +403,8 @@ export default function BillBookForm() {
                   : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
               }`}
             >
-              <Eye size={18} /> <span>Records</span>
+              <Eye size={18} />
+              <span>Records</span>
             </button>
           </div>
         </div>
@@ -413,7 +511,7 @@ export default function BillBookForm() {
                         className="w-24 sm:w-32 px-2 sm:px-3 py-2 text-sm border border-gray-300 rounded-md text-right focus:ring-2 focus:ring-green-500 focus:border-transparent"
                       />
                       <button
-                        onClick={() => openDeleteCategory(cat.id, "INCOME")}
+                        onClick={() => deleteCategory(cat.id, "INCOME")}
                         className="p-1 text-gray-400 hover:text-red-600 flex-shrink-0"
                       >
                         <Trash2 size={16} />
@@ -421,6 +519,15 @@ export default function BillBookForm() {
                     </div>
                   ))}
                 </div>
+
+                {/* Income File Upload */}
+                <FileUploadSection
+                  type="INCOME"
+                  onUploadSuccess={(info) => {
+                    console.log("Income file uploaded:", info);
+                    // You can store this URL in state or link to transaction later
+                  }}
+                />
 
                 <div className="pt-4 border-t flex justify-between items-center">
                   <span className="text-sm font-medium text-gray-700">Total Income</span>
@@ -492,7 +599,7 @@ export default function BillBookForm() {
                         className="w-24 sm:w-32 px-2 sm:px-3 py-2 text-sm border border-gray-300 rounded-md text-right focus:ring-2 focus:ring-red-500 focus:border-transparent"
                       />
                       <button
-                        onClick={() => openDeleteCategory(cat.id, "EXPENSE")}
+                        onClick={() => deleteCategory(cat.id, "EXPENSE")}
                         className="p-1 text-gray-400 hover:text-red-600 flex-shrink-0"
                       >
                         <Trash2 size={16} />
@@ -500,6 +607,14 @@ export default function BillBookForm() {
                     </div>
                   ))}
                 </div>
+
+                {/* Expense File Upload */}
+                <FileUploadSection
+                  type="EXPENSE"
+                  onUploadSuccess={(info) => {
+                    console.log("Expense file uploaded:", info);
+                  }}
+                />
 
                 <div className="pt-4 border-t flex justify-between items-center">
                   <span className="text-sm font-medium text-gray-700">Total Expense</span>
@@ -610,7 +725,6 @@ export default function BillBookForm() {
               {filteredDates.map((date) => {
                 const dayRecs = groupedRecords[date];
                 if (dayRecs.length === 0) return null;
-
                 const income = dayRecs
                   .filter((r) => r.transaction_type === "INCOME")
                   .reduce((s, r) => s + parseFloat(r.amount), 0);
@@ -618,7 +732,6 @@ export default function BillBookForm() {
                   .filter((r) => r.transaction_type === "EXPENSE")
                   .reduce((s, r) => s + parseFloat(r.amount), 0);
                 const bal = income - expense;
-
                 return (
                   <div key={date} className="bg-white rounded-lg shadow overflow-hidden">
                     <div className="px-4 sm:px-6 py-3 sm:py-4 bg-gray-50 border-b">
@@ -646,7 +759,6 @@ export default function BillBookForm() {
                         </div>
                       </div>
                     </div>
-
                     <div className="overflow-x-auto">
                       <table className="w-full">
                         <thead className="bg-gray-50 border-b">
@@ -708,7 +820,7 @@ export default function BillBookForm() {
                               </td>
                               <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-right text-sm">
                                 <button
-                                  onClick={() => openDeleteRecord(r.id)}
+                                  onClick={() => deleteRecord(r.id)}
                                   className="p-1 text-red-600 hover:text-red-800"
                                 >
                                   <Trash2 size={16} />
@@ -750,39 +862,6 @@ export default function BillBookForm() {
           )}
         </div>
       )}
-
-      {/* Confirm Modals */}
-      <ConfirmModal
-        isOpen={deleteCatOpen}
-        onClose={() => {
-          setDeleteCatOpen(false);
-          setDeleteCatTarget(null);
-        }}
-        onConfirm={confirmDeleteCategory}
-        title="Delete Category?"
-        message={`Are you sure you want to delete this ${
-          deleteCatTarget?.type === "INCOME" ? "income" : "expense"
-        } category? This cannot be undone.`}
-        confirmText="Delete"
-        cancelText="Cancel"
-        confirmVariant="danger"
-        icon={Trash2}
-      />
-
-      <ConfirmModal
-        isOpen={deleteRecOpen}
-        onClose={() => {
-          setDeleteRecOpen(false);
-          setDeleteRecTarget(null);
-        }}
-        onConfirm={confirmDeleteRecord}
-        title="Delete Transaction?"
-        message="Are you sure you want to delete this transaction? This cannot be undone."
-        confirmText="Delete"
-        cancelText="Cancel"
-        confirmVariant="danger"
-        icon={Trash2}
-      />
     </div>
   );
 }
