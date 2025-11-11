@@ -1,5 +1,5 @@
+// routes/RouteGuard.jsx
 'use client';
-
 import { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
@@ -10,49 +10,39 @@ export default function RouteGuard({ children }) {
   const { isAuthenticated, isSuperAdmin, user, isLoading } = useAuth();
 
   useEffect(() => {
-    // Don't redirect while loading
     if (isLoading) return;
 
     const publicRoutes = ['/', '/login', '/register', '/admin/login'];
-    const isPublicRoute = publicRoutes.includes(pathname);
+    const isPublic = publicRoutes.includes(pathname);
 
-    // If not authenticated and not on public route, redirect to login
-    if (!isAuthenticated && !isPublicRoute) {
-      router.push('/login');
+    // 1. Not logged in → login
+    if (!isAuthenticated && !isPublic) {
+      router.replace('/login');
       return;
     }
 
-    // If authenticated and on login page, redirect based on role
+    // 2. Logged in on a login page → go to dashboard
     if (isAuthenticated && (pathname === '/login' || pathname === '/admin/login')) {
       if (isSuperAdmin) {
-        router.push('/admin');
+        router.replace('/admin/dashboard');
       } else if (user?.is_owner) {
-        router.push('/owner');
+        router.replace('/owner/dashboard');
       } else if (user?.is_employee) {
-        router.push('/employee');
-      } else {
-        router.push('/login');
+        router.replace('/employee/dashboard');
       }
       return;
     }
 
-    // Route-specific protection
-    if (pathname.startsWith('/admin') || pathname.startsWith('/admin')) {
-      if (!isSuperAdmin) {
-        router.push('/admin/login');
-      }
-    } else if (pathname.startsWith('/owner')) {
-      if (!user?.is_owner) {
-        router.push('/login');
-      }
-    } else if (pathname.startsWith('/employee')) {
-      if (!user?.is_employee) {
-        router.push('/login');
-      }
+    // 3. Role mismatch (fallback, middleware already blocked most)
+    if (pathname.startsWith('/admin') && !isSuperAdmin) {
+      router.replace('/admin/login');
+    } else if (pathname.startsWith('/owner') && !user?.is_owner) {
+      router.replace('/login');
+    } else if (pathname.startsWith('/employee') && !user?.is_employee) {
+      router.replace('/login');
     }
   }, [isAuthenticated, isSuperAdmin, user, pathname, router, isLoading]);
 
-  // Show loading state while checking authentication
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -61,5 +51,5 @@ export default function RouteGuard({ children }) {
     );
   }
 
-  return children;
+  return <>{children}</>;
 }

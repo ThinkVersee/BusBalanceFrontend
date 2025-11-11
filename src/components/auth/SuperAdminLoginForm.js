@@ -2,11 +2,11 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Shield, Lock, User, AlertCircle } from 'lucide-react';
+import { Mail, Lock, AlertCircle, Bus } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
 const SuperAdminLoginForm = () => {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const { login, isLoading, error, clearError } = useAuth();
   const router = useRouter();
@@ -16,145 +16,113 @@ const SuperAdminLoginForm = () => {
     clearError();
 
     try {
-      const result = await login({ 
-        username, 
-        password, 
-        endpoint: '/superadmin/login/'  
+      const result = await login({
+        username: email,
+        password,
+        endpoint: '/superadmin/login/'
       });
 
       if (result.meta.requestStatus === 'fulfilled') {
         router.push('/admin/');
       }
-    } catch (err) {
-     
-    }
+    } catch (err) {}
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4">
-      {/* Animated background elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-indigo-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-pink-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000"></div>
-      </div>
-
-      <div className="relative bg-white/10 backdrop-blur-xl p-8 rounded-2xl shadow-2xl w-full max-w-md border border-white/20">
-        {/* Header with icon */}
-        <div className="flex flex-col items-center mb-8">
-          <div className="bg-gradient-to-br from-purple-500 to-indigo-600 p-4 rounded-full mb-4 shadow-lg">
-            <Shield className="w-10 h-10 text-white" />
-          </div>
-          <h2 className="text-3xl font-bold text-white text-center">Super Admin</h2>
-          <p className="text-purple-200 text-sm mt-2">Secure access portal</p>
-        </div>
-
-        {/* Error message */}
-        {error && (
-          <div className="mb-6 p-4 bg-red-500/20 border border-red-500/50 rounded-lg flex items-start space-x-3">
-            <AlertCircle className="w-5 h-5 text-red-300 flex-shrink-0 mt-0.5" />
-            <p className="text-red-200 text-sm">{error.detail || 'Invalid credentials. Please try again.'}</p>
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Username field */}
-          <div>
-            <label htmlFor="username" className="block text-sm font-medium text-purple-200 mb-2">
-              Username
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <User className="h-5 w-5 text-purple-300" />
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+      <div className="w-full max-w-md">
+        {/* Updated Logo with Bus Icon */}
+        <div className="text-center mb-8">
+          <div className="flex justify-center mb-4">
+            <div className="bg-gradient-to-r from-blue-500 to-cyan-400 p-2 rounded-xl shadow-md">
+              <div className="bg-white p-2 rounded-lg">
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-cyan-300 rounded-lg flex items-center justify-center">
+                  <Bus className="w-7 h-7 text-white" />
+                </div>
               </div>
-              <input
-                type="text"
-                id="username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="block w-full pl-10 pr-3 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-purple-300 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition duration-200"
-                placeholder="Enter username"
-                required
-              />
             </div>
           </div>
+          <h1 className="text-2xl font-bold text-gray-900">BUS BALANCE</h1>
+        </div>
 
-          {/* Password field */}
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-purple-200 mb-2">
-              Password
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Lock className="h-5 w-5 text-purple-300" />
-              </div>
-              <input
-                type="password"
-                id="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="block w-full pl-10 pr-3 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-purple-300 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition duration-200"
-                placeholder="Enter password"
-                required
-              />
+        {/* Rest of the form remains unchanged */}
+        <div className="bg-white rounded-2xl shadow-lg p-8">
+          <h2 className="text-xl font-semibold text-gray-900 mb-6">Login</h2>
+
+          {error && (
+            <div className="mb-5 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-sm text-red-700">
+              <AlertCircle className="w-4 h-4 flex-shrink-0" />
+              <span>{error.detail || 'Invalid credentials. Please try again.'}</span>
             </div>
-          </div>
+          )}
 
-          {/* Submit button */}
-          <button
-            type="submit"
-            disabled={isLoading}
-            className={`w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-3 px-4 rounded-lg font-semibold hover:from-purple-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-slate-900 transition duration-200 shadow-lg ${
-              isLoading ? 'opacity-50 cursor-not-allowed' : ''
-            }`}
-          >
-            {isLoading ? (
-              <span className="flex items-center justify-center">
-                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Authenticating...
-              </span>
-            ) : (
-              'Access Dashboard'
-            )}
-          </button>
-        </form>
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Mail className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  type="email"
+                  id="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                  placeholder="Enter Email..."
+                  required
+                />
+              </div>
+            </div>
 
-        {/* Footer */}
-        <div className="mt-6 text-center">
-          <p className="text-sm text-purple-200">
-            Restricted access only
-          </p>
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Lock className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  type="password"
+                  id="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                  placeholder="Enter password..."
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="text-right">
+              <a href="#" className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+                Forgot password?
+              </a>
+            </div>
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              className={`w-full py-3 px-4 rounded-lg font-semibold text-white transition ${
+                isLoading
+                  ? 'bg-blue-400 cursor-not-allowed'
+                  : 'bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2'
+              }`}
+            >
+              {isLoading ? (
+                <span className="flex items-center justify-center">
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Authenticating...
+                </span>
+              ) : (
+                'Login'
+              )}
+            </button>
+          </form>
         </div>
       </div>
-
-      <style jsx>{`
-        @keyframes blob {
-          0% {
-            transform: translate(0px, 0px) scale(1);
-          }
-          33% {
-            transform: translate(30px, -50px) scale(1.1);
-          }
-          66% {
-            transform: translate(-20px, 20px) scale(0.9);
-          }
-          100% {
-            transform: translate(0px, 0px) scale(1);
-          }
-        }
-        .animate-blob {
-          animation: blob 7s infinite;
-        }
-        .animation-delay-2000 {
-          animation-delay: 2s;
-        }
-        .animation-delay-4000 {
-          animation-delay: 4s;
-        }
-      `}</style>
     </div>
   );
 };

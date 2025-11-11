@@ -143,12 +143,7 @@ export default function Navbar({ isSuperAdmin = false, onMenuToggle }) {
                   </div>
                 </div>
 
-                <button className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50">
-                  Profile
-                </button>
-                <button className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50">
-                  Settings
-                </button>
+              
 
                 <hr className="my-1" />
 
