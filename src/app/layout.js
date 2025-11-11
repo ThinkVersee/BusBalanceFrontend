@@ -12,9 +12,9 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body>
         <ReduxProvider>
-          {/* <RouteGuard> */}
+          <RouteGuard>
             {children}
-          {/* </RouteGuard> */}
+          </RouteGuard>
         </ReduxProvider>
       </body>
     </html>
