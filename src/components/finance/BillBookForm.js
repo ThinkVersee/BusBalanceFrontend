@@ -1,4 +1,5 @@
 "use client";
+
 import { useState, useEffect } from "react";
 import {
   Plus,
@@ -13,87 +14,9 @@ import {
   TrendingDown,
   DollarSign,
   X,
-  Upload,
-  CheckCircle,
-  AlertCircle,
-  Image,
-  File,
-  ExternalLink,
 } from "lucide-react";
 import axiosInstance from "@/config/axiosInstance";
-
-// === Reusable File Input ===
-function FileInputSection({ type, file, setFile, error }) {
-  return (
-    <div className="mt-4 p-4 border rounded-lg bg-gray-50">
-      <div className="flex items-center gap-2 mb-2">
-        <Upload size={18} className="text-blue-600" />
-        <h4 className="font-medium text-sm">
-          {type === "INCOME" ? "Income" : "Expense"} Attachment
-        </h4>
-      </div>
-      <input
-        type="file"
-        accept="image/*,application/pdf"
-        onChange={(e) => setFile(e.target.files?.[0] || null)}
-        className="block w-full text-sm file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-sm file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-      />
-      {file && (
-        <div className="mt-2 flex items-center gap-1 text-green-600 text-xs">
-          <CheckCircle size={14} />
-          {file.name} selected
-        </div>
-      )}
-      {error && (
-        <div className="mt-2 flex items-center gap-1 text-red-600 text-xs">
-          <AlertCircle size={14} />
-          {error}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// === Attachment Display Component ===
-function AttachmentItem({ attachment }) {
-  const isImage = attachment.file_name.match(/\.(jpg|jpeg|png|gif|webp)$/i);
-  const isPDF = attachment.file_name.match(/\.pdf$/i);
-
-  return (
-    <div className="flex items-center gap-2 p-2 bg-white rounded border">
-      {isImage ? (
-        <a href={attachment.file_url} target="_blank" rel="noopener noreferrer" className="block">
-          <img
-            src={attachment.file_url}
-            alt={attachment.file_name}
-            className="w-16 h-16 object-cover rounded border"
-          />
-        </a>
-      ) : isPDF ? (
-        <a
-          href={attachment.file_url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-2 text-blue-600 hover:underline"
-        >
-          <File size={16} />
-          <span className="text-xs">{attachment.file_name}</span>
-          <ExternalLink size={14} />
-        </a>
-      ) : (
-        <a
-          href={attachment.file_url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-2 text-gray-600 hover:underline"
-        >
-          <File size={16} />
-          <span className="text-xs">{attachment.file_name}</span>
-        </a>
-      )}
-    </div>
-  );
-}
+import { ConfirmModal } from "@/components/common/ConfirmModal";
 
 export default function BillBookForm() {
   const [activeTab, setActiveTab] = useState("new");
@@ -101,23 +24,31 @@ export default function BillBookForm() {
     date: new Date().toISOString().split("T")[0],
     bus: "",
   });
+
   const [ownedBuses, setOwnedBuses] = useState([]);
   const [incomeCategories, setIncomeCategories] = useState([]);
   const [expenseCategories, setExpenseCategories] = useState([]);
+
   const [showAddIncome, setShowAddIncome] = useState(false);
   const [showAddExpense, setShowAddExpense] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
+
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+
   const [records, setRecords] = useState([]);
   const [loadingRecords, setLoadingRecords] = useState(false);
   const [filterDate, setFilterDate] = useState("");
   const [filterBus, setFilterBus] = useState("");
 
-  const [incomeFile, setIncomeFile] = useState(null);
-  const [expenseFile, setExpenseFile] = useState(null);
+  // Delete modal states
+  const [deleteCatOpen, setDeleteCatOpen] = useState(false);
+  const [deleteCatTarget, setDeleteCatTarget] = useState(null); // { id, type }
+  const [deleteRecOpen, setDeleteRecOpen] = useState(false);
+  const [deleteRecTarget, setDeleteRecTarget] = useState(null); // id
 
+  // Fetch buses & categories
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -126,13 +57,27 @@ export default function BillBookForm() {
           axiosInstance.get("/finance/buses/"),
           axiosInstance.get("/finance/categories/"),
         ]);
+
         setOwnedBuses(busRes.data);
+
         const income = catRes.data
           .filter((c) => c.transaction_type === "INCOME")
-          .map((c) => ({ id: c.id, name: c.name, amount: "", transaction_type: "INCOME" }));
+          .map((c) => ({
+            id: c.id,
+            name: c.name,
+            amount: "",
+            transaction_type: "INCOME",
+          }));
+
         const expense = catRes.data
           .filter((c) => c.transaction_type === "EXPENSE")
-          .map((c) => ({ id: c.id, name: c.name, amount: "", transaction_type: "EXPENSE" }));
+          .map((c) => ({
+            id: c.id,
+            name: c.name,
+            amount: "",
+            transaction_type: "EXPENSE",
+          }));
+
         setIncomeCategories(income);
         setExpenseCategories(expense);
       } catch (err) {
@@ -141,9 +86,11 @@ export default function BillBookForm() {
         setLoading(false);
       }
     };
+
     fetchData();
   }, []);
 
+  // Fetch records when on records tab or filters change
   useEffect(() => {
     if (activeTab === "records") fetchRecords();
   }, [activeTab, filterDate, filterBus]);
@@ -154,6 +101,7 @@ export default function BillBookForm() {
       const params = {};
       if (filterDate) params.date = filterDate;
       if (filterBus) params.bus = filterBus;
+
       const res = await axiosInstance.get("/finance/transactions/report/", { params });
       setRecords(res.data.transactions || []);
     } catch (err) {
@@ -164,6 +112,7 @@ export default function BillBookForm() {
     }
   };
 
+  // Update amount in category
   const updateIncomeAmount = (id, value) => {
     setIncomeCategories((prev) =>
       prev.map((cat) => (cat.id === id ? { ...cat, amount: value } : cat))
@@ -176,6 +125,7 @@ export default function BillBookForm() {
     );
   };
 
+  // Add new category
   const addNewCategory = async (type) => {
     if (!newCategoryName.trim()) return;
     try {
@@ -202,40 +152,60 @@ export default function BillBookForm() {
     }
   };
 
-  const deleteCategory = async (id, type) => {
-    if (!confirm("Delete this category permanently?")) return;
+  // Open delete category modal
+  const openDeleteCategory = (id, type) => {
+    setDeleteCatTarget({ id, type });
+    setDeleteCatOpen(true);
+  };
+
+  // Confirm delete category
+  const confirmDeleteCategory = async () => {
+    if (!deleteCatTarget) return;
     try {
-      await axiosInstance.delete(`/finance/categories/${id}`);
-      if (type === "INCOME") {
-        setIncomeCategories((prev) => prev.filter((c) => c.id !== id));
+      await axiosInstance.delete(`/finance/categories/${deleteCatTarget.id}/`);
+      if (deleteCatTarget.type === "INCOME") {
+        setIncomeCategories((prev) => prev.filter((c) => c.id !== deleteCatTarget.id));
       } else {
-        setExpenseCategories((prev) => prev.filter((c) => c.id !== id));
+        setExpenseCategories((prev) => prev.filter((c) => c.id !== deleteCatTarget.id));
       }
     } catch (err) {
       alert(err.response?.data?.detail || "Failed to delete category");
+    } finally {
+      setDeleteCatOpen(false);
+      setDeleteCatTarget(null);
     }
   };
 
-  const deleteRecord = async (id) => {
-    if (!confirm("Delete this transaction?")) return;
+  // Open delete transaction modal
+  const openDeleteRecord = (id) => {
+    setDeleteRecTarget(id);
+    setDeleteRecOpen(true);
+  };
+
+  // Confirm delete transaction
+  const confirmDeleteRecord = async () => {
+    if (!deleteRecTarget) return;
     try {
-      await axiosInstance.delete(`/finance/transactions/${id}`);
-      setRecords((prev) => prev.filter((r) => r.id !== id));
+      await axiosInstance.delete(`/finance/transactions/${deleteRecTarget}/`);
+      setRecords((prev) => prev.filter((r) => r.id !== deleteRecTarget));
     } catch (err) {
       alert(err.response?.data?.detail || "Failed to delete record");
+    } finally {
+      setDeleteRecOpen(false);
+      setDeleteRecTarget(null);
     }
   };
 
+  // Calculate totals
   const calculateTotal = (cats) =>
     cats.reduce((sum, c) => sum + (parseFloat(c.amount) || 0), 0);
   const totalIncome = calculateTotal(incomeCategories);
   const totalExpense = calculateTotal(expenseCategories);
   const balance = totalIncome - totalExpense;
 
+  // Save all transactions
   const handleSave = async () => {
     const transactions = [];
-    let hasIncome = false, hasExpense = false;
-
     incomeCategories.forEach((cat) => {
       if (cat.amount && parseFloat(cat.amount) > 0) {
         transactions.push({
@@ -243,12 +213,9 @@ export default function BillBookForm() {
           amount: parseFloat(cat.amount),
           date: formData.date,
           bus_id: formData.bus ? parseInt(formData.bus) : null,
-          transaction_type: "INCOME",
         });
-        hasIncome = true;
       }
     });
-
     expenseCategories.forEach((cat) => {
       if (cat.amount && parseFloat(cat.amount) > 0) {
         transactions.push({
@@ -256,34 +223,18 @@ export default function BillBookForm() {
           amount: parseFloat(cat.amount),
           date: formData.date,
           bus_id: formData.bus ? parseInt(formData.bus) : null,
-          transaction_type: "EXPENSE",
         });
-        hasExpense = true;
       }
     });
 
     if (transactions.length === 0) return alert("Please enter at least one amount.");
 
-    const formDataToSend = new FormData();
-    formDataToSend.append("transactions", JSON.stringify(transactions));
-
-    if (hasIncome && incomeFile) {
-      formDataToSend.append("income_file_0", incomeFile);
-    }
-    if (hasExpense && expenseFile) {
-      formDataToSend.append("expense_file_0", expenseFile);
-    }
-
     setSaving(true);
     try {
-      await axiosInstance.post("/finance/transactions/bulk/", formDataToSend, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      await axiosInstance.post("/finance/transactions/bulk/", transactions);
       alert("Saved successfully!");
       setIncomeCategories((prev) => prev.map((c) => ({ ...c, amount: "" })));
       setExpenseCategories((prev) => prev.map((c) => ({ ...c, amount: "" })));
-      setIncomeFile(null);
-      setExpenseFile(null);
     } catch (err) {
       const msg = err.response?.data?.error || "Failed to save.";
       setError(msg);
@@ -293,6 +244,7 @@ export default function BillBookForm() {
     }
   };
 
+  // Group records by date
   const groupedRecords = Array.isArray(records)
     ? records.reduce((acc, r) => {
         if (!acc[r.date]) acc[r.date] = [];
@@ -344,8 +296,7 @@ export default function BillBookForm() {
                   : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
               }`}
             >
-              <FileText size={18} />
-              <span>New Entry</span>
+              <FileText size={18} /> <span>New Entry</span>
             </button>
             <button
               onClick={() => setActiveTab("records")}
@@ -355,8 +306,7 @@ export default function BillBookForm() {
                   : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
               }`}
             >
-              <Eye size={18} />
-              <span>Records</span>
+              <Eye size={18} /> <span>Records</span>
             </button>
           </div>
         </div>
@@ -405,12 +355,12 @@ export default function BillBookForm() {
               <div className="p-4 sm:p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
-                    <TrendingUp className="text-green-600" size={20} />
+                    <TrendingUp className="text-green-600 flex-shrink-0" size={20} />
                     <h2 className="text-base sm:text-lg font-semibold text-gray-900">Income</h2>
                   </div>
                   <button
                     onClick={() => setShowAddIncome(true)}
-                    className="flex items-center gap-1 px-2 sm:px-3 py-1.5 text-xs sm:text-sm bg-green-50 text-green-700 rounded-md hover:bg-green-100"
+                    className="flex items-center gap-1 px-2 sm:px-3 py-1.5 text-xs sm:text-sm bg-green-50 text-green-700 rounded-md hover:bg-green-100 transition-colors whitespace-nowrap"
                   >
                     <Plus size={16} /> <span className="hidden sm:inline">Add</span>
                   </button>
@@ -460,19 +410,17 @@ export default function BillBookForm() {
                         value={cat.amount}
                         onChange={(e) => updateIncomeAmount(cat.id, e.target.value)}
                         placeholder="0.00"
-                        className="w-24 sm:w-32 px-2 sm:px-3 py-2 text-sm border border-gray-300 rounded-md text-right focus:ring-2 focus:ring-green-500"
+                        className="w-24 sm:w-32 px-2 sm:px-3 py-2 text-sm border border-gray-300 rounded-md text-right focus:ring-2 focus:ring-green-500 focus:border-transparent"
                       />
                       <button
-                        onClick={() => deleteCategory(cat.id, "INCOME")}
-                        className="p-1 text-gray-400 hover:text-red-600"
+                        onClick={() => openDeleteCategory(cat.id, "INCOME")}
+                        className="p-1 text-gray-400 hover:text-red-600 flex-shrink-0"
                       >
                         <Trash2 size={16} />
                       </button>
                     </div>
                   ))}
                 </div>
-
-                <FileInputSection type="INCOME" file={incomeFile} setFile={setIncomeFile} />
 
                 <div className="pt-4 border-t flex justify-between items-center">
                   <span className="text-sm font-medium text-gray-700">Total Income</span>
@@ -486,12 +434,12 @@ export default function BillBookForm() {
               <div className="p-4 sm:p-6 border-t lg:border-t-0">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
-                    <TrendingDown className="text-red-600" size={20} />
+                    <TrendingDown className="text-red-600 flex-shrink-0" size={20} />
                     <h2 className="text-base sm:text-lg font-semibold text-gray-900">Expenses</h2>
                   </div>
                   <button
                     onClick={() => setShowAddExpense(true)}
-                    className="flex items-center gap-1 px-2 sm:px-3 py-1.5 text-xs sm:text-sm bg-red-50 text-red-700 rounded-md hover:bg-red-100"
+                    className="flex items-center gap-1 px-2 sm:px-3 py-1.5 text-xs sm:text-sm bg-red-50 text-red-700 rounded-md hover:bg-red-100 transition-colors whitespace-nowrap"
                   >
                     <Plus size={16} /> <span className="hidden sm:inline">Add</span>
                   </button>
@@ -541,19 +489,17 @@ export default function BillBookForm() {
                         value={cat.amount}
                         onChange={(e) => updateExpenseAmount(cat.id, e.target.value)}
                         placeholder="0.00"
-                        className="w-24 sm:w-32 px-2 sm:px-3 py-2 text-sm border border-gray-300 rounded-md text-right focus:ring-2 focus:ring-red-500"
+                        className="w-24 sm:w-32 px-2 sm:px-3 py-2 text-sm border border-gray-300 rounded-md text-right focus:ring-2 focus:ring-red-500 focus:border-transparent"
                       />
                       <button
-                        onClick={() => deleteCategory(cat.id, "EXPENSE")}
-                        className="p-1 text-gray-400 hover:text-red-600"
+                        onClick={() => openDeleteCategory(cat.id, "EXPENSE")}
+                        className="p-1 text-gray-400 hover:text-red-600 flex-shrink-0"
                       >
                         <Trash2 size={16} />
                       </button>
                     </div>
                   ))}
                 </div>
-
-                <FileInputSection type="EXPENSE" file={expenseFile} setFile={setExpenseFile} />
 
                 <div className="pt-4 border-t flex justify-between items-center">
                   <span className="text-sm font-medium text-gray-700">Total Expense</span>
@@ -580,9 +526,13 @@ export default function BillBookForm() {
                 <button
                   onClick={handleSave}
                   disabled={saving}
-                  className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+                  className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
                 >
-                  {saving ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
+                  {saving ? (
+                    <Loader2 className="animate-spin" size={18} />
+                  ) : (
+                    <Save size={18} />
+                  )}
                   {saving ? "Saving..." : "Save Entry"}
                 </button>
               </div>
@@ -600,7 +550,7 @@ export default function BillBookForm() {
           {/* Filters */}
           <div className="bg-white rounded-lg shadow p-4 sm:p-6 mb-4 sm:mb-6">
             <div className="flex items-center gap-2 mb-4">
-              <Filter className="text-gray-600" size={20} />
+              <Filter className="text-gray-600 flex-shrink-0" size={20} />
               <h2 className="text-base sm:text-lg font-semibold text-gray-900">Filters</h2>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -610,7 +560,7 @@ export default function BillBookForm() {
                   type="date"
                   value={filterDate}
                   onChange={(e) => setFilterDate(e.target.value)}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
               <div>
@@ -618,7 +568,7 @@ export default function BillBookForm() {
                 <select
                   value={filterBus}
                   onChange={(e) => setFilterBus(e.target.value)}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="">All Buses</option>
                   {ownedBuses.map((b) => (
@@ -635,7 +585,7 @@ export default function BillBookForm() {
                       setFilterDate("");
                       setFilterBus("");
                     }}
-                    className="w-full px-4 py-2 text-sm bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
+                    className="w-full px-4 py-2 text-sm bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
                   >
                     Clear Filters
                   </button>
@@ -656,11 +606,17 @@ export default function BillBookForm() {
               <p className="text-sm text-gray-500 mt-1">Try adjusting your filters</p>
             </div>
           ) : (
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               {filteredDates.map((date) => {
                 const dayRecs = groupedRecords[date];
-                const income = dayRecs.filter(r => r.transaction_type === "INCOME").reduce((s, r) => s + parseFloat(r.amount), 0);
-                const expense = dayRecs.filter(r => r.transaction_type === "EXPENSE").reduce((s, r) => s + parseFloat(r.amount), 0);
+                if (dayRecs.length === 0) return null;
+
+                const income = dayRecs
+                  .filter((r) => r.transaction_type === "INCOME")
+                  .reduce((s, r) => s + parseFloat(r.amount), 0);
+                const expense = dayRecs
+                  .filter((r) => r.transaction_type === "EXPENSE")
+                  .reduce((s, r) => s + parseFloat(r.amount), 0);
                 const bal = income - expense;
 
                 return (
@@ -668,7 +624,7 @@ export default function BillBookForm() {
                     <div className="px-4 sm:px-6 py-3 sm:py-4 bg-gray-50 border-b">
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                         <div className="flex items-center gap-2 sm:gap-3">
-                          <Calendar className="text-gray-600" size={18} />
+                          <Calendar className="text-gray-600 flex-shrink-0" size={18} />
                           <h3 className="text-sm sm:text-base font-semibold text-gray-900">
                             {new Date(date).toLocaleDateString("en-IN", {
                               weekday: "short",
@@ -680,7 +636,11 @@ export default function BillBookForm() {
                         </div>
                         <div className="text-left sm:text-right">
                           <div className="text-xs text-gray-500">Net Balance</div>
-                          <div className={`text-lg sm:text-xl font-bold ${bal >= 0 ? "text-green-600" : "text-red-600"}`}>
+                          <div
+                            className={`text-lg sm:text-xl font-bold ${
+                              bal >= 0 ? "text-green-600" : "text-red-600"
+                            }`}
+                          >
                             ₹ {bal.toFixed(2)}
                           </div>
                         </div>
@@ -691,20 +651,41 @@ export default function BillBookForm() {
                       <table className="w-full">
                         <thead className="bg-gray-50 border-b">
                           <tr>
-                            <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                            <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                            <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Bus</th>
-                            <th className="px-3 sm:px-6 py-2 sm:py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                            <th className="px-3 sm:px-6 py-2 sm:py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Attachments</th>
-                            <th className="px-3 sm:px-6 py-2 sm:py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                            <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Type
+                            </th>
+                            <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Category
+                            </th>
+                            <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">
+                              Bus
+                            </th>
+                            <th className="px-3 sm:px-6 py-2 sm:py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Amount
+                            </th>
+                            <th className="px-3 sm:px-6 py-2 sm:py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Action
+                            </th>
                           </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
                           {dayRecs.map((r) => (
                             <tr key={r.id} className="hover:bg-gray-50">
                               <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
-                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${r.transaction_type === "INCOME" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
-                                  {r.transaction_type === "INCOME" ? "IN" : "EXP"}
+                                <span
+                                  className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                                    r.transaction_type === "INCOME"
+                                      ? "bg-green-100 text-green-800"
+                                      : "bg-red-100 text-red-800"
+                                  }`}
+                                >
+                                  {r.transaction_type === "INCOME" ? (
+                                    <TrendingUp size={12} className="mr-1 hidden sm:inline" />
+                                  ) : (
+                                    <TrendingDown size={12} className="mr-1 hidden sm:inline" />
+                                  )}
+                                  <span className="hidden sm:inline">{r.transaction_type}</span>
+                                  <span className="sm:hidden">{r.transaction_type === "INCOME" ? "IN" : "EXP"}</span>
                                 </span>
                               </td>
                               <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-medium text-gray-900">
@@ -715,23 +696,21 @@ export default function BillBookForm() {
                                 {r.bus_name || "-"}
                               </td>
                               <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-right font-semibold">
-                                <span className={r.transaction_type === "INCOME" ? "text-green-600" : "text-red-600"}>
+                                <span
+                                  className={
+                                    r.transaction_type === "INCOME"
+                                      ? "text-green-600"
+                                      : "text-red-600"
+                                  }
+                                >
                                   ₹ {parseFloat(r.amount).toFixed(2)}
                                 </span>
                               </td>
-                              <td className="px-3 sm:px-6 py-3 sm:py-4 text-center">
-                                {r.attachments && r.attachments.length > 0 ? (
-                                  <div className="flex flex-wrap gap-1 justify-center">
-                                    {r.attachments.map((att) => (
-                                      <AttachmentItem key={att.id} attachment={att} />
-                                    ))}
-                                  </div>
-                                ) : (
-                                  <span className="text-gray-400 text-xs">—</span>
-                                )}
-                              </td>
                               <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-right text-sm">
-                                <button onClick={() => deleteRecord(r.id)} className="p-1 text-red-600 hover:text-red-800">
+                                <button
+                                  onClick={() => openDeleteRecord(r.id)}
+                                  className="p-1 text-red-600 hover:text-red-800"
+                                >
                                   <Trash2 size={16} />
                                 </button>
                               </td>
@@ -740,13 +719,23 @@ export default function BillBookForm() {
                         </tbody>
                         <tfoot className="bg-gray-50 border-t-2">
                           <tr>
-                            <td colSpan="4" className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-semibold text-gray-700">
+                            <td colSpan="3" className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-semibold text-gray-700">
                               Daily Summary
                             </td>
                             <td className="px-3 sm:px-6 py-3 sm:py-4 text-right">
-                              <div className="space-y-1">
-                                <div><div className="text-xs text-gray-500">Income</div><div className="text-xs sm:text-sm font-bold text-green-600">₹ {income.toFixed(2)}</div></div>
-                                <div><div className="text-xs text-gray-500">Expense</div><div className="text-xs sm:text-sm font-bold text-red-600">₹ {expense.toFixed(2)}</div></div>
+                              <div className="space-y-2">
+                                <div>
+                                  <div className="text-xs text-gray-500 mb-0.5">Income</div>
+                                  <div className="text-xs sm:text-sm font-bold text-green-600">
+                                    ₹ {income.toFixed(2)}
+                                  </div>
+                                </div>
+                                <div>
+                                  <div className="text-xs text-gray-500 mb-0.5">Expense</div>
+                                  <div className="text-xs sm:text-sm font-bold text-red-600">
+                                    ₹ {expense.toFixed(2)}
+                                  </div>
+                                </div>
                               </div>
                             </td>
                             <td></td>
@@ -761,6 +750,39 @@ export default function BillBookForm() {
           )}
         </div>
       )}
+
+      {/* Confirm Modals */}
+      <ConfirmModal
+        isOpen={deleteCatOpen}
+        onClose={() => {
+          setDeleteCatOpen(false);
+          setDeleteCatTarget(null);
+        }}
+        onConfirm={confirmDeleteCategory}
+        title="Delete Category?"
+        message={`Are you sure you want to delete this ${
+          deleteCatTarget?.type === "INCOME" ? "income" : "expense"
+        } category? This cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        confirmVariant="danger"
+        icon={Trash2}
+      />
+
+      <ConfirmModal
+        isOpen={deleteRecOpen}
+        onClose={() => {
+          setDeleteRecOpen(false);
+          setDeleteRecTarget(null);
+        }}
+        onConfirm={confirmDeleteRecord}
+        title="Delete Transaction?"
+        message="Are you sure you want to delete this transaction? This cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        confirmVariant="danger"
+        icon={Trash2}
+      />
     </div>
   );
 }
