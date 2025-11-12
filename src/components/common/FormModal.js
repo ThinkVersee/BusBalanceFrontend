@@ -29,8 +29,9 @@ export const FormModal = ({
 
   if (!isOpen) return null;
 
+  // Fixed: Added `text-gray-900` to ensure dark text on all OS (especially macOS)
   const baseInputClass =
-    'w-full px-3 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed';
+    'w-full px-3 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed text-gray-900';
 
   const toggleDropdown = (name) => {
     setOpenDropdown((prev) => ({ ...prev, [name]: !prev[name] }));

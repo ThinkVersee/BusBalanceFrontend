@@ -21,7 +21,7 @@ import { ActionBar } from '@/components/common/ActionBar';
 import { GenericTable } from '@/components/common/GenericTable';
 import { FormModal } from '@/components/common/FormModal';
 import { ConfirmModal } from '@/components/common/ConfirmModal';
- 
+
 
 const ownerSchema = z.object({
   name: z.string().min(2, 'Name is required'),
@@ -278,11 +278,10 @@ export default function BusOwnerManagement() {
         header: 'Status',
         cell: row => (
           <span
-            className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${
-              row.is_active
+            className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${row.is_active
                 ? 'bg-green-100 text-green-800'
                 : 'bg-red-100 text-red-800'
-            }`}
+              }`}
           >
             {row.is_active ? <CheckCircle size={14} /> : <Ban size={14} />}
             {row.is_active ? 'Active' : 'Blocked'}
@@ -329,11 +328,10 @@ export default function BusOwnerManagement() {
             {/* Block / Unblock */}
             <button
               onClick={() => openBlockModal(row)}
-              className={`${
-                row.is_active
+              className={`${row.is_active
                   ? 'text-orange-600 hover:text-orange-800'
                   : 'text-green-600 hover:text-green-800'
-              } transition-colors`}
+                } transition-colors`}
               title={row.is_active ? 'Block this owner' : 'Unblock this owner'}
             >
               <Ban
@@ -382,30 +380,30 @@ export default function BusOwnerManagement() {
       <div className="max-w-7xl mx-auto">
 
         {/* HEADER */}
-<div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 mb-6 sm:mb-8">
-  <div className="flex items-center gap-3 w-full sm:w-auto sm:flex-1 sm:min-w-0">
-    {/* Icon – scales & stays square */}
-    <div className="flex-shrink-0 w-10 h-10 sm:w-11 sm:h-11 lg:w-12 lg:h-12 
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 mb-6 sm:mb-8">
+          <div className="flex items-center gap-3 w-full sm:w-auto sm:flex-1 sm:min-w-0">
+            {/* Icon – scales & stays square */}
+            <div className="flex-shrink-0 w-10 h-10 sm:w-11 sm:h-11 lg:w-12 lg:h-12 
                     bg-gradient-to-br from-blue-600 to-blue-700 
                     rounded-lg sm:rounded-xl 
                     flex items-center justify-center shadow-md">
-      <Building2 className="text-white w-5 h-5 sm:w-5.5 lg:w-6" />
-    </div>
+              <Building2 className="text-white w-5 h-5 sm:w-5.5 lg:w-6" />
+            </div>
 
-    {/* Text – safe truncation & responsive font */}
-    <div className="flex-1 min-w-0">
-      <h1 className="text-lg sm:text-xl lg:text-2xl xl:text-3xl 
+            {/* Text – safe truncation & responsive font */}
+            <div className="flex-1 min-w-0">
+              <h1 className="text-lg sm:text-xl lg:text-2xl xl:text-3xl 
                      font-bold text-gray-900 
                      truncate">
-        Bus Owner Management
-      </h1>
-      <p className="text-xs sm:text-sm text-gray-600 mt-0.5 
+                Bus Owner Management
+              </h1>
+              <p className="text-xs sm:text-sm text-gray-600 mt-0.5 
                     line-clamp-2">
-        Manage bus owners and their companies
-      </p>
-    </div>
-  </div>
-</div>
+                Manage bus owners and their companies
+              </p>
+            </div>
+          </div>
+        </div>
         {/* ERROR */}
         {apiError && (
           <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-lg mb-4 text-sm">
@@ -456,7 +454,7 @@ export default function BusOwnerManagement() {
         />
 
         {/* DELETE MODAL */}
-<ConfirmModal
+        <ConfirmModal
           isOpen={isDeleteModalOpen}
           onClose={() => {
             setIsDeleteModalOpen(false);

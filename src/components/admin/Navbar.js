@@ -91,8 +91,8 @@ export default function Navbar({ onMenuToggle }) {
                 <div className="text-xs text-gray-500 truncate">{user.email || 'admin@example.com'}</div>
               </div>
 
-              <button className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50">Profile</button>
-              <button className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50">Settings</button>
+              {/* <button className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50">Profile</button> */}
+              {/* <button className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50">Settings</button> */}
               <hr className="my-1" />
               <button
                 onClick={handleLogout}
