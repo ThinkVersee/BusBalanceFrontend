@@ -7,7 +7,7 @@ export default function SolutionSection() {
           Your Simple Solution in One App
         </h2>
         <p className="text-xl text-gray-600 mb-12 max-w-3xl mx-auto">
-          BusBalance automatically tracks all your income and expenses, calculates profits instantly, and shows you exactly how your business is performing.
+          BusBook automatically tracks all your income and expenses, calculates profits instantly, and shows you exactly how your business is performing.
         </p>
         <div className="bg-white rounded-2xl shadow-xl p-8 max-w-4xl mx-auto">
           <div className="grid md:grid-cols-3 gap-6 text-center">

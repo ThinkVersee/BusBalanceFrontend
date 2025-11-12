@@ -9,7 +9,7 @@ export default function Footer() {
           <div>
             <div className="flex items-center space-x-2 mb-4">
               <Bus className="w-8 h-8 text-blue-400" />
-              <span className="text-xl font-bold">BusManager</span>
+              <span className="text-xl font-bold">BusBook</span>
             </div>
             <p className="text-gray-400">Making bus business management simple and efficient.</p>
           </div>
@@ -38,7 +38,7 @@ export default function Footer() {
           </div>
         </div>
         <div className="border-t border-gray-800 pt-8 text-center text-gray-400">
-          <p>&copy; 2025 BusManager. All rights reserved.</p>
+          <p>&copy; 2025 BusBook. All rights reserved.</p>
         </div>
       </div>
     </footer>
