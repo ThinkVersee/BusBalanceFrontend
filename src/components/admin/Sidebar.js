@@ -38,7 +38,7 @@ const Sidebar = ({ isOpen, onClose }) => {
               </svg>
             </div>
             <div>
-              <h2 className="text-xl font-bold text-gray-900">BusTrack</h2>
+              <h2 className="text-xl font-bold text-gray-900">BusBook</h2>
               <p className="text-xs text-gray-500">Admin</p>
             </div>
           </div>

@@ -1,5 +1,6 @@
 "use client";
-import { useState, useEffect } from "react";
+
+import React, { useState, useEffect } from "react";
 import {
   Plus,
   Save,
@@ -16,34 +17,64 @@ import {
   Upload,
   CheckCircle,
   AlertCircle,
-  Image,
-  File,
   ExternalLink,
+  FolderOpen,
 } from "lucide-react";
 import axiosInstance from "@/config/axiosInstance";
 
-// === Reusable File Input ===
-function FileInputSection({ type, file, setFile, error }) {
+/* -------------------------------------------------
+   File Input Section
+   ------------------------------------------------- */
+function FileInputSection({ type, files, setFiles, error }) {
+  const handleFileChange = (e) => {
+    const newFiles = Array.from(e.target.files || []);
+    setFiles((prev) => [...prev, ...newFiles]);
+  };
+
+  const removeFile = (index) => {
+    setFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
   return (
     <div className="mt-4 p-4 border rounded-lg bg-gray-50">
       <div className="flex items-center gap-2 mb-2">
         <Upload size={18} className="text-blue-600" />
         <h4 className="font-medium text-sm">
-          {type === "INCOME" ? "Income" : "Expense"} Attachment
+          {type === "INCOME" ? "Income Attachments" : "Expense Attachments"}
         </h4>
       </div>
+
       <input
         type="file"
+        multiple
         accept="image/*,application/pdf"
-        onChange={(e) => setFile(e.target.files?.[0] || null)}
-        className="block w-full text-sm file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-sm file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+        onChange={handleFileChange}
+        className="block w-full text-sm text-gray-900 file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-sm file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 bg-white"
       />
-      {file && (
-        <div className="mt-2 flex items-center gap-1 text-green-600 text-xs">
-          <CheckCircle size={14} />
-          {file.name} selected
+
+      {files.length > 0 && (
+        <div className="mt-3 space-y-2 max-h-48 overflow-y-auto">
+          {files.map((file, index) => (
+            <div
+              key={index}
+              className="flex items-center justify-between p-2 bg-white rounded border text-xs"
+            >
+              <div className="flex items-center gap-1 text-green-600 truncate max-w-[200px] sm:max-w-xs">
+                <CheckCircle size={14} />
+                <span className="truncate">{file.name}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => removeFile(index)}
+                className="text-red-500 hover:text-red-700"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          ))}
         </div>
       )}
+
       {error && (
         <div className="mt-2 flex items-center gap-1 text-red-600 text-xs">
           <AlertCircle size={14} />
@@ -54,15 +85,17 @@ function FileInputSection({ type, file, setFile, error }) {
   );
 }
 
-// === Attachment Display Component ===
+/* -------------------------------------------------
+   Attachment Item
+   ------------------------------------------------- */
 function AttachmentItem({ attachment }) {
-  const isImage = attachment.file_name.match(/\.(jpg|jpeg|png|gif|webp)$/i);
-  const isPDF = attachment.file_name.match(/\.pdf$/i);
+  const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(attachment.file_name);
+  const isPDF = /\.pdf$/i.test(attachment.file_name);
 
   return (
     <div className="flex items-center gap-2 p-2 bg-white rounded border">
       {isImage ? (
-        <a href={attachment.file_url} target="_blank" rel="noopener noreferrer" className="block">
+        <a href={attachment.file_url} target="_blank" rel="noopener noreferrer">
           <img
             src={attachment.file_url}
             alt={attachment.file_name}
@@ -76,7 +109,7 @@ function AttachmentItem({ attachment }) {
           rel="noopener noreferrer"
           className="flex items-center gap-2 text-blue-600 hover:underline"
         >
-          <File size={16} />
+          <FileText size={16} />
           <span className="text-xs">{attachment.file_name}</span>
           <ExternalLink size={14} />
         </a>
@@ -87,7 +120,7 @@ function AttachmentItem({ attachment }) {
           rel="noopener noreferrer"
           className="flex items-center gap-2 text-gray-600 hover:underline"
         >
-          <File size={16} />
+          <FileText size={16} />
           <span className="text-xs">{attachment.file_name}</span>
         </a>
       )}
@@ -95,6 +128,48 @@ function AttachmentItem({ attachment }) {
   );
 }
 
+/* -------------------------------------------------
+   Attachments Modal
+   ------------------------------------------------- */
+function AttachmentsModal({ isOpen, onClose, title, attachments }) {
+  if (!isOpen) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between p-4 border-b">
+          <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+          <button
+            onClick={onClose}
+            className="p-1 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-100"
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          {attachments.length === 0 ? (
+            <p className="text-center text-gray-500 py-8">No attachments found</p>
+          ) : (
+            attachments.map((att) => (
+              <AttachmentItem key={att.id} attachment={att} />
+            ))
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* -------------------------------------------------
+   Main Component
+   ------------------------------------------------- */
 export default function BillBookForm() {
   const [activeTab, setActiveTab] = useState("new");
   const [formData, setFormData] = useState({
@@ -114,10 +189,42 @@ export default function BillBookForm() {
   const [loadingRecords, setLoadingRecords] = useState(false);
   const [filterDate, setFilterDate] = useState("");
   const [filterBus, setFilterBus] = useState("");
+  const [incomeFiles, setIncomeFiles] = useState([]);
+  const [expenseFiles, setExpenseFiles] = useState([]);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalTitle, setModalTitle] = useState("");
+  const [modalAttachments, setModalAttachments] = useState([]);
+  const [categoryRefreshTrigger, setCategoryRefreshTrigger] = useState(0);
 
-  const [incomeFile, setIncomeFile] = useState(null);
-  const [expenseFile, setExpenseFile] = useState(null);
+  const refreshCategories = async () => {
+    try {
+      const catRes = await axiosInstance.get("/finance/categories/");
+      const income = catRes.data
+        .filter((c) => c.transaction_type === "INCOME")
+        .map((c) => ({
+          id: c.id,
+          name: c.name,
+          amount: "",
+          transaction_type: "INCOME",
+        }));
+      const expense = catRes.data
+        .filter((c) => c.transaction_type === "EXPENSE")
+        .map((c) => ({
+          id: c.id,
+          name: c.name,
+          amount: "",
+          transaction_type: "EXPENSE",
+        }));
+      setIncomeCategories(income);
+      setExpenseCategories(expense);
+    } catch (err) {
+      console.error("Failed to refresh categories:", err);
+    }
+  };
 
+  /* -------------------------------------------------
+     Initial data load
+     ------------------------------------------------- */
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -129,10 +236,20 @@ export default function BillBookForm() {
         setOwnedBuses(busRes.data);
         const income = catRes.data
           .filter((c) => c.transaction_type === "INCOME")
-          .map((c) => ({ id: c.id, name: c.name, amount: "", transaction_type: "INCOME" }));
+          .map((c) => ({
+            id: c.id,
+            name: c.name,
+            amount: "",
+            transaction_type: "INCOME",
+          }));
         const expense = catRes.data
           .filter((c) => c.transaction_type === "EXPENSE")
-          .map((c) => ({ id: c.id, name: c.name, amount: "", transaction_type: "EXPENSE" }));
+          .map((c) => ({
+            id: c.id,
+            name: c.name,
+            amount: "",
+            transaction_type: "EXPENSE",
+          }));
         setIncomeCategories(income);
         setExpenseCategories(expense);
       } catch (err) {
@@ -142,8 +259,11 @@ export default function BillBookForm() {
       }
     };
     fetchData();
-  }, []);
+  }, [categoryRefreshTrigger]);
 
+  /* -------------------------------------------------
+     Records tab – fetch when needed
+     ------------------------------------------------- */
   useEffect(() => {
     if (activeTab === "records") fetchRecords();
   }, [activeTab, filterDate, filterBus]);
@@ -164,6 +284,9 @@ export default function BillBookForm() {
     }
   };
 
+  /* -------------------------------------------------
+     Helpers for categories
+     ------------------------------------------------- */
   const updateIncomeAmount = (id, value) => {
     setIncomeCategories((prev) =>
       prev.map((cat) => (cat.id === id ? { ...cat, amount: value } : cat))
@@ -197,6 +320,7 @@ export default function BillBookForm() {
         setShowAddExpense(false);
       }
       setNewCategoryName("");
+      setCategoryRefreshTrigger((prev) => prev + 1);
     } catch (err) {
       alert(err.response?.data?.name?.[0] || "Failed to add category.");
     }
@@ -211,6 +335,7 @@ export default function BillBookForm() {
       } else {
         setExpenseCategories((prev) => prev.filter((c) => c.id !== id));
       }
+      setCategoryRefreshTrigger((prev) => prev + 1);
     } catch (err) {
       alert(err.response?.data?.detail || "Failed to delete category");
     }
@@ -226,15 +351,22 @@ export default function BillBookForm() {
     }
   };
 
+  /* -------------------------------------------------
+     Totals
+     ------------------------------------------------- */
   const calculateTotal = (cats) =>
     cats.reduce((sum, c) => sum + (parseFloat(c.amount) || 0), 0);
   const totalIncome = calculateTotal(incomeCategories);
   const totalExpense = calculateTotal(expenseCategories);
   const balance = totalIncome - totalExpense;
 
+  /* -------------------------------------------------
+     Save handler
+     ------------------------------------------------- */
   const handleSave = async () => {
     const transactions = [];
-    let hasIncome = false, hasExpense = false;
+    let hasIncome = false,
+      hasExpense = false;
 
     incomeCategories.forEach((cat) => {
       if (cat.amount && parseFloat(cat.amount) > 0) {
@@ -267,12 +399,12 @@ export default function BillBookForm() {
     const formDataToSend = new FormData();
     formDataToSend.append("transactions", JSON.stringify(transactions));
 
-    if (hasIncome && incomeFile) {
-      formDataToSend.append("income_file_0", incomeFile);
-    }
-    if (hasExpense && expenseFile) {
-      formDataToSend.append("expense_file_0", expenseFile);
-    }
+    incomeFiles.forEach((file, i) => {
+      if (hasIncome) formDataToSend.append(`income_file_${i}`, file);
+    });
+    expenseFiles.forEach((file, i) => {
+      if (hasExpense) formDataToSend.append(`expense_file_${i}`, file);
+    });
 
     setSaving(true);
     try {
@@ -280,10 +412,17 @@ export default function BillBookForm() {
         headers: { "Content-Type": "multipart/form-data" },
       });
       alert("Saved successfully!");
+
+      // reset form
       setIncomeCategories((prev) => prev.map((c) => ({ ...c, amount: "" })));
       setExpenseCategories((prev) => prev.map((c) => ({ ...c, amount: "" })));
-      setIncomeFile(null);
-      setExpenseFile(null);
+      setIncomeFiles([]);
+      setExpenseFiles([]);
+      setFormData({
+        date: new Date().toISOString().split("T")[0],
+        bus: "",
+      });
+      await refreshCategories();
     } catch (err) {
       const msg = err.response?.data?.error || "Failed to save.";
       setError(msg);
@@ -293,18 +432,22 @@ export default function BillBookForm() {
     }
   };
 
-  const groupedRecords = Array.isArray(records)
-    ? records.reduce((acc, r) => {
-        if (!acc[r.date]) acc[r.date] = [];
-        acc[r.date].push(r);
-        return acc;
-      }, {})
-    : {};
+  /* -------------------------------------------------
+     Grouping & filtering records
+     ------------------------------------------------- */
+  const groupedRecords = records.reduce((acc, r) => {
+    if (!acc[r.date]) acc[r.date] = [];
+    acc[r.date].push(r);
+    return acc;
+  }, {});
 
   const filteredDates = Object.keys(groupedRecords)
     .filter((d) => !filterDate || d === filterDate)
     .sort((a, b) => new Date(b) - new Date(a));
 
+  /* -------------------------------------------------
+     Loading screen
+     ------------------------------------------------- */
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -313,6 +456,9 @@ export default function BillBookForm() {
     );
   }
 
+  /* -------------------------------------------------
+     Render
+     ------------------------------------------------- */
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -362,7 +508,7 @@ export default function BillBookForm() {
         </div>
       </div>
 
-      {/* New Entry Tab */}
+      {/* ==== NEW ENTRY TAB ==== */}
       {activeTab === "new" && (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
           <div className="bg-white rounded-lg shadow">
@@ -377,7 +523,7 @@ export default function BillBookForm() {
                     type="date"
                     value={formData.date}
                     onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900"
                   />
                 </div>
                 <div>
@@ -387,7 +533,7 @@ export default function BillBookForm() {
                   <select
                     value={formData.bus}
                     onChange={(e) => setFormData({ ...formData, bus: e.target.value })}
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900"
                   >
                     <option value="">All Buses</option>
                     {ownedBuses.map((bus) => (
@@ -401,18 +547,21 @@ export default function BillBookForm() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 lg:divide-x">
-              {/* Income Section */}
+              {/* ----- Income ----- */}
               <div className="p-4 sm:p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <TrendingUp className="text-green-600" size={20} />
-                    <h2 className="text-base sm:text-lg font-semibold text-gray-900">Income</h2>
+                    <h2 className="text-base sm:text-lg font-semibold text-gray-900">
+                      Income
+                    </h2>
                   </div>
                   <button
                     onClick={() => setShowAddIncome(true)}
                     className="flex items-center gap-1 px-2 sm:px-3 py-1.5 text-xs sm:text-sm bg-green-50 text-green-700 rounded-md hover:bg-green-100"
                   >
-                    <Plus size={16} /> <span className="hidden sm:inline">Add</span>
+                    <Plus size={16} />
+                    <span className="hidden sm:inline">Add</span>
                   </button>
                 </div>
 
@@ -424,7 +573,7 @@ export default function BillBookForm() {
                         value={newCategoryName}
                         onChange={(e) => setNewCategoryName(e.target.value)}
                         placeholder="Category name"
-                        className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-md"
+                        className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-md bg-white text-gray-900"
                       />
                       <button
                         onClick={() => {
@@ -460,7 +609,7 @@ export default function BillBookForm() {
                         value={cat.amount}
                         onChange={(e) => updateIncomeAmount(cat.id, e.target.value)}
                         placeholder="0.00"
-                        className="w-24 sm:w-32 px-2 sm:px-3 py-2 text-sm border border-gray-300 rounded-md text-right focus:ring-2 focus:ring-green-500"
+                        className="w-24 sm:w-32 px-2 sm:px-3 py-2 text-sm border border-gray-300 rounded-md text-right focus:ring-2 focus:ring-green-500 bg-white text-gray-900"
                       />
                       <button
                         onClick={() => deleteCategory(cat.id, "INCOME")}
@@ -472,7 +621,11 @@ export default function BillBookForm() {
                   ))}
                 </div>
 
-                <FileInputSection type="INCOME" file={incomeFile} setFile={setIncomeFile} />
+                <FileInputSection
+                  type="INCOME"
+                  files={incomeFiles}
+                  setFiles={setIncomeFiles}
+                />
 
                 <div className="pt-4 border-t flex justify-between items-center">
                   <span className="text-sm font-medium text-gray-700">Total Income</span>
@@ -482,18 +635,21 @@ export default function BillBookForm() {
                 </div>
               </div>
 
-              {/* Expense Section */}
+              {/* ----- Expense ----- */}
               <div className="p-4 sm:p-6 border-t lg:border-t-0">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <TrendingDown className="text-red-600" size={20} />
-                    <h2 className="text-base sm:text-lg font-semibold text-gray-900">Expenses</h2>
+                    <h2 className="text-base sm:text-lg font-semibold text-gray-900">
+                      Expenses
+                    </h2>
                   </div>
                   <button
                     onClick={() => setShowAddExpense(true)}
                     className="flex items-center gap-1 px-2 sm:px-3 py-1.5 text-xs sm:text-sm bg-red-50 text-red-700 rounded-md hover:bg-red-100"
                   >
-                    <Plus size={16} /> <span className="hidden sm:inline">Add</span>
+                    <Plus size={16} />
+                    <span className="hidden sm:inline">Add</span>
                   </button>
                 </div>
 
@@ -505,7 +661,7 @@ export default function BillBookForm() {
                         value={newCategoryName}
                         onChange={(e) => setNewCategoryName(e.target.value)}
                         placeholder="Category name"
-                        className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-md"
+                        className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-md bg-white text-gray-900"
                       />
                       <button
                         onClick={() => {
@@ -541,7 +697,7 @@ export default function BillBookForm() {
                         value={cat.amount}
                         onChange={(e) => updateExpenseAmount(cat.id, e.target.value)}
                         placeholder="0.00"
-                        className="w-24 sm:w-32 px-2 sm:px-3 py-2 text-sm border border-gray-300 rounded-md text-right focus:ring-2 focus:ring-red-500"
+                        className="w-24 sm:w-32 px-2 sm:px-3 py-2 text-sm border border-gray-300 rounded-md text-right focus:ring-2 focus:ring-red-500 bg-white text-gray-900"
                       />
                       <button
                         onClick={() => deleteCategory(cat.id, "EXPENSE")}
@@ -553,7 +709,11 @@ export default function BillBookForm() {
                   ))}
                 </div>
 
-                <FileInputSection type="EXPENSE" file={expenseFile} setFile={setExpenseFile} />
+                <FileInputSection
+                  type="EXPENSE"
+                  files={expenseFiles}
+                  setFiles={setExpenseFiles}
+                />
 
                 <div className="pt-4 border-t flex justify-between items-center">
                   <span className="text-sm font-medium text-gray-700">Total Expense</span>
@@ -582,43 +742,55 @@ export default function BillBookForm() {
                   disabled={saving}
                   className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
                 >
-                  {saving ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
+                  {saving ? (
+                    <Loader2 className="animate-spin" size={18} />
+                  ) : (
+                    <Save size={18} />
+                  )}
                   {saving ? "Saving..." : "Save Entry"}
                 </button>
               </div>
               {error && (
-                <div className="mt-3 p-3 bg-red-50 text-red-700 text-sm rounded-md">{error}</div>
+                <div className="mt-3 p-3 bg-red-50 text-red-700 text-sm rounded-md">
+                  {error}
+                </div>
               )}
             </div>
           </div>
         </div>
       )}
 
-      {/* Records Tab */}
+      {/* ==== RECORDS TAB ==== */}
       {activeTab === "records" && (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
           {/* Filters */}
           <div className="bg-white rounded-lg shadow p-4 sm:p-6 mb-4 sm:mb-6">
             <div className="flex items-center gap-2 mb-4">
               <Filter className="text-gray-600" size={20} />
-              <h2 className="text-base sm:text-lg font-semibold text-gray-900">Filters</h2>
+              <h2 className="text-base sm:text-lg font-semibold text-gray-900">
+                Filters
+              </h2>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Date
+                </label>
                 <input
                   type="date"
                   value={filterDate}
                   onChange={(e) => setFilterDate(e.target.value)}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Bus</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Bus
+                </label>
                 <select
                   value={filterBus}
                   onChange={(e) => setFilterBus(e.target.value)}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
                 >
                   <option value="">All Buses</option>
                   {ownedBuses.map((b) => (
@@ -628,8 +800,8 @@ export default function BillBookForm() {
                   ))}
                 </select>
               </div>
-              <div className="flex items-end">
-                {(filterDate || filterBus) && (
+              {(filterDate || filterBus) && (
+                <div className="flex items-end">
                   <button
                     onClick={() => {
                       setFilterDate("");
@@ -639,8 +811,8 @@ export default function BillBookForm() {
                   >
                     Clear Filters
                   </button>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -652,21 +824,41 @@ export default function BillBookForm() {
           ) : filteredDates.length === 0 ? (
             <div className="bg-white rounded-lg shadow p-8 sm:p-12 text-center">
               <FileText className="mx-auto text-gray-300 mb-4" size={48} />
-              <p className="text-base sm:text-lg font-medium text-gray-600">No records found</p>
-              <p className="text-sm text-gray-500 mt-1">Try adjusting your filters</p>
+              <p className="text-base sm:text-lg font-medium text-gray-600">
+                No records found
+              </p>
+              <p className="text-sm text-gray-500 mt-1">
+                Try adjusting your filters
+              </p>
             </div>
           ) : (
             <div className="space-y-6">
               {filteredDates.map((date) => {
                 const dayRecs = groupedRecords[date];
-                const income = dayRecs.filter(r => r.transaction_type === "INCOME").reduce((s, r) => s + parseFloat(r.amount), 0);
-                const expense = dayRecs.filter(r => r.transaction_type === "EXPENSE").reduce((s, r) => s + parseFloat(r.amount), 0);
+                const income = dayRecs
+                  .filter((r) => r.transaction_type === "INCOME")
+                  .reduce((s, r) => s + parseFloat(r.amount), 0);
+                const expense = dayRecs
+                  .filter((r) => r.transaction_type === "EXPENSE")
+                  .reduce((s, r) => s + parseFloat(r.amount), 0);
                 const bal = income - expense;
 
+                // Gather all attachments for the day (per type)
+                const dayIncomeAtts = dayRecs
+                  .filter((r) => r.transaction_type === "INCOME")
+                  .flatMap((r) => r.attachments || []);
+                const dayExpenseAtts = dayRecs
+                  .filter((r) => r.transaction_type === "EXPENSE")
+                  .flatMap((r) => r.attachments || []);
+
                 return (
-                  <div key={date} className="bg-white rounded-lg shadow overflow-hidden">
+                  <div
+                    key={date}
+                    className="bg-white rounded-lg shadow overflow-hidden"
+                  >
+                    {/* Day Header – now includes attachment buttons */}
                     <div className="px-4 sm:px-6 py-3 sm:py-4 bg-gray-50 border-b">
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                         <div className="flex items-center gap-2 sm:gap-3">
                           <Calendar className="text-gray-600" size={18} />
                           <h3 className="text-sm sm:text-base font-semibold text-gray-900">
@@ -678,9 +870,48 @@ export default function BillBookForm() {
                             })}
                           </h3>
                         </div>
+
+                        {/* Attachment Buttons */}
+                        <div className="flex flex-wrap gap-2">
+                          {dayIncomeAtts.length > 0 && (
+                            <button
+                              onClick={() => {
+                                setModalTitle(
+                                  `Income Attachments – ${new Date(date).toLocaleDateString()}`
+                                );
+                                setModalAttachments(dayIncomeAtts);
+                                setModalOpen(true);
+                              }}
+                              className="flex items-center gap-1 px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded hover:bg-green-200 transition"
+                            >
+                              <FolderOpen size={14} />
+                              Income ({dayIncomeAtts.length})
+                            </button>
+                          )}
+                          {dayExpenseAtts.length > 0 && (
+                            <button
+                              onClick={() => {
+                                setModalTitle(
+                                  `Expense Attachments – ${new Date(date).toLocaleDateString()}`
+                                );
+                                setModalAttachments(dayExpenseAtts);
+                                setModalOpen(true);
+                              }}
+                              className="flex items-center gap-1 px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded hover:bg-red-200 transition"
+                            >
+                              <FolderOpen size={14} />
+                              Expense ({dayExpenseAtts.length})
+                            </button>
+                          )}
+                        </div>
+
                         <div className="text-left sm:text-right">
                           <div className="text-xs text-gray-500">Net Balance</div>
-                          <div className={`text-lg sm:text-xl font-bold ${bal >= 0 ? "text-green-600" : "text-red-600"}`}>
+                          <div
+                            className={`text-lg sm:text-xl font-bold ${
+                              bal >= 0 ? "text-green-600" : "text-red-600"
+                            }`}
+                          >
                             ₹ {bal.toFixed(2)}
                           </div>
                         </div>
@@ -691,65 +922,89 @@ export default function BillBookForm() {
                       <table className="w-full">
                         <thead className="bg-gray-50 border-b">
                           <tr>
-                            <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                            <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                            <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Bus</th>
-                            <th className="px-3 sm:px-6 py-2 sm:py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                            <th className="px-3 sm:px-6 py-2 sm:py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Attachments</th>
-                            <th className="px-3 sm:px-6 py-2 sm:py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                            {["Type", "Category", "Bus", "Amount", "Action"].map((th, i) => (
+                              <th
+                                key={i}
+                                className={`px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${
+                                  i === 2 ? "hidden sm:table-cell" : ""
+                                } ${i === 3 || i === 4 ? "text-right" : ""}`}
+                              >
+                                {th}
+                              </th>
+                            ))}
                           </tr>
                         </thead>
+
                         <tbody className="bg-white divide-y divide-gray-200">
                           {dayRecs.map((r) => (
                             <tr key={r.id} className="hover:bg-gray-50">
                               <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
-                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${r.transaction_type === "INCOME" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
+                                <span
+                                  className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                                    r.transaction_type === "INCOME"
+                                      ? "bg-green-100 text-green-800"
+                                      : "bg-red-100 text-red-800"
+                                  }`}
+                                >
                                   {r.transaction_type === "INCOME" ? "IN" : "EXP"}
                                 </span>
                               </td>
                               <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-medium text-gray-900">
                                 <div className="max-w-xs truncate">{r.category_name}</div>
-                                <div className="text-xs text-gray-500 sm:hidden">{r.bus_name || "-"}</div>
+                                <div className="text-xs text-gray-500 sm:hidden">
+                                  {r.bus_name || "-"}
+                                </div>
                               </td>
                               <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-sm text-gray-500 hidden sm:table-cell">
                                 {r.bus_name || "-"}
                               </td>
                               <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-right font-semibold">
-                                <span className={r.transaction_type === "INCOME" ? "text-green-600" : "text-red-600"}>
+                                <span
+                                  className={
+                                    r.transaction_type === "INCOME"
+                                      ? "text-green-600"
+                                      : "text-red-600"
+                                  }
+                                >
                                   ₹ {parseFloat(r.amount).toFixed(2)}
                                 </span>
                               </td>
-                              <td className="px-3 sm:px-6 py-3 sm:py-4 text-center">
-                                {r.attachments && r.attachments.length > 0 ? (
-                                  <div className="flex flex-wrap gap-1 justify-center">
-                                    {r.attachments.map((att) => (
-                                      <AttachmentItem key={att.id} attachment={att} />
-                                    ))}
-                                  </div>
-                                ) : (
-                                  <span className="text-gray-400 text-xs">—</span>
-                                )}
-                              </td>
                               <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-right text-sm">
-                                <button onClick={() => deleteRecord(r.id)} className="p-1 text-red-600 hover:text-red-800">
+                                <button
+                                  onClick={() => deleteRecord(r.id)}
+                                  className="p-1 text-red-600 hover:text-red-800"
+                                >
                                   <Trash2 size={16} />
                                 </button>
                               </td>
                             </tr>
                           ))}
                         </tbody>
+
                         <tfoot className="bg-gray-50 border-t-2">
                           <tr>
-                            <td colSpan="4" className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-semibold text-gray-700">
+                            <td
+                              colSpan={4}
+                              className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm font-semibold text-gray-700"
+                            >
                               Daily Summary
                             </td>
                             <td className="px-3 sm:px-6 py-3 sm:py-4 text-right">
                               <div className="space-y-1">
-                                <div><div className="text-xs text-gray-500">Income</div><div className="text-xs sm:text-sm font-bold text-green-600">₹ {income.toFixed(2)}</div></div>
-                                <div><div className="text-xs text-gray-500">Expense</div><div className="text-xs sm:text-sm font-bold text-red-600">₹ {expense.toFixed(2)}</div></div>
+                                <div>
+                                  <div className="text-xs text-gray-500">Income</div>
+                                  <div className="text-xs sm:text-sm font-bold text-green-600">
+                                    ₹ {income.toFixed(2)}
+                                  </div>
+                                </div>
+                                <div>
+                                  <div className="text-xs text-gray-500">Expense</div>
+                                  <div className="text-xs sm:text-sm font-bold text-red-600">
+                                    ₹ {expense.toFixed(2)}
+                                  </div>
+                                </div>
                               </div>
                             </td>
-                            <td></td>
                           </tr>
                         </tfoot>
                       </table>
@@ -761,6 +1016,14 @@ export default function BillBookForm() {
           )}
         </div>
       )}
+
+      {/* Modal */}
+      <AttachmentsModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title={modalTitle}
+        attachments={modalAttachments}
+      />
     </div>
   );
 }

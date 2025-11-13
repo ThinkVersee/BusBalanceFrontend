@@ -56,7 +56,7 @@ export default function Footer() {
 
         {/* Copyright */}
         <div className="border-t border-gray-800 pt-8 text-center text-gray-400">
-          <p>&copy; 2025 BusManager. All rights reserved.</p>
+          <p>&copy; 2025 BusBook. All rights reserved.</p>
         </div>
       </div>
     </footer>
