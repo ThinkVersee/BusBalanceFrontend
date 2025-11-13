@@ -1,28 +1,48 @@
 // components/home/SolutionSection.jsx
+import Image from "next/image";
+
 export default function SolutionSection() {
   return (
-    <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-green-50 to-blue-50">
-      <div className="max-w-7xl mx-auto text-center">
-        <h2 className="text-4xl font-bold text-gray-900 mb-6">
-          Your Simple Solution in One App
-        </h2>
-        <p className="text-xl text-gray-600 mb-12 max-w-3xl mx-auto">
-          BusBook automatically tracks all your income and expenses, calculates profits instantly, and shows you exactly how your business is performing.
-        </p>
-        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-4xl mx-auto">
-          <div className="grid md:grid-cols-3 gap-6 text-center">
-            <div>
-              <div className="text-5xl font-bold text-blue-600 mb-2">2 min</div>
-              <div className="text-gray-700">Daily Entry Time</div>
-            </div>
-            <div>
-              <div className="text-5xl font-bold text-green-600 mb-2">100%</div>
-              <div className="text-gray-700">Accurate Tracking</div>
-            </div>
-            <div>
-              <div className="text-5xl font-bold text-purple-600 mb-2">24/7</div>
-              <div className="text-gray-700">Access Anywhere</div>
-            </div>
+    <section className="py-20 bg-white">
+      <div className="max-w-6xl mx-auto px-4 grid md:grid-cols-2 gap-12 items-center">
+        
+        {/* LEFT — Image */}
+        <div className="relative">
+          <Image
+            src="/assets/solution.png" // ✅ Path to your uploaded image in public/assets/
+            alt="Bus business dashboard preview"
+            width={600}
+            height={400}
+            className="rounded-2xl shadow-lg"
+            priority
+          />
+        </div>
+
+        {/* RIGHT — Text content */}
+        <div>
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">
+            Manage your Business fast
+          </h2>
+
+          <p className="text-gray-600 mb-8">
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
+            eiusmod tempor incididunt ut labore et dolore magna aliqua.
+          </p>
+
+          {/* Feature list */}
+          <div className="space-y-6">
+            {[
+              "With lots of unique blocks, you can easily build a page without coding.",
+              "Track income and expenses with visual clarity and speed.",
+              "Get real-time insights for smarter business management."
+            ].map((text, index) => (
+              <div key={index} className="flex items-start space-x-4">
+                <div className="flex-shrink-0 w-10 h-10 flex items-center justify-center bg-blue-100 text-blue-600 font-bold rounded-full">
+                  {index + 1}
+                </div>
+                <p className="text-gray-700">{text}</p>
+              </div>
+            ))}
           </div>
         </div>
       </div>

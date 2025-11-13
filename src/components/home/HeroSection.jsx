@@ -1,51 +1,191 @@
-// components/HeroSection.jsx
-import { Bus } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 
 export default function HeroSection() {
   return (
-    <section id="home" className="pt-24 pb-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-blue-50 to-white">
+    <section className="relative overflow-hidden pt-32 pb-20 px-4 sm:px-6 lg:px-8 bg-white">
+      
       <div className="max-w-7xl mx-auto">
-        <div className="grid md:grid-cols-2 gap-12 items-center">
-          <div>
-            <h1 className="text-5xl font-bold text-gray-900 mb-6 leading-tight">
-              Manage Your Bus Business <span className="text-blue-600">Finances</span> Effortlessly
-            </h1>
-            <p className="text-xl text-gray-600 mb-8">
-              Stop losing track of expenses and income. Track every rupee, analyze profits, and keep your bus business finances in perfect balance.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <button className="bg-blue-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-blue-700 transition shadow-lg">
-                Start Free Trial
-              </button>
-              <button className="border-2 border-blue-600 text-blue-600 px-8 py-4 rounded-lg text-lg font-semibold hover:bg-blue-50 transition">
-                Watch Demo
-              </button>
-            </div>
+        
+        {/* MAIN CONTENT */}
+        <div className="text-center max-w-4xl mx-auto space-y-8">
+          
+          {/* HEADING */}
+          <h1 className="text-5xl md:text-6xl font-bold text-gray-900 leading-tight">
+            Manage Your Bus<br />
+            <span className="text-gray-900">Business Finances Effortlessly</span>
+          </h1>
+
+          {/* SUBHEADING */}
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            We share common trends and strategies for improving your rental income and making sure you stay in high demand.
+          </p>
+
+          {/* CTA BUTTONS */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+            <button className="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center gap-2 shadow-lg">
+              Get started
+              <ArrowRight className="w-5 h-5" />
+            </button>
+            
+            <button className="px-6 py-3 bg-white text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors border border-gray-300">
+              View Demo
+            </button>
           </div>
 
-          <div className="bg-gradient-to-br from-blue-100 to-blue-200 rounded-2xl p-8 shadow-2xl">
-            <div className="bg-white rounded-lg p-6 shadow-lg">
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-gray-600 font-medium">Today's Summary</span>
-                <Bus className="w-6 h-6 text-blue-600" />
+        </div>
+
+        {/* DASHBOARD PREVIEW IMAGE */}
+        <div className="mt-16 relative">
+          <div className="relative mx-auto max-w-5xl">
+            {/* Shadow/Glow effect */}
+            <div className="absolute inset-0 bg-gradient-to-b from-blue-100/50 to-transparent rounded-t-2xl blur-2xl"></div>
+            
+            {/* Dashboard mockup container */}
+            <div className="relative bg-white rounded-t-2xl shadow-2xl border border-gray-200 p-6">
+              
+              {/* Dashboard Header */}
+              <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
+                <div className="flex items-center gap-4">
+                  <div className="flex gap-2">
+                    <div className="w-3 h-3 rounded-full bg-red-400"></div>
+                    <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
+                    <div className="w-3 h-3 rounded-full bg-green-400"></div>
+                  </div>
+                  <div className="flex items-center gap-3 text-sm text-gray-600">
+                    <span>Home</span>
+                    <span>Status / Website</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-gray-200"></div>
+                  <div className="w-8 h-8 rounded-full bg-blue-600"></div>
+                </div>
               </div>
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-700">Total Income</span>
-                  <span className="text-2xl font-bold text-green-600">₹12,450</span>
+
+              {/* Sessions Section */}
+              <div className="bg-gray-50 rounded-xl p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl font-semibold text-gray-900">Sessions</h3>
+                  <select className="text-sm border border-gray-300 rounded-lg px-3 py-1.5">
+                    <option>Last 7 days</option>
+                  </select>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-700">Total Expenses</span>
-                  <span className="text-2xl font-bold text-red-600">₹4,320</span>
-                </div>
-                <div className="border-t pt-4 flex justify-between items-center">
-                  <span className="text-gray-700 font-semibold">Net Profit</span>
-                  <span className="text-3xl font-bold text-blue-600">₹8,130</span>
+
+                {/* Stats Cards Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+                  
+                  {/* Card 1 */}
+                  <div className="bg-white rounded-lg p-6 shadow-sm">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+                        <div className="w-6 h-6 rounded-full bg-blue-600"></div>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">Student Name</p>
+                        <p className="font-semibold text-gray-900">Brandon Perez</p>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Score</span>
+                        <span className="font-semibold">87</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Time</span>
+                        <span className="font-semibold">2 mins</span>
+                      </div>
+                      <div className="text-xs text-gray-500">Good work</div>
+                      {/* Mini chart placeholder */}
+                      <div className="h-16 mt-3">
+                        <svg viewBox="0 0 100 40" className="w-full h-full">
+                          <polyline
+                            points="0,35 20,28 40,32 60,20 80,25 100,15"
+                            fill="none"
+                            stroke="#3b82f6"
+                            strokeWidth="2"
+                          />
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card 2 */}
+                  <div className="bg-white rounded-lg p-6 shadow-sm">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
+                        <div className="w-6 h-6 rounded-full bg-purple-600"></div>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">Student Name</p>
+                        <p className="font-semibold text-gray-900">Art Vandelayson</p>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Score</span>
+                        <span className="font-semibold">97</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Time</span>
+                        <span className="font-semibold">5 mins</span>
+                      </div>
+                      <div className="text-xs text-gray-500">Good work</div>
+                      {/* Mini chart placeholder */}
+                      <div className="h-16 mt-3">
+                        <svg viewBox="0 0 100 40" className="w-full h-full">
+                          <polyline
+                            points="0,30 20,25 40,28 60,18 80,22 100,12"
+                            fill="none"
+                            stroke="#9333ea"
+                            strokeWidth="2"
+                          />
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card 3 */}
+                  <div className="bg-white rounded-lg p-6 shadow-sm">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
+                        <div className="w-6 h-6 rounded-full bg-green-600"></div>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">Student Name</p>
+                        <p className="font-semibold text-gray-900">Morgan West</p>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Score</span>
+                        <span className="font-semibold">78</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-600">Time</span>
+                        <span className="font-semibold">1 min</span>
+                      </div>
+                      <div className="text-xs text-gray-500">Good work</div>
+                      {/* Mini chart placeholder */}
+                      <div className="h-16 mt-3">
+                        <svg viewBox="0 0 100 40" className="w-full h-full">
+                          <polyline
+                            points="0,32 20,30 40,35 60,25 80,28 100,20"
+                            fill="none"
+                            stroke="#16a34a"
+                            strokeWidth="2"
+                          />
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+
                 </div>
               </div>
+
             </div>
           </div>
         </div>
+
       </div>
     </section>
   );
