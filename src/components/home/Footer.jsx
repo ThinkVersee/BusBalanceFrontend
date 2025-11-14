@@ -1,63 +1,44 @@
-// src/components/Footer.jsx
-import Image from "next/image";
+import { Twitter, Facebook, Instagram, Linkedin, Bus } from 'lucide-react';
 
 export default function Footer() {
   return (
-    <footer className="bg-gray-900 text-white py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="grid md:grid-cols-4 gap-8 mb-8">
-          {/* Logo + Description */}
-          <div>
-            <div className="flex items-center space-x-2 mb-4">
-              <Image
-                src="/assets/logo.webp" // ✅ public path reference
-                alt="BusManager Logo"
-                width={32}
-                height={32}
-                className="rounded-md"
-                priority
-              />
-              <span className="text-xl font-bold">BusManager</span>
+    <footer className="bg-white border-t border-gray-200 py-10">
+      <div className="max-w-6xl mx-auto px-6">
+        <div className="flex flex-col md:flex-row justify-between items-center gap-6 text-sm">
+
+          {/* LOGO – your exact code */}
+          <div className="flex items-center space-x-2 cursor-pointer">
+            <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center">
+              <Bus className="w-5 h-5 text-white" />
             </div>
-            <p className="text-gray-400">
-              Making bus business management simple and efficient.
-            </p>
+            <span className="text-2xl font-bold text-gray-900">
+              BUS BOOK
+            </span>
           </div>
 
-          {/* Product Links */}
-          <div>
-            <h4 className="font-bold mb-4">Product</h4>
-            <ul className="space-y-2 text-gray-400">
-              <li><a href="#features" className="hover:text-white transition">Features</a></li>
-              <li><a href="#" className="hover:text-white transition">Pricing</a></li>
-              <li><a href="#" className="hover:text-white transition">Demo</a></li>
-            </ul>
+          {/* Quick Links */}
+          <div className="flex gap-6 text-gray-600">
+            <a href="#" className="hover:text-gray-900">About</a>
+            <a href="#" className="hover:text-gray-900">Pricing</a>
+            <a href="#" className="hover:text-gray-900">Support</a>
+            <a href="#" className="hover:text-gray-900">Privacy</a>
           </div>
 
-          {/* Company Links */}
-          <div>
-            <h4 className="font-bold mb-4">Company</h4>
-            <ul className="space-y-2 text-gray-400">
-              <li><a href="#" className="hover:text-white transition">About Us</a></li>
-              <li><a href="#" className="hover:text-white transition">Contact</a></li>
-              <li><a href="#" className="hover:text-white transition">Support</a></li>
-            </ul>
+          {/* Social Icons */}
+          <div className="flex gap-4">
+            {[Twitter, Facebook, Instagram, Linkedin].map((Icon, i) => (
+              <a key={i} href="#" className="text-gray-500 hover:text-blue-600 transition">
+                <Icon size={18} />
+              </a>
+            ))}
           </div>
 
-          {/* Legal Links */}
-          <div>
-            <h4 className="font-bold mb-4">Legal</h4>
-            <ul className="space-y-2 text-gray-400">
-              <li><a href="#" className="hover:text-white transition">Privacy Policy</a></li>
-              <li><a href="#" className="hover:text-white transition">Terms of Service</a></li>
-            </ul>
-          </div>
         </div>
 
         {/* Copyright */}
-        <div className="border-t border-gray-800 pt-8 text-center text-gray-400">
-          <p>&copy; 2025 BusBook. All rights reserved.</p>
-        </div>
+        <p className="text-center text-xs text-gray-500 mt-6">
+          © {new Date().getFullYear()} BUS BOOK All rights reserved.
+        </p>
       </div>
     </footer>
   );
