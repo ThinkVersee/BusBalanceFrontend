@@ -22,10 +22,10 @@ export default function Navbar() {
 
   const navLinks = [
     { label: 'Buss', id: 'buss' },
-    { label: 'Demos', id: 'demos' },
-    { label: 'Pages', id: 'pages' },
-    { label: 'Support', id: 'support' },
+    { label: 'Services', id: 'services' },
     { label: 'Contact', id: 'contact' },
+    { label: 'Support', id: 'support' },
+    { label: 'About', id: 'about' },
   ];
 
   return (
@@ -39,7 +39,7 @@ export default function Navbar() {
               <Bus className="w-5 h-5 text-white" />
             </div>
             <span className="text-2xl font-bold text-gray-900">
-              Buss
+              BUS BOOK
             </span>
           </div>
 

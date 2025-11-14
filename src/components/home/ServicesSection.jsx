@@ -28,7 +28,7 @@ export default function AboutAppSection() {
         {/* LEFT: Image */}
         <div className="flex justify-center">
           <Image
-            src="/assets/about-app.png" // ✅ Image path from /public
+            src="/asstes/home/about.jpg" // ✅ Image path from /public
             alt="BusBalance app preview"
             width={500}
             height={500}

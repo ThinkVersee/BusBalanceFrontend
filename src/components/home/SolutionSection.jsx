@@ -1,4 +1,4 @@
-// components/home/SolutionSection.jsx
+
 import Image from "next/image";
 
 export default function SolutionSection() {
@@ -9,7 +9,7 @@ export default function SolutionSection() {
         {/* LEFT — Image */}
         <div className="relative">
           <Image
-            src="/assets/solution.png" // ✅ Path to your uploaded image in public/assets/
+            src="/asstes/home/calender.jpeg"
             alt="Bus business dashboard preview"
             width={600}
             height={400}
@@ -49,3 +49,4 @@ export default function SolutionSection() {
     </section>
   );
 }
+
