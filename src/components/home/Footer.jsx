@@ -17,21 +17,21 @@ export default function Footer() {
           </div>
 
           {/* Quick Links */}
-          <div className="flex gap-6 text-gray-600">
+          {/* <div className="flex gap-6 text-gray-600">
             <a href="#" className="hover:text-gray-900">About</a>
             <a href="#" className="hover:text-gray-900">Pricing</a>
             <a href="#" className="hover:text-gray-900">Support</a>
             <a href="#" className="hover:text-gray-900">Privacy</a>
-          </div>
+          </div> */}
 
           {/* Social Icons */}
-          <div className="flex gap-4">
+          {/* <div className="flex gap-4">
             {[Twitter, Facebook, Instagram, Linkedin].map((Icon, i) => (
               <a key={i} href="#" className="text-gray-500 hover:text-blue-600 transition">
                 <Icon size={18} />
               </a>
             ))}
-          </div>
+          </div> */}
 
         </div>
 

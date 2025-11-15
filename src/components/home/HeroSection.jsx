@@ -1,37 +1,26 @@
-'use client';
-import { ArrowRight } from 'lucide-react';
+"use client";
+import { ArrowRight } from "lucide-react";
 
 export default function HeroSection() {
   return (
     <section className="relative overflow-hidden pt-32 pb-20 px-4 sm:px-6 lg:px-8 bg-white">
-      
       <div className="max-w-7xl mx-auto">
-        
-        {/* MAIN CONTENT */}
         <div className="text-center max-w-4xl mx-auto space-y-8">
-          
-          {/* HEADING */}
           <h1 className="text-xl md:text-6xl font-bold text-gray-900 leading-tight">
             Manage Your Bus<br />
             <span className="text-gray-900">Business Finances Effortlessly</span>
           </h1>
-
-          {/* SUBHEADING */}
-          <p className="text- text-gray-600 max-w-2xl mx-auto">
-            We share common trends and strategies for improving your rental income and making sure you stay in high demand.
+          <p className="text-gray-600 max-w-2xl mx-auto">
+          Smart financial tracking to keep your bus business organized, profitable, and stress-free.
           </p>
         </div>
 
-        {/* DASHBOARD PREVIEW IMAGE */}
+        {/* Dashboard Mockup */}
         <div className="mt-16 relative">
           <div className="relative mx-auto max-w-5xl">
-            {/* Glow effect */}
             <div className="absolute inset-0 bg-gradient-to-b from-blue-100/50 to-transparent rounded-t-2xl blur-2xl"></div>
-            
-            {/* Dashboard mockup container */}
             <div className="relative bg-white rounded-t-2xl shadow-2xl border border-gray-200 p-6">
-              
-              {/* Dashboard Header */}
+              {/* Header */}
               <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
                 <div className="flex items-center gap-4">
                   <div className="flex gap-2">
@@ -50,7 +39,7 @@ export default function HeroSection() {
                 </div>
               </div>
 
-              {/* Sessions Section (Updated Padding) */}
+              {/* Sessions */}
               <div className="bg-gray-50 rounded-xl p-2 sm:p-3">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-lg font-semibold text-gray-900">Sessions</h3>
@@ -59,9 +48,7 @@ export default function HeroSection() {
                   </select>
                 </div>
 
-                {/* Stats Cards Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4">
-
                   {/* Card 1 */}
                   <div className="bg-white rounded-lg p-4 shadow-sm">
                     <div className="flex items-center gap-3 mb-4">
@@ -73,7 +60,6 @@ export default function HeroSection() {
                         <p className="font-semibold text-gray-900">Brandon Perez</p>
                       </div>
                     </div>
-
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-600">Score</span>
@@ -84,7 +70,6 @@ export default function HeroSection() {
                         <span className="font-semibold">2 mins</span>
                       </div>
                       <div className="text-xs text-gray-500">Good work</div>
-
                       <div className="h-16 mt-3">
                         <svg viewBox="0 0 100 40" className="w-full h-full">
                           <polyline
@@ -109,7 +94,6 @@ export default function HeroSection() {
                         <p className="font-semibold text-gray-900">Art Vandelayson</p>
                       </div>
                     </div>
-
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-600">Score</span>
@@ -120,7 +104,6 @@ export default function HeroSection() {
                         <span className="font-semibold">5 mins</span>
                       </div>
                       <div className="text-xs text-gray-500">Good work</div>
-
                       <div className="h-16 mt-3">
                         <svg viewBox="0 0 100 40" className="w-full h-full">
                           <polyline
@@ -145,7 +128,6 @@ export default function HeroSection() {
                         <p className="font-semibold text-gray-900">Morgan West</p>
                       </div>
                     </div>
-
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-600">Score</span>
@@ -156,7 +138,6 @@ export default function HeroSection() {
                         <span className="font-semibold">1 min</span>
                       </div>
                       <div className="text-xs text-gray-500">Good work</div>
-
                       <div className="h-16 mt-3">
                         <svg viewBox="0 0 100 40" className="w-full h-full">
                           <polyline
@@ -169,13 +150,11 @@ export default function HeroSection() {
                       </div>
                     </div>
                   </div>
-
-                </div> 
+                </div>
               </div>
             </div>
           </div>
         </div>
-
       </div>
     </section>
   );

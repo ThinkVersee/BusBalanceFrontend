@@ -1,24 +1,38 @@
-// app/page.js
-import Navbar from "@/components/home/Navbar";
+// app/page.jsx
+import AboutAppSection from "@/components/home/AboutAppSection";
+import Footer from "@/components/home/Footer";
 import HeroSection from "@/components/home/HeroSection";
+import Navbar from "@/components/home/Navbar";
 import ProblemSection from "@/components/home/ProblemSection";
 import SolutionSection from "@/components/home/SolutionSection";
 
-import ServicesSection from "@/components/home/ServicesSection";
-
-import Footer from "@/components/home/Footer";
-
 export default function Home() {
   return (
-    <div className="min-h-screen bg-white">
+    <main>
       <Navbar />
-      <HeroSection />
-      <ProblemSection />
-      <SolutionSection />
-  
-      <ServicesSection />
-      
-      <Footer />
-    </div>
+
+      {/* HERO */}
+      <section id="buss">
+        <HeroSection />
+      </section>
+
+      {/* SERVICES / FEATURES */}
+      <section id="services">
+        <ProblemSection />
+      </section>
+
+      {/* ABOUT */}
+      <section id="about">
+        <AboutAppSection/>
+      </section>
+
+      {/* SUPPORT / SOLUTION */}
+      <section id="support">
+        <SolutionSection />
+      </section>
+           <section id="footer">
+        <Footer />
+      </section>
+    </main>
   );
 }

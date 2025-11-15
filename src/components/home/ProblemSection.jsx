@@ -1,33 +1,34 @@
-import { Briefcase, BarChart3, Smartphone } from "lucide-react";
+import { Briefcase, BarChart3, Smartphone, Users, TrendingUp, IndianRupee, Star } from "lucide-react";
 
 export default function ProblemSection() {
   const features = [
     {
       icon: Briefcase,
       title: "Business Management",
-      desc: "With lots of unique blocks, you can easily build a page without coding. Build your next landing page.",
+      desc: "Manage your bus fleet, drivers, routes, and schedules effortlessly — all from one dashboard, no coding required.",
     },
     {
       icon: BarChart3,
-      title: "Business Tracking",
-      desc: "With lots of unique blocks, you can easily build a page without coding. Build your next landing page.",
+      title: "Daily Profit Tracking",
+      desc: "Auto-calculate earnings from ticket sales and deduct fuel, driver wages, and maintenance costs in real time.",
     },
     {
       icon: Smartphone,
-      title: "Beautiful Mobile App",
-      desc: "With lots of unique blocks, you can easily build a page without coding. Build your next landing page.",
+      title: "Mobile App for Owners",
+      desc: "Log trips, fuel fills, and passenger counts on the go. View profit per trip instantly from your phone.",
     },
   ];
 
   const stats = [
-    { value: "1M+", label: "Customers visit Buss every month" },
-    { value: "93%", label: "Satisfaction rate from our customers" },
-    { value: "4.9", label: "Average customer ratings out of 5.00!" },
+    { value: "1M+", label: "Bus Owners Use Monthly", icon: Users, gradient: "from-blue-500 to-cyan-500" },
+    { value: "93%", label: "Profit Accuracy", icon: TrendingUp, gradient: "from-emerald-500 to-teal-500" },
+    { value: "₹50L+", label: "Daily Income Tracked", icon: IndianRupee, gradient: "from-orange-500 to-red-500" },
+    { value: "4.9", label: "Rating from Owners", icon: Star, gradient: "from-yellow-400 to-amber-500" },
   ];
 
   return (
     <section className="py-16 px-4 sm:px-6 lg:px-8 bg-white relative overflow-hidden">
-      {/* Floating Geometric Background Shapes */}
+      {/* Background Shapes */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-20 left-10 w-32 h-32 bg-blue-100 rounded-full opacity-20 animate-float"></div>
         <div className="absolute top-40 right-20 w-24 h-24 bg-indigo-100 rotate-45 opacity-30 animate-float-delay"></div>
@@ -36,7 +37,7 @@ export default function ProblemSection() {
         <div className="absolute bottom-20 right-10 w-16 h-16 bg-blue-200 rotate-12 opacity-20 animate-float-delay"></div>
       </div>
 
-      {/* Top Feature Cards */}
+      {/* Feature Cards */}
       <div className="max-w-6xl mx-auto mb-16 relative z-10">
         <div className="grid md:grid-cols-3 gap-6">
           {features.map((f, i) => {
@@ -57,55 +58,47 @@ export default function ProblemSection() {
         </div>
       </div>
 
-      {/* Main Content Section */}
+      {/* Main Content */}
       <div className="max-w-6xl mx-auto relative z-10">
-        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-3xl p-12 relative overflow-hidden">
-          {/* Subtle inner glow */}
+        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-3xl p-10 md:p-12 relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white to-transparent opacity-30"></div>
 
-          <div className="grid md:grid-cols-2 gap-12 items-center relative z-10">
-            {/* Left Content */}
+          <div className="grid md:grid-cols-2 gap-10 items-center relative z-10">
             <div>
-              <h2 className="text-4xl font-bold text-gray-900 mb-4 leading-tight">
-                Getting started with Buss is easier than ever
+              <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4 leading-tight">
+                Start Tracking Profit in <span className="text-indigo-600">60 Seconds</span>
               </h2>
               <p className="text-gray-600 mb-6 leading-relaxed">
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
-                incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud
-                exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+                Track daily income from tickets, deduct fuel & driver costs, and see real-time profit per trip or route. Designed for Indian bus owners — no spreadsheets, no hassle.
               </p>
-              <button className="bg-indigo-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-indigo-700 transition inline-flex items-center gap-2 shadow-lg hover:shadow-xl">
-                Get Started
-                <span>→</span>
-              </button>
             </div>
 
-            {/* Right Preview Card */}
+            {/* Samuel Spencer Card – Compact & Realistic */}
             <div className="relative">
-              <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-sm mx-auto border border-gray-100">
-                <div className="flex items-center gap-3 mb-5">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-orange-400 to-pink-500 flex-shrink-0"></div>
+              <div className="bg-white rounded-2xl shadow-2xl p-4 max-w-xs mx-auto border border-gray-100">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-pink-500 flex-shrink-0"></div>
                   <div>
-                    <div className="font-semibold text-gray-900">Samuel Spencer</div>
-                    <div className="text-sm text-gray-500">Creative Director</div>
+                    <div className="font-semibold text-gray-900 text-sm">Rajesh Kumar</div>
+                    <div className="text-xs text-gray-500">Bus Owner, Pune</div>
                   </div>
                 </div>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Daily Income</span>
-                    <span className="text-sm font-semibold text-gray-900">03</span>
+                <div className="space-y-2 text-xs">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Today’s Trips</span>
+                    <span className="font-semibold text-gray-900">3</span>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Pending</span>
-                    <span className="text-sm font-semibold text-indigo-600">₹ 4.03</span>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Net Profit</span>
+                    <span className="font-semibold text-indigo-600">₹4,031</span>
                   </div>
-                  <div className="h-32 bg-gradient-to-r from-indigo-50 to-blue-50 rounded-lg flex items-end p-3 overflow-hidden">
+                  <div className="h-20 bg-gradient-to-r from-indigo-50 to-blue-50 rounded-lg flex items-end p-2 overflow-hidden">
                     <svg viewBox="0 0 100 40" className="w-full h-full">
                       <polyline
                         points="0,35 20,30 40,25 60,20 80,15 100,10"
                         fill="none"
                         stroke="url(#gradient)"
-                        strokeWidth="3"
+                        strokeWidth="2.5"
                         className="drop-shadow-sm"
                       />
                       <defs>
@@ -122,16 +115,22 @@ export default function ProblemSection() {
           </div>
         </div>
 
-        {/* Stats Section */}
-        <div className="grid md:grid-cols-3 gap-8 mt-16">
-          {stats.map((stat, i) => (
-            <div key={i} className="text-center group">
-              <div className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-blue-600 mb-2">
-                {stat.value}
+        {/* Stats with Icons */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-16">
+          {stats.map((stat, i) => {
+            const Icon = stat.icon;
+            return (
+              <div key={i} className="text-center group">
+                <div className={`inline-flex items-center justify-center w-14 h-14 rounded-full bg-gradient-to-br ${stat.gradient} text-white mb-3 group-hover:scale-110 transition-transform`}>
+                  <Icon className="w-7 h-7" />
+                </div>
+                {/* <div className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-gray-800 to-gray-900 mb-1">
+                  {stat.value}
+                </div> */}
+                <div className="text-sm text-gray-600 max-w-xs mx-auto">{stat.label}</div>
               </div>
-              <div className="text-sm text-gray-600 max-w-xs mx-auto">{stat.label}</div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </section>
