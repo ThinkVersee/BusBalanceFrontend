@@ -3,21 +3,18 @@ import axiosInstance from '@/config/axiosInstance';
 import Cookies from 'js-cookie';
 
 /* ===========================================================
-   🧩 HELPER: SET AUTH COOKIES + LOCALSTORAGE
+   HELPER: Set Auth Cookies + localStorage (sync)
    =========================================================== */
-const setAuthCookies = (tokens, isSuperAdmin) => {
+const setAuthCookies = (tokens, isSuperAdmin = false) => {
   const prefix = isSuperAdmin ? 'superadmin_' : '';
   const cookieOptions = {
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
-    expires: 7, // 7 days
+    path: '/',
+    expires: 7,
   };
-
-  // ✅ Set tokens in cookies
   Cookies.set(`${prefix}access_token`, tokens.access, cookieOptions);
   Cookies.set(`${prefix}refresh_token`, tokens.refresh, cookieOptions);
-
-  // ✅ Backup in localStorage
   if (typeof window !== 'undefined') {
     localStorage.setItem(`${prefix}access_token`, tokens.access);
     localStorage.setItem(`${prefix}refresh_token`, tokens.refresh);
@@ -25,42 +22,28 @@ const setAuthCookies = (tokens, isSuperAdmin) => {
 };
 
 /* ===========================================================
-   🧩 HELPER: CLEAR AUTH COOKIES + LOCALSTORAGE
+   HELPER: Clear All Auth Data
    =========================================================== */
-const clearAuthCookies = (isSuperAdmin = false) => {
+const clearAuthData = (isSuperAdmin = false) => {
   const prefix = isSuperAdmin ? 'superadmin_' : '';
-
-  // ✅ Remove cookies
   Cookies.remove(`${prefix}access_token`);
   Cookies.remove(`${prefix}refresh_token`);
-
-  // ✅ Remove from localStorage
   if (typeof window !== 'undefined') {
     localStorage.removeItem(`${prefix}access_token`);
     localStorage.removeItem(`${prefix}refresh_token`);
   }
-
-  // ✅ Remove user object
-  localStorage.removeItem('user');
-
-  // ✅ Also clear opposite role tokens (optional for safety)
-  if (isSuperAdmin) {
-    Cookies.remove('access_token');
-    Cookies.remove('refresh_token');
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-  } else {
-    Cookies.remove('superadmin_access_token');
-    Cookies.remove('superadmin_refresh_token');
-    localStorage.removeItem('superadmin_access_token');
-    localStorage.removeItem('superadmin_refresh_token');
+  const opposite = isSuperAdmin ? '' : 'superadmin_';
+  Cookies.remove(`${opposite}access_token`);
+  Cookies.remove(`${opposite}refresh_token`);
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem(`${opposite}access_token`);
+    localStorage.removeItem(`${opposite}refresh_token`);
+    localStorage.removeItem('user');
   }
-
-  console.log(`🧹 Cleared all ${isSuperAdmin ? 'superadmin' : 'user'} tokens.`);
 };
 
 /* ===========================================================
-   🧩 LOGIN THUNK
+   THUNK: Login User
    =========================================================== */
 export const loginUser = createAsyncThunk(
   'auth/login',
@@ -68,26 +51,22 @@ export const loginUser = createAsyncThunk(
     try {
       const response = await axiosInstance.post(endpoint, { username, password });
       const data = response.data;
-      const isSuperAdmin = endpoint.includes('superadmin') || endpoint.includes('admin');
-
-      // Normalize token structure
-      const tokens = data.tokens ? data.tokens : { access: data.access, refresh: data.refresh };
-
-      // Save tokens and user
+      const isSuperAdmin = endpoint.includes('admin') || endpoint.includes('superadmin');
+      const tokens = data.tokens || { access: data.access, refresh: data.refresh };
       setAuthCookies(tokens, isSuperAdmin);
       if (typeof window !== 'undefined' && data.user) {
         localStorage.setItem('user', JSON.stringify(data.user));
       }
-
       return { user: data.user, tokens, isSuperAdmin };
     } catch (error) {
-      return rejectWithValue(error.response?.data || { error: 'Login failed' });
+      const message = error.response?.data?.detail || error.response?.data?.error || 'Login failed';
+      return rejectWithValue({ message });
     }
   }
 );
 
 /* ===========================================================
-   🧩 LOGOUT THUNK
+   THUNK: Logout User
    =========================================================== */
 export const logoutUser = createAsyncThunk(
   'auth/logout',
@@ -95,97 +74,95 @@ export const logoutUser = createAsyncThunk(
     try {
       await axiosInstance.post('/logout/');
     } catch (error) {
-      console.error('Logout error:', error);
+      console.warn('Logout API failed (continuing cleanup):', error);
     } finally {
-      // ✅ Always clear tokens
-      clearAuthCookies(isSuperAdmin);
+      clearAuthData(isSuperAdmin);
     }
     return { success: true };
   }
 );
 
 /* ===========================================================
-   🧩 REFRESH TOKEN THUNK
+   THUNK: Refresh Token
    =========================================================== */
 export const refreshToken = createAsyncThunk(
   'auth/refreshToken',
   async ({ isSuperAdmin = false } = {}, { rejectWithValue, getState }) => {
     try {
       const prefix = isSuperAdmin ? 'superadmin_' : '';
-      const refreshToken =
-        getState().auth.refreshToken ||
+      const state = getState().auth;
+      const refreshTokenValue =
+        state.refreshToken ||
         Cookies.get(`${prefix}refresh_token`) ||
-        (typeof window !== 'undefined'
-          ? localStorage.getItem(`${prefix}refresh_token`)
-          : null);
-
-      if (!refreshToken) throw new Error('No refresh token available');
-
-      const response = await axiosInstance.post('/token/refresh/', { refresh: refreshToken });
-
-      const cookieOptions = {
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        expires: 7,
-      };
-
-      Cookies.set(`${prefix}access_token`, response.data.access, cookieOptions);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(`${prefix}access_token`, response.data.access);
+        (typeof window !== 'undefined' ? localStorage.getItem(`${prefix}refresh_token`) : null);
+      if (!refreshTokenValue) {
+        throw new Error('No refresh token available');
       }
-
-      return response.data;
+      const endpoint = isSuperAdmin
+        ? `${process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, '')}/token/refresh/`
+        : `${process.env.NEXT_PUBLIC_API_URL}/token/refresh/`;
+      const { data } = await axiosInstance.post(endpoint, { refresh: refreshTokenValue });
+      const cookieOptions = { secure: process.env.NODE_ENV === 'production', sameSite: 'lax', path: '/', expires: 7 };
+      Cookies.set(`${prefix}access_token`, data.access, cookieOptions);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(`${prefix}access_token`, data.access);
+      }
+      return { access: data.access, isSuperAdmin };
     } catch (error) {
-      clearAuthCookies(isSuperAdmin);
-      return rejectWithValue(error.response?.data || { error: 'Token refresh failed' });
+      const message = error.response?.data?.detail || 'Token refresh failed';
+      clearAuthData(isSuperAdmin);
+      return rejectWithValue({ message });
     }
   }
 );
 
 /* ===========================================================
-   🧩 INITIAL TOKEN LOADING
+   INITIAL TOKEN LOADER (SSR-safe)
    =========================================================== */
-const getInitialTokens = () => {
+const loadInitialAuthState = () => {
   if (typeof window === 'undefined') {
-    return { accessToken: null, refreshToken: null, isSuperAdmin: false };
-  }
-
-  // Superadmin tokens first
-  const superadminAccessToken =
-    Cookies.get('superadmin_access_token') || localStorage.getItem('superadmin_access_token');
-  if (superadminAccessToken) {
     return {
-      accessToken: superadminAccessToken,
-      refreshToken:
-        Cookies.get('superadmin_refresh_token') ||
-        localStorage.getItem('superadmin_refresh_token'),
-      isSuperAdmin: true,
+      accessToken: null,
+      refreshToken: null,
+      isSuperAdmin: false,
+      user: null,
     };
   }
 
-  // Normal user tokens
-  const accessToken = Cookies.get('access_token') || localStorage.getItem('access_token');
+  const superAccess = Cookies.get('superadmin_access_token') || localStorage.getItem('superadmin_access_token');
+  if (superAccess) {
+    return {
+      accessToken: superAccess,
+      refreshToken: Cookies.get('superadmin_refresh_token') || localStorage.getItem('superadmin_refresh_token'),
+      isSuperAdmin: true,
+      user: JSON.parse(localStorage.getItem('user') || 'null'),
+    };
+  }
+
+  const access = Cookies.get('access_token') || localStorage.getItem('access_token');
   return {
-    accessToken: accessToken || null,
+    accessToken: access || null,
     refreshToken: Cookies.get('refresh_token') || localStorage.getItem('refresh_token'),
     isSuperAdmin: false,
+    user: JSON.parse(localStorage.getItem('user') || 'null'),
   };
 };
 
-const initialTokens = getInitialTokens();
+const initialAuth = loadInitialAuthState();
 
 /* ===========================================================
-   🧩 SLICE
+   AUTH SLICE
    =========================================================== */
 const authSlice = createSlice({
   name: 'auth',
   initialState: {
-    user: typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('user')) : null,
-    accessToken: initialTokens.accessToken,
-    refreshToken: initialTokens.refreshToken,
-    isAuthenticated: !!initialTokens.accessToken,
-    isSuperAdmin: initialTokens.isSuperAdmin,
+    user: initialAuth.user,
+    accessToken: initialAuth.accessToken,
+    refreshToken: initialAuth.refreshToken,
+    isAuthenticated: !!initialAuth.accessToken,
+    isSuperAdmin: initialAuth.isSuperAdmin,
     isLoading: false,
+    isInitializing: true, // NEW: Are we still checking tokens?
     error: null,
   },
   reducers: {
@@ -193,20 +170,33 @@ const authSlice = createSlice({
       state.error = null;
     },
     setCredentials: (state, action) => {
-      state.user = action.payload.user;
-      state.accessToken = action.payload.tokens?.access || null;
-      state.refreshToken = action.payload.tokens?.refresh || null;
-      state.isAuthenticated = !!action.payload.user;
-      state.isSuperAdmin = action.payload.isSuperAdmin || false;
-
-      if (action.payload.tokens) {
-        setAuthCookies(action.payload.tokens, action.payload.isSuperAdmin);
-      }
+      const { user, tokens, isSuperAdmin } = action.payload;
+      state.user = user;
+      state.accessToken = tokens?.access || null;
+      state.refreshToken = tokens?.refresh || null;
+      state.isAuthenticated = !!user;
+      state.isSuperAdmin = !!isSuperAdmin;
+      state.isInitializing = false;
+      if (tokens) setAuthCookies(tokens, isSuperAdmin);
+    },
+    forceLogout: (state) => {
+      clearAuthData(state.isSuperAdmin);
+      state.user = null;
+      state.accessToken = null;
+      state.refreshToken = null;
+      state.isAuthenticated = false;
+      state.isSuperAdmin = false;
+      state.isInitializing = false;
+      state.error = 'Session expired. Please log in again.';
+    },
+    // NEW: Mark initialization complete (used after hydration check)
+    finishInitialization: (state) => {
+      state.isInitializing = false;
     },
   },
   extraReducers: (builder) => {
     builder
-      // Login cases
+      // LOGIN
       .addCase(loginUser.pending, (state) => {
         state.isLoading = true;
         state.error = null;
@@ -218,6 +208,8 @@ const authSlice = createSlice({
         state.accessToken = action.payload.tokens.access;
         state.refreshToken = action.payload.tokens.refresh;
         state.isSuperAdmin = action.payload.isSuperAdmin;
+        state.isInitializing = false;
+        state.error = null;
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.isLoading = false;
@@ -226,16 +218,18 @@ const authSlice = createSlice({
         state.accessToken = null;
         state.refreshToken = null;
         state.isSuperAdmin = false;
-        state.error = action.payload;
+        state.isInitializing = false;
+        state.error = action.payload?.message || 'Login failed';
       })
 
-      // Logout cases
+      // LOGOUT
       .addCase(logoutUser.fulfilled, (state) => {
         state.isAuthenticated = false;
         state.user = null;
         state.accessToken = null;
         state.refreshToken = null;
         state.isSuperAdmin = false;
+        state.isInitializing = false;
         state.error = null;
       })
       .addCase(logoutUser.rejected, (state) => {
@@ -244,34 +238,43 @@ const authSlice = createSlice({
         state.accessToken = null;
         state.refreshToken = null;
         state.isSuperAdmin = false;
+        state.isInitializing = false;
       })
 
-      // Refresh token
+      // REFRESH
+      .addCase(refreshToken.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
       .addCase(refreshToken.fulfilled, (state, action) => {
+        state.isLoading = false;
         state.accessToken = action.payload.access;
         state.isAuthenticated = true;
+        state.isSuperAdmin = action.payload.isSuperAdmin;
+        state.isInitializing = false;
       })
       .addCase(refreshToken.rejected, (state, action) => {
+        state.isLoading = false;
         state.isAuthenticated = false;
         state.user = null;
         state.accessToken = null;
         state.refreshToken = null;
         state.isSuperAdmin = false;
-        state.error = action.payload;
+        state.isInitializing = false;
+        state.error = action.payload?.message || 'Session expired';
       });
   },
 });
 
-export const { clearError, setCredentials } = authSlice.actions;
+export const { clearError, setCredentials, forceLogout, finishInitialization } = authSlice.actions;
 
-/* ===========================================================
-   🧩 SELECTORS
-   =========================================================== */
 export const selectCurrentUser = (state) => state.auth.user;
 export const selectIsAuthenticated = (state) => state.auth.isAuthenticated;
 export const selectIsSuperAdmin = (state) => state.auth.isSuperAdmin;
 export const selectAuthLoading = (state) => state.auth.isLoading;
 export const selectAuthError = (state) => state.auth.error;
 export const selectAccessToken = (state) => state.auth.accessToken;
+export const selectRefreshToken = (state) => state.auth.refreshToken;
+export const selectIsInitializing = (state) => state.auth.isInitializing; // NEW
 
 export default authSlice.reducer;

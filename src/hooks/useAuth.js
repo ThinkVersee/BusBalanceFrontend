@@ -1,7 +1,7 @@
 import { useDispatch, useSelector } from 'react-redux';
-import { 
-  loginUser, 
-  logoutUser, 
+import {
+  loginUser,
+  logoutUser,
   refreshToken,
   clearError,
   selectCurrentUser,
@@ -9,22 +9,21 @@ import {
   selectIsSuperAdmin,
   selectAuthLoading,
   selectAuthError,
-  selectAccessToken 
+  selectAccessToken,
+  selectIsInitializing, // NEW
 } from '@/store/slices/authSlice';
 
 export const useAuth = () => {
   const dispatch = useDispatch();
-
   return {
-    // Selectors
     user: useSelector(selectCurrentUser),
     isAuthenticated: useSelector(selectIsAuthenticated),
     isSuperAdmin: useSelector(selectIsSuperAdmin),
     isLoading: useSelector(selectAuthLoading),
+    isInitializing: useSelector(selectIsInitializing), // NEW
     error: useSelector(selectAuthError),
     accessToken: useSelector(selectAccessToken),
-    
-    // Actions
+
     login: (credentials) => dispatch(loginUser(credentials)),
     logout: (options) => dispatch(logoutUser(options)),
     refresh: (options) => dispatch(refreshToken(options)),

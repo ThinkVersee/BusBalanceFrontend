@@ -78,11 +78,10 @@ export default function OwnerDashboard() {
     }
   }, [today]);
 
+  // Fetch only once on mount
   useEffect(() => {
     fetchDashboardData();
-    const interval = setInterval(fetchDashboardData, 30000);
-    return () => clearInterval(interval);
-  }, [fetchDashboardData]);
+  }, [fetchDashboardData]); // No interval
 
   const handleWithdraw = async (e) => {
     e.preventDefault();
@@ -98,7 +97,7 @@ export default function OwnerDashboard() {
       });
       setShowWithdrawModal(false);
       setWithdrawForm({ amount: "", reason: "", method: "Cash", reference: "" });
-      fetchDashboardData(); // Refresh balance
+      fetchDashboardData(); // Refresh only after withdrawal
     } catch (err) {
       setWithdrawError(err.response?.data?.amount?.[0] || "Withdrawal failed.");
     } finally {
@@ -118,7 +117,7 @@ export default function OwnerDashboard() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
         <div className="mb-6 sm:mb-8">
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 flex items-center gap-3">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 and items-center gap-3">
             <Activity className="text-blue-600 flex-shrink-0" size={28} />
             <span className="truncate">Owner Dashboard</span>
           </h1>

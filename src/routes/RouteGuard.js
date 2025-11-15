@@ -1,106 +1,117 @@
-// routes/RouteGuard.jsx
 'use client';
-
-import { useEffect, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import AuthLoadingScreen from '@/components/auth/AuthLoadingScreen';
+import { finishInitialization } from '@/store/slices/authSlice';
+import { useDispatch } from 'react-redux';
 
 const PUBLIC_ROUTES = ['/', '/login', '/register', '/admin/login'];
+const ADMIN_ROUTES = '/admin';
+const OWNER_ROUTES = '/owner';
+const EMPLOYEE_ROUTES = '/employee';
 
 export default function RouteGuard({ children }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { isAuthenticated, isSuperAdmin, user, isLoading: authLoading } = useAuth();
+  const dispatch = useDispatch();
+  const hasRedirected = useRef(false);
 
-  const [checking, setChecking] = useState(true);
-  const [authorized, setAuthorized] = useState(false);
+  const {
+    isAuthenticated,
+    isSuperAdmin,
+    user,
+    isLoading: authLoading,
+    isInitializing,
+  } = useAuth();
 
   useEffect(() => {
-    const run = () => {
-      // -------------------------------------------------------------
-      // Still loading auth context → wait
-      // -------------------------------------------------------------
-      if (authLoading) {
-        setChecking(true);
-        return;
-      }
+    // Prevent multiple redirects
+    if (hasRedirected.current) return;
 
-      // -------------------------------------------------------------
-      // Public route → always allow
-      // -------------------------------------------------------------
-      if (PUBLIC_ROUTES.includes(pathname)) {
-        setAuthorized(true);
-        setChecking(false);
-        return;
-      }
+    // Finish initialization
+    if (isInitializing) {
+      dispatch(finishInitialization());
+      return;
+    }
 
-      // -------------------------------------------------------------
-      // Not authenticated → go to appropriate login
-      // -------------------------------------------------------------
-      if (!isAuthenticated) {
-        setAuthorized(false);
-        setChecking(false);
-        const target = pathname.startsWith('/admin') ? '/admin/login' : '/login';
-        router.replace(target);
-        return;
-      }
+    // Still loading auth state
+    if (authLoading) return;
 
-      // -------------------------------------------------------------
-      // Authenticated – role checks
-      // -------------------------------------------------------------
-      if (pathname.startsWith('/admin') && !isSuperAdmin) {
-        setAuthorized(false);
-        setChecking(false);
+    // === 1. Block authenticated users from public/auth pages ===
+    if (isAuthenticated && PUBLIC_ROUTES.includes(pathname)) {
+      hasRedirected.current = true;
+      if (isSuperAdmin) {
+        router.replace('/admin');
+      } else if (user?.is_owner) {
+        router.replace('/owner');
+      } else if (user?.is_employee) {
+        router.replace('/employee');
+      } else {
+        router.replace('/');
+      }
+      return;
+    }
+
+    // === 2. Non-authenticated users on protected routes ===
+    if (!isAuthenticated && !PUBLIC_ROUTES.includes(pathname)) {
+      hasRedirected.current = true;
+      const target = pathname.startsWith('/admin') ? '/admin/login' : '/login';
+      router.replace(target);
+      return;
+    }
+
+    // === 3. Role-based route protection ===
+    // Admin routes
+    if (pathname.startsWith(ADMIN_ROUTES) && pathname !== '/admin/login') {
+      if (!isSuperAdmin) {
+        hasRedirected.current = true;
         router.replace('/admin/login');
         return;
       }
+    }
 
-      if (pathname.startsWith('/owner') && !user?.is_owner) {
-        setAuthorized(false);
-        setChecking(false);
-        router.replace('/login');
-        return;
-      }
+    // Owner routes
+    if (pathname.startsWith(OWNER_ROUTES) && !user?.is_owner) {
+      hasRedirected.current = true;
+      router.replace('/login');
+      return;
+    }
 
-      if (pathname.startsWith('/employee') && !user?.is_employee) {
-        setAuthorized(false);
-        setChecking(false);
-        router.replace('/login');
-        return;
-      }
+    // Employee routes
+    if (pathname.startsWith(EMPLOYEE_ROUTES) && !user?.is_employee) {
+      hasRedirected.current = true;
+      router.replace('/login');
+      return;
+    }
 
-      // -------------------------------------------------------------
-      // Prevent logged-in users from seeing login pages
-      // -------------------------------------------------------------
-      if (isAuthenticated && (pathname === '/login' || pathname === '/admin/login')) {
-        setAuthorized(false);
-        setChecking(false);
-        if (isSuperAdmin) router.replace('/admin/dashboard');
-        else if (user?.is_owner) router.replace('/owner/dashboard');
-        else if (user?.is_employee) router.replace('/employee/dashboard');
-        return;
-      }
+    // === 4. SuperAdmin should not stay on /admin/login ===
+    if (isSuperAdmin && pathname === '/admin/login') {
+      hasRedirected.current = true;
+      router.replace('/admin');
+      return;
+    }
 
-      // -------------------------------------------------------------
-      // All checks passed
-      // -------------------------------------------------------------
-      setAuthorized(true);
-      setChecking(false);
-    };
+    // Reset redirect flag when path changes
+    hasRedirected.current = false;
+  }, [
+    isAuthenticated,
+    isSuperAdmin,
+    user,
+    pathname,
+    router,
+    authLoading,
+    isInitializing,
+    dispatch,
+  ]);
 
-    run();
-  }, [isAuthenticated, isSuperAdmin, user, pathname, router, authLoading]);
-
-  // -----------------------------------------------------------------
-  // Render
-  // -----------------------------------------------------------------
-  if (checking || authLoading) {
-    return <AuthLoadingScreen message="Verifying authentication..." />;
-  }
-
-  if (!authorized) {
-    return <AuthLoadingScreen message="Redirecting..." />;
+  // Show loading screen during init or auth check
+  if (isInitializing || authLoading) {
+    return (
+      <AuthLoadingScreen
+        message={isInitializing ? 'Initializing session…' : 'Verifying authentication…'}
+      />
+    );
   }
 
   return <>{children}</>;
