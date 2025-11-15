@@ -1,7 +1,7 @@
 // app/staff/page.js
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -15,8 +15,7 @@ import { FormModal } from '@/components/common/FormModal';
 import { ConfirmModal } from '@/components/common/ConfirmModal';
 
 /* ------------------------------------------------------------------
-   ZOD SCHEMA – bus_ids required for **all** employees,
-   date_of_joining removed
+   ZOD SCHEMA
    ------------------------------------------------------------------ */
 const employeeSchema = z.object({
   name: z.string().min(1, 'Full name is required'),
@@ -30,7 +29,7 @@ const employeeSchema = z.object({
 });
 
 /* ------------------------------------------------------------------
-   CLIENT COMPONENT
+   MAIN COMPONENT
    ------------------------------------------------------------------ */
 export default function StaffManagement() {
   /* -------------------------- STATE -------------------------- */
@@ -106,7 +105,7 @@ export default function StaffManagement() {
     const q = search.toLowerCase();
     const res = employees.filter(e =>
       [e.user?.name, e.user?.email, e.user?.phone, e.employee_id, e.employee_type,
-       ...(e.buses?.map(b => b.bus_number) || [])]
+      ...(e.buses?.map(b => b.bus_number) || [])]
         .some(f => f?.toString().toLowerCase().includes(q))
     );
     setFiltered(res);
@@ -139,7 +138,7 @@ export default function StaffManagement() {
       license_number: '',
       license_expiry: '',
       is_active_employee: true,
-      bus_ids: [], // will be validated as required
+      bus_ids: [],
     });
     setSelected(null);
     setModalOpen(true);
@@ -197,6 +196,7 @@ export default function StaffManagement() {
     setSelected(emp);
     setDeleteOpen(true);
   };
+
   const confirmDelete = async () => {
     if (!selected) return;
     try {
@@ -241,22 +241,22 @@ export default function StaffManagement() {
     }
   };
 
-  /* -------------------------- FORM SECTIONS (cleaned) -------------------------- */
+  /* -------------------------- FORM SECTIONS -------------------------- */
   const employeeSections = useMemo(
     () => [
       {
         title: 'Basic Information',
         fields: [
-          { label: 'Full Name *', name: 'name', required: true },
-          { label: 'Email', name: 'email', type: 'email' },
-          { label: 'Phone', name: 'phone', type: 'tel' },
+          { label: 'Full Name', name: 'name', required: true },
+          { label: 'Email', name: 'email', type: 'email', required: true },
+          { label: 'Phone', name: 'phone', type: 'tel', required: true },
         ],
       },
       {
         title: 'Employment Details',
         fields: [
           {
-            label: 'Role *',
+            label: 'Role',
             name: 'employee_type',
             type: 'select',
             required: true,
@@ -267,12 +267,17 @@ export default function StaffManagement() {
               { value: 'MANAGER', label: 'Manager' },
               { value: 'CLEANER', label: 'Cleaner' },
               { value: 'MECHANIC', label: 'Mechanic' },
-            ],
+            ].map(opt => ({
+              ...opt,
+              // This ensures text is dark even in native select on macOS
+              ...(opt.value && { className: 'text-gray-900' })
+            })),
           },
           {
-            label: 'Assigned Buses *',
+            label: 'Assigned Buses',
             name: 'bus_ids',
             type: 'multiselect',
+            required: true,
             placeholder: busLoading ? 'Loading buses...' : '— Select Buses —',
             options: buses
               .filter(b => b.is_operational !== false)
@@ -301,8 +306,9 @@ export default function StaffManagement() {
     () => [
       {
         header: 'Employee ID',
-        cell: row =>
-          React.createElement('span', { className: 'font-mono text-sm' }, row.employee_id || '—'),
+        cell: row => (
+          <span className="font-mono text-sm">{row.employee_id || '—'}</span>
+        ),
       },
       { header: 'Name', accessor: row => row.user?.name || '—' },
       { header: 'Role', accessor: 'employee_type' },
@@ -312,138 +318,157 @@ export default function StaffManagement() {
         header: 'Status',
         cell: row => {
           const active = row.is_active_employee;
-          return React.createElement(
-            'span',
-            {
-              className: `inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-              }`,
-            },
-            active ? React.createElement(CheckCircle, { size: 14 }) : React.createElement(Ban, { size: 14 }),
-            active ? 'Active' : 'Blocked'
+          return (
+            <span
+              className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                }`}
+            >
+              {active ? <CheckCircle size={14} /> : <Ban size={14} />}
+              {active ? 'Active' : 'Blocked'}
+            </span>
           );
         },
       },
       {
         header: 'Actions',
-        cell: row =>
-          React.createElement('div', { className: 'flex items-center gap-3' },
-            React.createElement('button', {
-              onClick: () => openEdit(row),
-              className: 'text-blue-600 hover:text-blue-800',
-              title: 'Edit',
-            }, React.createElement(Edit, { size: 16 })),
-            React.createElement('button', {
-              onClick: () => openDelete(row),
-              className: 'text-red-600 hover:text-red-800',
-              title: 'Delete',
-            }, React.createElement(Trash2, { size: 16 })),
-            React.createElement('button', {
-              onClick: () => openBlockModal(row),
-              className: row.is_active_employee
-                ? 'text-orange-600 hover:text-orange-800'
-                : 'text-green-600 hover:text-green-800',
-              title: row.is_active_employee ? 'Block' : 'Unblock',
-            }, React.createElement(Ban, { size: 16 }))
-          ),
+        cell: row => (
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => openEdit(row)}
+              className="text-blue-600 hover:text-blue-800"
+              title="Edit"
+            >
+              <Edit size={16} />
+            </button>
+            <button
+              onClick={() => openDelete(row)}
+              className="text-red-600 hover:text-red-800"
+              title="Delete"
+            >
+              <Trash2 size={16} />
+            </button>
+            <button
+              onClick={() => openBlockModal(row)}
+              className={
+                row.is_active_employee
+                  ? 'text-orange-600 hover:text-orange-800'
+                  : 'text-green-600 hover:text-green-800'
+              }
+              title={row.is_active_employee ? 'Block' : 'Unblock'}
+            >
+              <Ban size={16} />
+            </button>
+          </div>
+        ),
       },
     ],
-    [openEdit, openDelete, openBlockModal]
+    []
   );
 
   /* -------------------------- RENDER -------------------------- */
-  return React.createElement(
-    'div',
-    { className: 'min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-gray-50 p-4 sm:p-6 lg:p-8' },
-    React.createElement('div', { className: 'max-w-7xl mx-auto' },
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-gray-50 p-4 sm:p-6 lg:p-8">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-8">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-teal-600 to-teal-700 rounded-xl flex items-center justify-center shadow-lg">
+              <Users className="text-white w-5 h-5 sm:w-6 sm:h-6" />
+            </div>
+            <div>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
+                Staff Management
+              </h1>
+              <p className="text-gray-600 text-xs sm:text-sm mt-0.5">
+                Manage drivers, conductors, mechanics, cleaners & managers
+              </p>
+            </div>
+          </div>
+        </div>
 
-      /* Header */
-      React.createElement('div', { className: 'flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-8' },
-        React.createElement('div', { className: 'flex items-center gap-3' },
-          React.createElement('div', {
-            className:
-              'w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-teal-600 to-teal-700 rounded-xl flex items-center justify-center shadow-lg',
-          }, React.createElement(Users, { className: 'text-white w-5 h-5 sm:w-6 sm:h-6' })),
-          React.createElement('div', null,
-            React.createElement('h1', { className: 'text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900' }, 'Staff Management'),
-            React.createElement('p', { className: 'text-gray-600 text-xs sm:text-sm mt-0.5' },
-              'Manage drivers, conductors, mechanics, cleaners & managers')
-          )
-        )
-      ),
+        {/* API Error */}
+        {apiError && (
+          <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-lg mb-4 text-sm">
+            {apiError}
+          </div>
+        )}
 
-      /* API Error */
-      apiError && React.createElement('div', {
-        className: 'bg-red-50 border border-red-200 text-red-700 p-3 rounded-lg mb-4 text-sm',
-      }, apiError),
+        {/* Stats + ActionBar */}
+        <StatsCards
+          total={employees.length}
+          active={employees.filter(e => e.is_active_employee).length}
+          label="Employees"
+        />
+        <ActionBar
+          search={search}
+          onSearch={setSearch}
+          onAdd={openAdd}
+          addLabel="Add New Employee"
+          searchPlaceholder="Search by name, ID, role, phone, bus..."
+        />
 
-      /* Stats + ActionBar */
-      React.createElement(StatsCards, {
-        total: employees.length,
-        active: employees.filter(e => e.is_active_employee).length,
-        label: 'Employees',
-      }),
-      React.createElement(ActionBar, {
-        search,
-        onSearch: setSearch,
-        onAdd: openAdd,
-        addLabel: 'Add New Employee',
-        searchPlaceholder: 'Search by name, ID, role, phone, bus...',
-      }),
+        {/* Table */}
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
+          <GenericTable
+            rows={filtered}
+            columns={columns}
+            loading={apiLoading}
+            emptyMessage="No employees found"
+          />
+        </div>
 
-      /* Table */
-      React.createElement('div', { className: 'bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100' },
-        React.createElement(GenericTable, {
-          rows: filtered,
-          columns,
-          loading: apiLoading,
-          emptyMessage: 'No employees found',
-        })
-      ),
+        {/* Modals */}
+        <FormModal
+          isOpen={modalOpen}
+          onClose={closeModal}
+          title={selected ? 'Edit Employee' : 'Add New Employee'}
+          icon={Users}
+          sections={employeeSections}
+          register={register}
+          errors={errors}
+          onSubmit={handleSubmit(onSubmit)}
+          loading={loading}
+          submitLabel={selected ? 'Update' : 'Create Employee'}
+          watch={watch}
+          setValue={setValue}
+        />
 
-      /* Modals */
-      React.createElement(FormModal, {
-        isOpen: modalOpen,
-        onClose: closeModal,
-        title: selected ? 'Edit Employee' : 'Add New Employee',
-        icon: Users,
-        sections: employeeSections,
-        register,
-        errors,
-        onSubmit: handleSubmit(onSubmit),
-        loading,
-        submitLabel: selected ? 'Update' : 'Create Employee',
-        watch,
-        setValue,
-      }),
+        <ConfirmModal
+          isOpen={deleteOpen}
+          onClose={() => {
+            setDeleteOpen(false);
+            setSelected(null);
+          }}
+          onConfirm={confirmDelete}
+          loading={loading}
+          title="Delete Employee?"
+          message={`Are you sure you want to delete ${selected?.user?.name || ''}? This cannot be undone.`}
+          confirmText="Delete"
+          cancelText="Cancel"
+          confirmVariant="danger"
+          icon={Trash2}
+        />
 
-      React.createElement(ConfirmModal, {
-        isOpen: deleteOpen,
-        onClose: () => { setDeleteOpen(false); setSelected(null); },
-        onConfirm: confirmDelete,
-        loading,
-        title: 'Delete Employee?',
-        message: `Are you sure you want to delete ${selected?.user?.name || ''}? This cannot be undone.`,
-        confirmText: 'Delete',
-        cancelText: 'Cancel',
-        confirmVariant: 'danger',
-        icon: Trash2,
-      }),
-
-      React.createElement(ConfirmModal, {
-        isOpen: blockOpen,
-        onClose: () => { setBlockOpen(false); setBlockTarget(null); },
-        onConfirm: confirmBlock,
-        loading: false,
-        title: blockAction === 'block' ? 'Block Employee?' : 'Unblock Employee?',
-        message: blockAction === 'block'
-          ? `Block ${blockTarget?.user?.name || ''}?`
-          : `Unblock ${blockTarget?.user?.name || ''}?`,
-        confirmText: blockAction === 'block' ? 'Block' : 'Unblock',
-        cancelText: 'Cancel',
-        confirmVariant: blockAction === 'block' ? 'warning' : 'success',
-        icon: Ban,
-      })
-    )
+        <ConfirmModal
+          isOpen={blockOpen}
+          onClose={() => {
+            setBlockOpen(false);
+            setBlockTarget(null);
+          }}
+          onConfirm={confirmBlock}
+          loading={false}
+          title={blockAction === 'block' ? 'Block Employee?' : 'Unblock Employee?'}
+          message={
+            blockAction === 'block'
+              ? `Block ${blockTarget?.user?.name || ''}?`
+              : `Unblock ${blockTarget?.user?.name || ''}?`
+          }
+          confirmText={blockAction === 'block' ? 'Block' : 'Unblock'}
+          cancelText="Cancel"
+          confirmVariant={blockAction === 'block' ? 'warning' : 'success'}
+          icon={Ban}
+        />
+      </div>
+    </div>
   );
 }

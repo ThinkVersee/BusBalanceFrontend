@@ -411,13 +411,15 @@ export default function BillBookForm() {
   };
 
   /* -------------------------------------------------
-     Save handler
+     Save handler – FIXED: Files cleared immediately
      ------------------------------------------------- */
   const handleSave = async () => {
     setError(null);
     if (!validateForm()) return;
+
     const transactions = [];
     let hasExpense = false;
+
     incomeCategories.forEach((cat) => {
       if (cat.amount && parseFloat(cat.amount) > 0) {
         transactions.push({
@@ -429,6 +431,7 @@ export default function BillBookForm() {
         });
       }
     });
+
     expenseCategories.forEach((cat) => {
       if (cat.amount && parseFloat(cat.amount) > 0) {
         transactions.push({
@@ -441,24 +444,32 @@ export default function BillBookForm() {
         hasExpense = true;
       }
     });
+
     if (transactions.length === 0) {
       setError("Please enter at least one amount.");
       return;
     }
+
     const formDataToSend = new FormData();
     formDataToSend.append("transactions", JSON.stringify(transactions));
+
+    // Append files and CLEAR them immediately
     expenseFiles.forEach((file, i) => {
       if (hasExpense) formDataToSend.append(`expense_file_${i}`, file);
     });
+    setExpenseFiles([]); // CLEAR FILES BEFORE API CALL
+
     setSaving(true);
     try {
       await axiosInstance.post("/finance/transactions/bulk/", formDataToSend, {
         headers: { "Content-Type": "multipart/form-data" },
       });
+
       alert("Saved successfully!");
+
+      // Reset form
       setIncomeCategories((prev) => prev.map((c) => ({ ...c, amount: "" })));
       setExpenseCategories((prev) => prev.map((c) => ({ ...c, amount: "" })));
-      setExpenseFiles([]);
       setFormData({
         date: new Date().toISOString().split("T")[0],
         bus: "",

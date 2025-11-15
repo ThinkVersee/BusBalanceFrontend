@@ -41,30 +41,32 @@ const busSections = () => [
       { label: 'Registration Number', name: 'registration_number', required: true },
       { label: 'Bus Name', name: 'bus_name', required: true },
       { label: 'Primary Route', name: 'route', required: true, colSpan: 'col-span-1 sm:col-span-2' },
-    ],
-  },
-  {
-    title: 'Optional Specifications',
-    fields: [
+      { label: 'Seating Capacity', name: 'seating_capacity', type: 'number' ,required: true},
       {
         label: 'Bus Type',
         name: 'bus_type',
         type: 'select',
+        required: true,
         options: [
           { value: '', label: '— Select Type —' },
+          { value: 'ORDINARY', label: 'Ordinary' },
           { value: 'AC_SLEEPER', label: 'AC Sleeper' },
           { value: 'NON_AC_SLEEPER', label: 'Non-AC Sleeper' },
           { value: 'AC_SEATER', label: 'AC Seater' },
           { value: 'NON_AC_SEATER', label: 'Non-AC Seater' },
           { value: 'SEMI_SLEEPER', label: 'Semi Sleeper' },
           { value: 'VOLVO', label: 'Volvo' },
-          { value: 'ORDINARY', label: 'Ordinary' },
         ]
       },
+    ],
+  },
+  {
+    title: 'Optional Specifications',
+    fields: [
+      
       { label: 'Manufacturer', name: 'manufacturer' },
       { label: 'Model', name: 'model' },
       { label: 'Year of Manufacture', name: 'year_of_manufacture', type: 'number' },
-      { label: 'Seating Capacity', name: 'seating_capacity', type: 'number' },
       { label: 'Chassis Number', name: 'chassis_number' },
       { label: 'Engine Number', name: 'engine_number' },
     ],

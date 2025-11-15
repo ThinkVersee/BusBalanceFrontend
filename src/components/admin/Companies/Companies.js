@@ -22,24 +22,26 @@ import { GenericTable } from '@/components/common/GenericTable';
 import { FormModal } from '@/components/common/FormModal';
 import { ConfirmModal } from '@/components/common/ConfirmModal';
 
-
+/* --------------------------------------------------------------
+   UPDATED SCHEMA – license_number is OPTIONAL now
+   -------------------------------------------------------------- */
 const ownerSchema = z.object({
   name: z.string().min(2, 'Name is required'),
   email: z.string().email('Invalid email'),
   company_name: z.string().min(1, 'Company name required'),
-  license_number: z.string().min(1, 'License required'),
+  license_number: z.string().optional().or(z.literal('')),
   business_address: z.string().min(1, 'Address required'),
   business_phone: z
     .string()
     .regex(/^\+?[1-9]\d{9,14}$/, 'Invalid phone')
     .optional()
     .or(z.literal('')),
-  pan_number: z.string().optional(),
-  gst_number: z.string().optional(),
+  pan_number: z.string().optional().or(z.literal('')),
+  gst_number: z.string().optional().or(z.literal('')),
 });
 
 /* --------------------------------------------------------------
-   FORM SECTIONS – used by the generic FormModal
+   FORM SECTIONS – license_number NOT REQUIRED now
    -------------------------------------------------------------- */
 const busOwnerSections = [
   {
@@ -47,13 +49,13 @@ const busOwnerSections = [
     fields: [
       { label: 'Name', name: 'name', required: true },
       { label: 'Email', name: 'email', type: 'email', required: true },
+      { label: 'Business Phone', name: 'business_phone', type: 'tel', required: true },
     ],
   },
   {
     title: 'Business Information',
     fields: [
       { label: 'Company Name', name: 'company_name', required: true },
-      { label: 'License Number', name: 'license_number', required: true },
       {
         label: 'Business Address',
         name: 'business_address',
@@ -61,7 +63,7 @@ const busOwnerSections = [
         required: true,
         colSpan: 'col-span-1 sm:col-span-2',
       },
-      { label: 'Business Phone', name: 'business_phone', type: 'tel' },
+      { label: 'License Number', name: 'license_number' },
       { label: 'PAN Number', name: 'pan_number' },
       {
         label: 'GST Number',
@@ -93,9 +95,9 @@ export default function BusOwnerManagement() {
     formState: { errors },
   } = useForm({ resolver: zodResolver(ownerSchema) });
 
-  // -----------------------------------------------------------------
-  // FETCH OWNERS
-  // -----------------------------------------------------------------
+  /* --------------------------------------------------------------
+     FETCH OWNERS
+     -------------------------------------------------------------- */
   const fetchOwners = useCallback(async () => {
     setApiLoading(true);
     setApiError(null);
@@ -114,9 +116,9 @@ export default function BusOwnerManagement() {
     fetchOwners();
   }, [fetchOwners]);
 
-  // -----------------------------------------------------------------
-  // SEARCH FILTER
-  // -----------------------------------------------------------------
+  /* --------------------------------------------------------------
+     SEARCH
+     -------------------------------------------------------------- */
   useEffect(() => {
     const q = searchQuery.toLowerCase();
     const filtered = owners.filter(o =>
@@ -127,9 +129,9 @@ export default function BusOwnerManagement() {
     setFilteredOwners(filtered);
   }, [searchQuery, owners]);
 
-  // -----------------------------------------------------------------
-  // FORM HELPERS
-  // -----------------------------------------------------------------
+  /* --------------------------------------------------------------
+     FORM RESET
+     -------------------------------------------------------------- */
   const resetForm = () => {
     reset({
       name: '',
@@ -144,29 +146,49 @@ export default function BusOwnerManagement() {
     setSelectedOwner(null);
   };
 
+  /* --------------------------------------------------------------
+     ADD OWNER
+     -------------------------------------------------------------- */
   const handleAdd = () => {
     resetForm();
     setIsModalOpen(true);
   };
 
+  /* --------------------------------------------------------------
+     EDIT OWNER
+     -------------------------------------------------------------- */
   const handleEdit = owner => {
     setSelectedOwner(owner);
     setValue('name', owner.name);
     setValue('email', owner.email);
-    setValue('company_name', owner.company_name);
-    setValue('license_number', owner.license_number);
-    setValue('business_address', owner.business_address);
+    setValue('company_name', owner.company_name || '');
+    setValue('license_number', owner.license_number || '');
+    setValue('business_address', owner.business_address || '');
     setValue('business_phone', owner.business_phone || '');
     setValue('pan_number', owner.pan_number || '');
     setValue('gst_number', owner.gst_number || '');
     setIsModalOpen(true);
   };
 
-  // -----------------------------------------------------------------
-  // SUBMIT (ADD / EDIT)
-  // -----------------------------------------------------------------
+  /* --------------------------------------------------------------
+     SUBMIT FORM  (IMPORTANT FIX APPLIED HERE)
+     -------------------------------------------------------------- */
   const onSubmit = async data => {
     setLoading(true);
+
+    // 🔥 Normalize empty values → null
+    Object.keys(data).forEach(key => {
+      const value = data[key];
+      if (
+        value === '' ||
+        value === undefined ||
+        value === null ||
+        (typeof value === 'string' && value.trim() === '')
+      ) {
+        data[key] = null;
+      }
+    });
+
     try {
       if (selectedOwner) {
         await axiosInstance.put(`/owners/bus-owners/${selectedOwner.id}/`, data);
@@ -186,9 +208,9 @@ export default function BusOwnerManagement() {
     }
   };
 
-  // -----------------------------------------------------------------
-  // DELETE
-  // -----------------------------------------------------------------
+  /* --------------------------------------------------------------
+     DELETE OWNER
+     -------------------------------------------------------------- */
   const handleDelete = owner => {
     setSelectedOwner(owner);
     setIsDeleteModalOpen(true);
@@ -208,9 +230,9 @@ export default function BusOwnerManagement() {
     }
   };
 
-  // -----------------------------------------------------------------
-  // BLOCK / UNBLOCK
-  // -----------------------------------------------------------------
+  /* --------------------------------------------------------------
+     BLOCK / UNBLOCK
+     -------------------------------------------------------------- */
   const openBlockModal = owner => {
     setSelectedOwner(owner);
     setBlockAction(owner.is_active ? 'block' : 'unblock');
@@ -233,7 +255,7 @@ export default function BusOwnerManagement() {
           o.id === selectedOwner.id ? { ...o, is_active: data.is_active } : o
         )
       );
-    } catch (err) {
+    } catch {
       alert('Failed to update status');
     } finally {
       setIsBlockModalOpen(false);
@@ -241,9 +263,9 @@ export default function BusOwnerManagement() {
     }
   };
 
-  // -----------------------------------------------------------------
-  // VERIFY
-  // -----------------------------------------------------------------
+  /* --------------------------------------------------------------
+     VERIFY OWNER
+     -------------------------------------------------------------- */
   const handleVerify = async owner => {
     try {
       const { data } = await axiosInstance.post(
@@ -259,15 +281,14 @@ export default function BusOwnerManagement() {
           o.id === owner.id ? { ...o, is_verified: data.is_verified } : o
         )
       );
-    } catch (err) {
-      console.error(err);
+    } catch {
       alert('Verification failed');
     }
   };
 
-  // -----------------------------------------------------------------
-  // TABLE COLUMNS
-  // -----------------------------------------------------------------
+  /* --------------------------------------------------------------
+     TABLE COLUMNS
+     -------------------------------------------------------------- */
   const columns = useMemo(
     () => [
       { header: 'Name', accessor: 'name' },
@@ -278,10 +299,11 @@ export default function BusOwnerManagement() {
         header: 'Status',
         cell: row => (
           <span
-            className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${row.is_active
+            className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${
+              row.is_active
                 ? 'bg-green-100 text-green-800'
                 : 'bg-red-100 text-red-800'
-              }`}
+            }`}
           >
             {row.is_active ? <CheckCircle size={14} /> : <Ban size={14} />}
             {row.is_active ? 'Active' : 'Blocked'}
@@ -307,45 +329,35 @@ export default function BusOwnerManagement() {
         header: 'Actions',
         cell: row => (
           <div className="flex items-center gap-3">
-            {/* Edit */}
             <button
               onClick={() => handleEdit(row)}
               className="text-blue-600 hover:text-blue-800 transition-colors"
-              title="Edit"
             >
               <Edit size={16} />
             </button>
 
-            {/* Delete */}
             <button
               onClick={() => handleDelete(row)}
               className="text-red-600 hover:text-red-800 transition-colors"
-              title="Delete"
             >
               <Trash2 size={16} />
             </button>
 
-            {/* Block / Unblock */}
             <button
               onClick={() => openBlockModal(row)}
-              className={`${row.is_active
+              className={`${
+                row.is_active
                   ? 'text-orange-600 hover:text-orange-800'
                   : 'text-green-600 hover:text-green-800'
-                } transition-colors`}
-              title={row.is_active ? 'Block this owner' : 'Unblock this owner'}
+              } transition-colors`}
             >
-              <Ban
-                size={16}
-                className={row.is_active ? 'text-orange-600' : 'text-green-600'}
-              />
+              <Ban size={16} />
             </button>
 
-            {/* Verify (only if not verified) */}
             {!row.is_verified && (
               <button
                 onClick={() => handleVerify(row)}
                 className="text-purple-600 hover:text-purple-800 transition-colors"
-                title="Verify"
               >
                 <CheckCircle size={16} />
               </button>
@@ -357,9 +369,9 @@ export default function BusOwnerManagement() {
     [handleEdit, handleDelete, openBlockModal, handleVerify]
   );
 
-  // -----------------------------------------------------------------
-  // PASSWORD HINT (shown only on Add)
-  // -----------------------------------------------------------------
+  /* --------------------------------------------------------------
+     PASSWORD HINT
+     -------------------------------------------------------------- */
   const passwordHint = !selectedOwner ? (
     <div className="col-span-1 sm:col-span-2 bg-blue-50 border border-blue-200 rounded-xl p-3 flex items-start gap-2">
       <Mail className="text-blue-600 mt-0.5 flex-shrink-0" size={18} />
@@ -372,9 +384,6 @@ export default function BusOwnerManagement() {
     </div>
   ) : null;
 
-  // -----------------------------------------------------------------
-  // RENDER
-  // -----------------------------------------------------------------
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-gray-50 p-4 sm:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto">
@@ -382,28 +391,25 @@ export default function BusOwnerManagement() {
         {/* HEADER */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 mb-6 sm:mb-8">
           <div className="flex items-center gap-3 w-full sm:w-auto sm:flex-1 sm:min-w-0">
-            {/* Icon – scales & stays square */}
             <div className="flex-shrink-0 w-10 h-10 sm:w-11 sm:h-11 lg:w-12 lg:h-12 
-                    bg-gradient-to-br from-blue-600 to-blue-700 
-                    rounded-lg sm:rounded-xl 
-                    flex items-center justify-center shadow-md">
+              bg-gradient-to-br from-blue-600 to-blue-700 
+              rounded-lg sm:rounded-xl 
+              flex items-center justify-center shadow-md">
               <Building2 className="text-white w-5 h-5 sm:w-5.5 lg:w-6" />
             </div>
 
-            {/* Text – safe truncation & responsive font */}
             <div className="flex-1 min-w-0">
               <h1 className="text-lg sm:text-xl lg:text-2xl xl:text-3xl 
-                     font-bold text-gray-900 
-                     truncate">
+                font-bold text-gray-900 truncate">
                 Bus Owner Management
               </h1>
-              <p className="text-xs sm:text-sm text-gray-600 mt-0.5 
-                    line-clamp-2">
+              <p className="text-xs sm:text-sm text-gray-600 mt-0.5 line-clamp-2">
                 Manage bus owners and their companies
               </p>
             </div>
           </div>
         </div>
+
         {/* ERROR */}
         {apiError && (
           <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-lg mb-4 text-sm">
