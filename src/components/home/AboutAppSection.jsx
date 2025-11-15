@@ -1,4 +1,3 @@
-// components/home/AboutAppSection.jsx
 import Image from "next/image";
 import { Palette, MousePointer, Smile } from "lucide-react";
 
@@ -6,17 +5,17 @@ const features = [
   {
     icon: Palette,
     title: "Creative Design",
-    desc: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Faucibus amet etiam tincidunt rhoncus.",
+    desc: "Clean, modern interface tailored for Indian bus owners — view daily profit, route performance, and fleet status at a glance.",
   },
   {
     icon: MousePointer,
     title: "Easy to Use",
-    desc: "Clean and simple interface designed for everyone — from beginners to experts.",
+    desc: "No training needed. Add ticket income, fuel, or driver salary in 3 taps — even while on the road.",
   },
   {
     icon: Smile,
     title: "Best User Experience",
-    desc: "Smooth, intuitive, and responsive — making every action faster and easier.",
+    desc: "Fast, offline-first mobile app with instant reports. Know your daily profit before the trip ends",
   },
 ];
 
@@ -24,11 +23,9 @@ export default function AboutAppSection() {
   return (
     <section className="py-20 bg-[#F7F7FA]">
       <div className="max-w-6xl mx-auto px-4 grid md:grid-cols-2 gap-12 items-center">
-
-        {/* LEFT: Image */}
         <div className="flex justify-center">
           <Image
-            src="/asstes/home/about.jpg" // ✅ Image path from /public
+            src="/asstes/home/about.jpg"
             alt="BusBalance app preview"
             width={500}
             height={500}
@@ -37,14 +34,10 @@ export default function AboutAppSection() {
           />
         </div>
 
-        {/* RIGHT: Text + Features */}
         <div>
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">
-            About Our App
-          </h2>
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">About Our App</h2>
           <p className="text-gray-600 mb-8">
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Viverra nunc ante vel vitae.
-            Est tellus vitae, nullam lobortis enim. Faucibus amet etiam tincidunt rhoncus.
+            Designed exclusively for bus owners in India — manage your fleet, track daily earnings from tickets, and monitor fuel & driver expenses in real time. Simple, powerful, and built for your daily transport business.
           </p>
 
           <div className="space-y-6">

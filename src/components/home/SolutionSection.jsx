@@ -1,12 +1,9 @@
-
 import Image from "next/image";
 
 export default function SolutionSection() {
   return (
     <section className="py-20 bg-white">
       <div className="max-w-6xl mx-auto px-4 grid md:grid-cols-2 gap-12 items-center">
-        
-        {/* LEFT — Image */}
         <div className="relative">
           <Image
             src="/asstes/home/calender.jpeg"
@@ -18,18 +15,12 @@ export default function SolutionSection() {
           />
         </div>
 
-        {/* RIGHT — Text content */}
         <div>
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">
-            Manage your Business fast
-          </h2>
-
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">Manage your Business fast</h2>
           <p className="text-gray-600 mb-8">
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
-            eiusmod tempor incididunt ut labore et dolore magna aliqua.
+            Track your bus income and expenses daily with ease — perfect for Indian bus owners managing tickets, fuel, drivers, and routes.
           </p>
 
-          {/* Feature list */}
           <div className="space-y-6">
             {[
               "With lots of unique blocks, you can easily build a page without coding.",
@@ -49,4 +40,3 @@ export default function SolutionSection() {
     </section>
   );
 }
-
