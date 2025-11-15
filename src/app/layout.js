@@ -3,7 +3,7 @@ import './globals.css';
 import RouteGuard from '@/routes/RouteGuard';
 
 export const metadata = {
-  title: 'BusBalance',
+  title: 'BusBook',
   description: 'Your app description',
 };
 
