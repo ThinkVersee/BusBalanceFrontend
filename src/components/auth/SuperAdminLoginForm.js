@@ -42,7 +42,7 @@ const SuperAdminLoginForm = () => {
               </div>
             </div>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">BUS BALANCE</h1>
+          <h1 className="text-2xl font-bold text-gray-900">BUSBOOK</h1>
         </div>
 
         {/* Login Form */}
@@ -98,12 +98,12 @@ const SuperAdminLoginForm = () => {
                 />
               </div>
             </div>
-
+{/* 
             <div className="text-right">
               <a href="#" className="text-sm text-blue-600 hover:text-blue-700 font-medium">
                 Forgot password?
               </a>
-            </div>
+            </div> */}
 
             <button
               type="submit"

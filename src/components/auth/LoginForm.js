@@ -121,7 +121,7 @@ const LoginForm = () => {
                 </div>
               </div>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900">BUS BALANCE</h1>
+            <h1 className="text-2xl font-bold text-gray-900">BUSBOOK</h1>
           </div>
 
           {/* Title */}
@@ -197,11 +197,11 @@ const LoginForm = () => {
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
               </div>
-              <div className="mt-2 text-right">
+              {/* <div className="mt-2 text-right">
                 <a href="/forgot-password" className="text-sm text-blue-600 hover:text-blue-700 transition duration-200">
                   Forgot password?
                 </a>
-              </div>
+              </div> */}
             </div>
 
             <button

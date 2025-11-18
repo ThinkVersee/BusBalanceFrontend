@@ -1,4 +1,3 @@
-// app/staff/page.js
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -95,6 +94,36 @@ export default function StaffManagement() {
     }
   }, []);
 
+  /* -------------------------- ERROR EXTRACTOR -------------------------- */
+  const extractErrorMessage = (error) => {
+    if (!error.response?.data) return 'An unexpected error occurred.';
+
+    const data = error.response.data;
+
+    // Case 1: Simple string or detail
+    if (typeof data === 'string') return data;
+    if (data.detail) return data.detail;
+
+    // Case 2: Nested DRF errors like { user: { email: "Already exists." } }
+    const messages = [];
+
+    const traverse = (obj) => {
+      if (Array.isArray(obj)) {
+        messages.push(...obj.map(item => (typeof item === 'string' ? item : JSON.stringify(item))));
+      } else if (typeof obj === 'object' && obj !== null) {
+        Object.values(obj).forEach(value => traverse(value));
+      } else if (typeof obj === 'string') {
+        messages.push(obj);
+      }
+    };
+
+    traverse(data);
+
+    return messages.length > 0
+      ? messages.join(' ')
+      : 'Validation failed. Please check your input.';
+  };
+
   /* -------------------------- EFFECTS -------------------------- */
   useEffect(() => {
     fetchEmployees();
@@ -157,7 +186,7 @@ export default function StaffManagement() {
   };
 
   /* -------------------------- SUBMIT -------------------------- */
-  const onSubmit = async data => {
+  const onSubmit = async (data) => {
     setLoading(true);
     try {
       const payload = {
@@ -185,7 +214,9 @@ export default function StaffManagement() {
       }
       closeModal();
     } catch (e) {
-      alert(Object.values(e.response?.data || {}).flat().join(', ') || 'Save failed');
+      const message = extractErrorMessage(e);
+      alert(message);
+      console.error('API Error:', e.response?.data);
     } finally {
       setLoading(false);
     }
@@ -234,7 +265,7 @@ export default function StaffManagement() {
       setEmployees(sorted);
       setFiltered(sorted);
     } catch {
-      alert('Failed');
+      alert('Operation failed');
     } finally {
       setBlockOpen(false);
       setBlockTarget(null);
@@ -248,8 +279,8 @@ export default function StaffManagement() {
         title: 'Basic Information',
         fields: [
           { label: 'Full Name', name: 'name', required: true },
-          { label: 'Email', name: 'email', type: 'email', required: true },
-          { label: 'Phone', name: 'phone', type: 'tel', required: true },
+          { label: 'Email', name: 'email', type: 'email' },
+          { label: 'Phone', name: 'phone', type: 'tel' },
         ],
       },
       {
@@ -269,7 +300,6 @@ export default function StaffManagement() {
               { value: 'MECHANIC', label: 'Mechanic' },
             ].map(opt => ({
               ...opt,
-              // This ensures text is dark even in native select on macOS
               ...(opt.value && { className: 'text-gray-900' })
             })),
           },
@@ -320,8 +350,9 @@ export default function StaffManagement() {
           const active = row.is_active_employee;
           return (
             <span
-              className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                }`}
+              className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+              }`}
             >
               {active ? <CheckCircle size={14} /> : <Ban size={14} />}
               {active ? 'Active' : 'Blocked'}

@@ -1,18 +1,20 @@
 'use client';
 
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, KeyRound, LogOut } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import Cookies from 'js-cookie';
+import ChangePasswordModal from '../common/ChangePasswordModal';
 
-export default function Navbar({ isSuperAdmin = false }) {
+// Import your existing modal
+
+export default function Navbar() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isChangePassOpen, setIsChangePassOpen] = useState(false);
   const [user, setUser] = useState({ username: '', email: '' });
 
   const dropdownRef = useRef(null);
 
-  /* -------------------------------------------------
-   * Load user from localStorage
-   * ------------------------------------------------- */
+  // Load user from localStorage
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const stored = localStorage.getItem('user');
@@ -25,109 +27,124 @@ export default function Navbar({ isSuperAdmin = false }) {
     }
   }, []);
 
-  /* -------------------------------------------------
-   * Close dropdown on click outside
-   * ------------------------------------------------- */
+  // Close dropdown when clicking outside
   useEffect(() => {
     const handler = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
         setIsDropdownOpen(false);
       }
     };
-    if (isDropdownOpen) document.addEventListener('mousedown', handler);
+    if (isDropdownOpen) {
+      document.addEventListener('mousedown', handler);
+    }
     return () => document.removeEventListener('mousedown', handler);
   }, [isDropdownOpen]);
 
-  /* -------------------------------------------------
-   * Logout – clear cookies + storage
-   * ------------------------------------------------- */
-  const clearAuthCookies = (superAdmin) => {
-    const prefix = superAdmin ? 'superadmin_' : '';
-    const opp = superAdmin ? '' : 'superadmin_';
-
-    Cookies.remove(`${prefix}access_token`);
-    Cookies.remove(`${prefix}refresh_token`);
-    localStorage.removeItem(`${prefix}access_token`);
-    localStorage.removeItem(`${prefix}refresh_token`);
-
-    Cookies.remove(`${opp}access_token`);
-    Cookies.remove(`${opp}refresh_token`);
-    localStorage.removeItem(`${opp}access_token`);
-    localStorage.removeItem(`${opp}refresh_token`);
-
+  // Logout - Clear employee auth data
+  const handleLogout = () => {
+    // Clear main employee tokens
+    Cookies.remove('access_token');
+    Cookies.remove('refresh_token');
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
     localStorage.removeItem('user');
+
+    // Extra safety: clear any superadmin tokens if exist
+    Cookies.remove('superadmin_access_token');
+    Cookies.remove('superadmin_refresh_token');
+    localStorage.removeItem('superadmin_access_token');
+    localStorage.removeItem('superadmin_refresh_token');
+
+    window.location.href = '/employee/login'; // Or '/login' if shared
   };
 
-  const handleLogout = () => {
-    clearAuthCookies(isSuperAdmin);
-    window.location.href = isSuperAdmin ? '/admin/login' : '/login';
+  const openChangePassword = () => {
+    setIsDropdownOpen(false);
+    setIsChangePassOpen(true);
   };
 
   return (
     <>
-      {/* ---------- NAVBAR ---------- */}
-      <nav className="fixed inset-x-0 top-0 z-50 flex items-center h-16 px-4 bg-white border-b border-gray-200 sm:px-6">
+      {/* ========== EMPLOYEE NAVBAR ========== */}
+      <nav className="fixed inset-x-0 top-0 z-50 flex items-center h-16 px-4 bg-white border-b border-gray-200 shadow-sm sm:px-6">
         
-        {/* Left: Logo / Title */}
+        {/* Left: Brand */}
         <div className="flex items-center flex-1">
-          <h1 className="text-lg font-bold text-gray-800 sm:text-xl md:text-2xl">
+          <h1 className="text-xl font-bold text-indigo-600 sm:text-2xl">
             Bus Book
           </h1>
+          <span className="hidden ml-3 px-2 py-0.5 text-xs font-medium text-indigo-700 bg-indigo-100 rounded-full sm:inline-block">
+            Employee
+          </span>
         </div>
 
         {/* Right: User Dropdown */}
-        <div className="flex items-center">
-          <div ref={dropdownRef} className="relative">
-            <button
-              onClick={() => setIsDropdownOpen((v) => !v)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors"
-              aria-expanded={isDropdownOpen}
-            >
-              {/* Avatar */}
-              <div className="flex items-center justify-center w-9 h-9 text-sm font-bold text-gray-800 bg-yellow-400 rounded-full">
-                {user.username ? user.username[0].toUpperCase() : 'U'}
+        <div ref={dropdownRef} className="relative">
+          <button
+            onClick={() => setIsDropdownOpen(prev => !prev)}
+            className="flex items-center gap-3 px-4 py-2 rounded-xl hover:bg-gray-50 transition-all duration-200"
+          >
+            {/* Avatar */}
+            <div className="flex items-center justify-center w-10 h-10 text-white font-bold text-sm bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full shadow-md">
+              {user.username ? user.username[0].toUpperCase() : 'E'}
+            </div>
+
+            {/* User Info - Hidden on mobile */}
+            <div className="hidden text-left sm:block">
+              <p className="text-sm font-semibold text-gray-800 truncate max-w-40">
+                {user.username || 'Employee'}
+              </p>
+              <p className="text-xs text-gray-500 truncate max-w-40">
+                {user.email || 'employee@busbook.in'}
+              </p>
+            </div>
+
+            <ChevronDown
+              size={18}
+              className={`text-gray-500 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`}
+            />
+          </button>
+
+          {/* Dropdown Menu */}
+          {isDropdownOpen && (
+            <div className="absolute right-0 z-50 w-64 mt-3 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden">
+              
+              {/* Mobile User Info */}
+              <div className="px-5 py-4 bg-gradient-to-r from-indigo-50 to-purple-50 border-b border-gray-200 sm:hidden">
+                <p className="font-semibold text-gray-800">{user.username || 'Employee'}</p>
+                <p className="text-sm text-gray-600">{user.email || 'employee@busbook.in'}</p>
               </div>
 
-              {/* Name/Email – visible on sm+ */}
-              <div className="hidden text-left sm:block">
-                <div className="text-sm font-semibold text-gray-800 truncate max-w-32">
-                  {user.username || 'User'}
-                </div>
-                <div className="text-xs text-gray-500 truncate max-w-32">
-                  {user.email || 'user@example.com'}
-                </div>
-              </div>
+              {/* Change Password */}
+              <button
+                onClick={openChangePassword}
+                className="w-full px-5 py-3.5 text-left text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors"
+              >
+                <KeyRound size={18} className="text-indigo-600" />
+                Change Password
+              </button>
 
-              <ChevronDown
-                size={16}
-                className={`text-gray-500 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}
-              />
-            </button>
+              <div className="h-px bg-gray-200" />
 
-            {/* Dropdown Menu */}
-            {isDropdownOpen && (
-              <div className="absolute right-0 z-50 w-56 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg">
-                {/* Mobile User Info */}
-                <div className="px-4 py-3 border-b border-gray-100 sm:hidden">
-                  <div className="text-sm font-medium text-gray-800 truncate">
-                    {user.username || 'User'}
-                  </div>
-                  <div className="text-xs text-gray-500 truncate">
-                    {user.email || 'user@example.com'}
-                  </div>
-                </div>
-
-                <button
-                  onClick={handleLogout}
-                  className="w-full px-4 py-2.5 text-left text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
-                >
-                  Logout
-                </button>
-              </div>
-            )}
-          </div>
+              {/* Logout */}
+              <button
+                onClick={handleLogout}
+                className="w-full px-5 py-3.5 text-left text-sm font-medium text-red-600 hover:bg-red-50 flex items-center gap-3 transition-colors"
+              >
+                <LogOut size={18} />
+                Logout
+              </button>
+            </div>
+          )}
         </div>
       </nav>
+
+      {/* Change Password Modal */}
+      <ChangePasswordModal
+        isOpen={isChangePassOpen}
+        onClose={() => setIsChangePassOpen(false)}
+        isSuperAdmin={false}  // Employee is not superadmin
+      />
     </>
   );
 }
