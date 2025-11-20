@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Building2, CreditCard, Users, X } from 'lucide-react';
+import { LayoutDashboard, Building2, CreditCard, Users, X ,Bus} from 'lucide-react';
 
 const Sidebar = ({ isOpen, onClose }) => {
   const pathname = usePathname();
@@ -37,10 +37,8 @@ const Sidebar = ({ isOpen, onClose }) => {
         <div className="h-16 px-4 flex items-center justify-between border-b border-gray-200">
           <div className="flex items-center gap-3">
             <div className="relative">
-              <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-indigo-700 rounded-xl flex items-center justify-center shadow-md">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                  <path d="M3 8L12 3L21 8V16L12 21L3 16V8Z" fill="white" opacity="0.9"/>
-                </svg>
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center shadow-md">
+                 <Bus className="w-7 h-7 text-white" />
               </div>
             </div>
             <div>
@@ -72,7 +70,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                       flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
                       transition-colors
                       ${isActive
-                        ? 'bg-indigo-50 text-indigo-600'
+                        ? 'bg-blue-50 text-blue-600'
                         : 'text-gray-700 hover:bg-gray-100'
                       }
                     `}

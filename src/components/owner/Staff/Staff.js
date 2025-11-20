@@ -402,20 +402,27 @@ export default function StaffManagement() {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-8">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-teal-600 to-teal-700 rounded-xl flex items-center justify-center shadow-lg">
-              <Users className="text-white w-5 h-5 sm:w-6 sm:h-6" />
-            </div>
-            <div>
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
-                Staff Management
-              </h1>
-              <p className="text-gray-600 text-xs sm:text-sm mt-0.5">
-                Manage drivers, conductors, mechanics, cleaners & managers
-              </p>
-            </div>
-          </div>
-        </div>
+  <div className="flex items-center gap-3 flex-1 min-w-0">
+
+    {/* Icon - responsive size */}
+    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl 
+      flex items-center justify-center shadow-lg flex-shrink-0">
+      <Users className="text-white w-5 h-5 sm:w-6 sm:h-6" />
+    </div>
+
+    {/* Text - responsive & trimmed */}
+    <div className="min-w-0 flex-1">
+      <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 truncate">
+        Staff Management
+      </h1>
+      <p className="text-gray-600 text-xs sm:text-sm mt-0.5 line-clamp-2">
+        Manage drivers, conductors, mechanics, cleaners & managers
+      </p>
+    </div>
+
+  </div>
+</div>
+
 
         {/* API Error */}
         {apiError && (

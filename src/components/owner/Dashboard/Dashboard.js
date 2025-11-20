@@ -155,7 +155,7 @@ export default function OwnerDashboard() {
           {/* Buses */}
           <div className="bg-white rounded-xl shadow-sm p-4 sm:p-5 border border-gray-100 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between mb-3 sm:mb-4">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-lg flex items-center justify-center flex-shrink-0">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
                 <Bus className="text-white" size={20} />
               </div>
               <span className="text-xs text-gray-500 hidden sm:inline">Total</span>
@@ -175,7 +175,7 @@ export default function OwnerDashboard() {
           {/* Staff */}
           <div className="bg-white rounded-xl shadow-sm p-4 sm:p-5 border border-gray-100 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between mb-3 sm:mb-4">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-teal-500 to-teal-600 rounded-lg flex items-center justify-center flex-shrink-0">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
                 <Users className="text-white" size={20} />
               </div>
               <span className="text-xs text-gray-500 hidden sm:inline">Total</span>
@@ -272,14 +272,14 @@ export default function OwnerDashboard() {
             </div>
             <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform flex-shrink-0" />
           </Link>
-          <Link href="/owner/bus" className="bg-indigo-600 text-white p-4 sm:p-5 rounded-xl hover:bg-indigo-700 transition-colors flex items-center justify-between group">
+          <Link href="/owner/bus" className="bg-blue-600 text-white p-4 sm:p-5 rounded-xl hover:bg-blue-700 transition-colors flex items-center justify-between group">
             <div className="flex items-center gap-3 flex-1 min-w-0">
               <Bus size={18} className="flex-shrink-0" />
               <span className="font-medium truncate">Manage Buses</span>
             </div>
             <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform flex-shrink-0" />
           </Link>
-          <Link href="/owner/staff" className="bg-teal-600 text-white p-4 sm:p-5 rounded-xl hover:bg-teal-700 transition-colors flex items-center justify-between group">
+          <Link href="/owner/staff" className="bg-blue-600 text-white p-4 sm:p-5 rounded-xl hover:bg-blue-700 transition-colors flex items-center justify-between group">
             <div className="flex items-center gap-3 flex-1 min-w-0">
               <Users size={18} className="flex-shrink-0" />
               <span className="font-medium truncate">Manage Staff</span>
