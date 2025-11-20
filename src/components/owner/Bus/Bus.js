@@ -18,7 +18,7 @@ const busSchema = z.object({
   registration_number: z.string().min(1, 'Registration number required').max(20, 'Max 20 characters'),
   bus_name: z.string().min(1, 'Bus name required'),
   route: z.string().min(1, 'Primary route required'),
-  bus_type: z.enum(['AC_SLEEPER','NON_AC_SLEEPER','AC_SEATER','NON_AC_SEATER','SEMI_SLEEPER','VOLVO','ORDINARY']).optional(),
+  bus_type: z.enum(['AC_SLEEPER', 'NON_AC_SLEEPER', 'AC_SEATER', 'NON_AC_SEATER', 'SEMI_SLEEPER', 'VOLVO', 'ORDINARY']).optional(),
   manufacturer: z.string().optional(),
   model: z.string().optional(),
   year_of_manufacture: z.coerce.number().int().optional(),
@@ -41,7 +41,7 @@ const busSections = () => [
       { label: 'Registration Number', name: 'registration_number', required: true },
       { label: 'Bus Name', name: 'bus_name', required: true },
       { label: 'Primary Route', name: 'route', required: true, colSpan: 'col-span-1 sm:col-span-2' },
-      { label: 'Seating Capacity', name: 'seating_capacity', type: 'number' ,required: true},
+      { label: 'Seating Capacity', name: 'seating_capacity', type: 'number', required: true },
       {
         label: 'Bus Type',
         name: 'bus_type',
@@ -63,7 +63,7 @@ const busSections = () => [
   {
     title: 'Optional Specifications',
     fields: [
-      
+
       { label: 'Manufacturer', name: 'manufacturer' },
       { label: 'Model', name: 'model' },
       { label: 'Year of Manufacture', name: 'year_of_manufacture', type: 'number' },
@@ -321,17 +321,15 @@ export default function BusManagement() {
       header: 'Operational',
       cell: row => (
         <div className="flex items-center gap-2">
-          <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${
-            row.is_operational ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-          }`}>
+          <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${row.is_operational ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+            }`}>
             {row.is_operational ? <CheckCircle size={14} /> : <XCircle size={14} />}
             {row.is_operational ? 'Yes' : 'No'}
           </span>
           <button
             onClick={() => openToggleConfirm(row)}
-            className={`p-1 rounded transition-colors ${
-              row.is_operational ? 'text-green-600 hover:text-green-800' : 'text-red-600 hover:text-red-800'
-            }`}
+            className={`p-1 rounded transition-colors ${row.is_operational ? 'text-green-600 hover:text-green-800' : 'text-red-600 hover:text-red-800'
+              }`}
             title={row.is_operational ? 'Mark as Non-Operational' : 'Mark as Operational'}
           >
             {row.is_operational ? <CheckCircle size={16} /> : <XCircle size={16} />}
@@ -370,24 +368,24 @@ export default function BusManagement() {
       <div className="max-w-7xl mx-auto">
 
         {/* Header */}
-       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6 sm:mb-8">
-  <div className="flex items-center gap-3 flex-1 min-w-0">
-    {/* Icon - scales down on mobile */}
-    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-indigo-600 to-indigo-700 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
-      <Bus className="text-white w-5 h-5 sm:w-6 sm:h-6" />
-    </div>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6 sm:mb-8">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            {/* Icon - scales down on mobile */}
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
+              <Bus className="text-white w-5 h-5 sm:w-6 sm:h-6" />
+            </div>
 
-    {/* Text Content */}
-    <div className="min-w-0 flex-1">
-      <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 truncate">
-        Bus Management
-      </h1>
-      <p className="text-gray-600 text-xs sm:text-sm mt-0.5 line-clamp-2">
-        Manage your buses and operational status
-      </p>
-    </div>
-  </div>
-</div>
+            {/* Text Content */}
+            <div className="min-w-0 flex-1">
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 truncate">
+                Bus Management
+              </h1>
+              <p className="text-gray-600 text-xs sm:text-sm mt-0.5 line-clamp-2">
+                Manage your buses and operational status
+              </p>
+            </div>
+          </div>
+        </div>
 
         {/* API Error */}
         {apiError && (
