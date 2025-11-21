@@ -1,4 +1,3 @@
-// pages/finance/billbook.js
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -79,15 +78,22 @@ export default function BillBookPage() {
 
         setOwnedBuses(busRes.data);
 
-        const income = catRes.data
-          .filter((c) => c.transaction_type === "INCOME")
-          .map((c) => ({ ...c, amount: "" }));
-        const expense = catRes.data
-          .filter((c) => c.transaction_type === "EXPENSE")
-          .map((c) => ({ ...c, amount: "" }));
+// Sort all categories: oldest → newest (by created_at or by id)
+const sortedCategories = [...catRes.data].sort((a, b) => {
+  return a.id - b.id;
+  // or simply: return a.id - b.id;  (since IDs are sequential)
+});
 
-        setIncomeCategories(income);
-        setExpenseCategories(expense);
+const income = sortedCategories
+  .filter((c) => c.transaction_type === "INCOME")
+  .map((c) => ({ ...c, amount: "" }));
+
+const expense = sortedCategories
+  .filter((c) => c.transaction_type === "EXPENSE")
+  .map((c) => ({ ...c, amount: "" }));
+
+setIncomeCategories(income);
+setExpenseCategories(expense);
       } catch (err) {
         setError("Failed to load initial data");
       } finally {
@@ -99,29 +105,38 @@ export default function BillBookPage() {
   }, [currentUser]);
 
   // Fetch records when on Records tab
-  useEffect(() => {
-    if (activeTab === "records" && currentUser) {
-      const fetchRecords = async () => {
-        setLoadingRecords(true);
-        try {
-          const params = {};
-          if (filterDate) params.date = filterDate;
-          if (filterBus) params.bus = filterBus;
+ // Fetch records when on Records tab
+useEffect(() => {
+  if (activeTab === "records" && currentUser) {
+    const fetchRecords = async () => {
+      setLoadingRecords(true);
+      try {
+        const params = {};
 
-          const res = await axiosInstance.get("/finance/transactions/report/", { params });
-          setRecords(res.data.transactions || []);
-        } catch (err) {
-          console.error("Failed to fetch records", err);
-          setRecords([]);
-        } finally {
-          setLoadingRecords(false);
+        // Apply filters only if they are set
+        if (filterDate) params.date = filterDate;
+        if (filterBus) params.bus = filterBus;
+
+        // FOR EMPLOYEE: Restrict to today only (unless a specific date filter is applied)
+        if (!isOwner && !filterDate) {
+          const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+          params.date = today;
         }
-      };
 
-      fetchRecords();
-      setOpenDates({});
-    }
-  }, [activeTab, filterDate, filterBus, currentUser]);
+        const res = await axiosInstance.get("/finance/transactions/report/", { params });
+        setRecords(res.data.transactions || []);
+      } catch (err) {
+        console.error("Failed to fetch records", err);
+        setRecords([]);
+      } finally {
+        setLoadingRecords(false);
+      }
+    };
+
+    fetchRecords();
+    setOpenDates({}); // Collapse all by default
+  }
+}, [activeTab, filterDate, filterBus, currentUser, isOwner]); // Add isOwner to deps
 
   // Calculations
   const totalIncome = incomeCategories.reduce((sum, c) => sum + (parseFloat(c.amount) || 0), 0);
@@ -441,6 +456,8 @@ const addNewCategory = async (type) => {
               setModalTitle={setModalTitle}
               modalAttachments={modalAttachments}
               setModalAttachments={setModalAttachments}
+              incomeCategories={incomeCategories}
+    expenseCategories={expenseCategories}
             />
           )}
         </main>

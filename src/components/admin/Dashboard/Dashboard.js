@@ -7,7 +7,8 @@ import {
   LayoutDashboard,
   Building2,
   Users,
-  DollarSign,
+
+  IndianRupee,
   TrendingUp,
   CheckCircle,
   Calendar,
@@ -189,7 +190,7 @@ export default function SuperadminDashboard() {
           <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl sm:rounded-2xl shadow-md p-5 sm:p-6 lg:p-8 text-white min-h-[160px] flex flex-col">
             <div className="flex items-start justify-between mb-3 sm:mb-4">
               <div className="w-12 h-12 bg-white/20 rounded-lg sm:rounded-xl flex items-center justify-center backdrop-blur-sm">
-                <DollarSign className="text-white" size={22} />
+                <IndianRupee className="text-white" size={22} />
               </div>
               <div className="bg-white/20 px-2.5 py-1 rounded-full backdrop-blur-sm">
                 <TrendingUp size={14} />
@@ -234,7 +235,7 @@ export default function SuperadminDashboard() {
           <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 p-5 sm:p-6">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-9 h-9 bg-green-100 rounded-lg flex items-center justify-center">
-                <DollarSign className="text-green-600" size={18} />
+                <IndianRupee className="text-green-600" size={18} />
               </div>
               <h4 className="font-semibold text-gray-900 text-sm sm:text-base">Avg Revenue/Sub</h4>
             </div>

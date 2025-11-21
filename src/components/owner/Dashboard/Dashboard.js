@@ -1,8 +1,9 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import {
-  Bus, Users, DollarSign, TrendingUp, TrendingDown,
-  Calendar, Loader2, ArrowRight, Activity, Wallet, AlertCircle
+  Bus, Users, IndianRupee, TrendingUp, TrendingDown,
+  Activity, Wallet, ArrowRight, Loader2, AlertCircle,
+  Calendar, BarChart3, CheckCircle
 } from "lucide-react";
 import axiosInstance from "@/config/axiosInstance";
 import Link from "next/link";
@@ -18,7 +19,7 @@ export default function OwnerDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Withdrawal Modal
+  // Withdrawal Modal State
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
   const [withdrawForm, setWithdrawForm] = useState({
     amount: "", reason: "", method: "Cash", reference: ""
@@ -57,10 +58,9 @@ export default function OwnerDashboard() {
 
       const recent = transactions
         .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-        .slice(0, 5);
+        .slice(0, 7);
 
-      setStats(prev => ({
-        ...prev,
+      setStats({
         totalBuses: buses.length,
         operationalBuses,
         totalStaff: staff.length,
@@ -69,7 +69,7 @@ export default function OwnerDashboard() {
         todayExpense: expense,
         netProfit,
         currentBalance: parseFloat(balance)
-      }));
+      });
       setRecentTransactions(recent);
     } catch (err) {
       setError(err.response?.data?.detail || "Failed to load dashboard data");
@@ -78,10 +78,9 @@ export default function OwnerDashboard() {
     }
   }, [today]);
 
-  // Fetch only once on mount
   useEffect(() => {
     fetchDashboardData();
-  }, [fetchDashboardData]); // No interval
+  }, [fetchDashboardData]);
 
   const handleWithdraw = async (e) => {
     e.preventDefault();
@@ -97,7 +96,7 @@ export default function OwnerDashboard() {
       });
       setShowWithdrawModal(false);
       setWithdrawForm({ amount: "", reason: "", method: "Cash", reference: "" });
-      fetchDashboardData(); // Refresh only after withdrawal
+      fetchDashboardData();
     } catch (err) {
       setWithdrawError(err.response?.data?.amount?.[0] || "Withdrawal failed.");
     } finally {
@@ -107,189 +106,173 @@ export default function OwnerDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <Loader2 className="animate-spin text-blue-600" size={48} />
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Loader2 className="w-10 h-10 animate-spin text-blue-600" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
-        <div className="mb-6 sm:mb-8">
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 and items-center gap-3">
-            <Activity className="text-blue-600 flex-shrink-0" size={28} />
-            <span className="truncate">Owner Dashboard</span>
-          </h1>
-          <p className="text-gray-600 mt-1 sm:mt-2 text-sm sm:text-base">Real-time overview of your fleet & finances</p>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+
+        {/* Header */}
+        <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg">
+              <Activity className="w-7 h-7 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Owner Dashboard</h1>
+              <p className="text-gray-600">Today, {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <button className="px-4 py-2.5 bg-white border border-gray-300 rounded-lg font-medium text-sm flex items-center gap-2 hover:bg-gray-50">
+              <Calendar className="w-4 h-4" /> Today
+            </button>
+            <Link href="/owner/expense" className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg font-medium flex items-center gap-2 hover:from-blue-700 hover:to-indigo-700 shadow-sm">
+              <BarChart3 className="w-4 h-4" /> Reports
+            </Link>
+          </div>
         </div>
 
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg mb-6 text-sm">
-            {error}
-          </div>
-        )}
-
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
-          {/* Current Balance */}
-          <div className="bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-xl shadow-sm p-4 sm:p-5 hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between mb-3 sm:mb-4">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                <Wallet className="text-white" size={20} />
+        {/* Current Balance Card */}
+        <div className="mb-8">
+          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-6 text-white shadow-xl">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-blue-100 text-sm font-medium">Current Balance</p>
+                <p className="text-4xl font-bold mt-1">₹{stats.currentBalance.toLocaleString('en-IN')}</p>
               </div>
-              <span className="text-xs opacity-90 hidden sm:inline">Available</span>
+              <Wallet className="w-16 h-16 opacity-30" />
             </div>
-            <div className="text-xl sm:text-2xl lg:text-2xl font-bold mb-1">
-              ₹ {stats.currentBalance.toFixed(0)}
-            </div>
-            <div className="text-sm opacity-90 mb-2">Current Balance</div>
-            <button
+            <button 
               onClick={() => setShowWithdrawModal(true)}
-              className="mt-2 text-xs bg-white/20 hover:bg-white/30 px-3 py-1 rounded-full font-medium transition-colors"
+              className="mt-5 w-full sm:w-auto px-6 py-3 bg-white/20 backdrop-blur-sm rounded-xl font-medium hover:bg-white/30 transition"
             >
-              Withdraw
+              Withdraw Funds
             </button>
           </div>
+        </div>
 
-          {/* Buses */}
-          <div className="bg-white rounded-xl shadow-sm p-4 sm:p-5 border border-gray-100 hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between mb-3 sm:mb-4">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                <Bus className="text-white" size={20} />
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+          <Link href="/owner/bus" className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-lg transition">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-blue-100 rounded-lg">
+                <Bus className="w-6 h-6 text-blue-600" />
               </div>
-              <span className="text-xs text-gray-500 hidden sm:inline">Total</span>
+              <span className="text-3xl font-bold text-gray-900">{stats.totalBuses}</span>
             </div>
-            <div className="text-xl sm:text-2xl lg:text-2xl font-bold text-gray-900 mb-1">
-              {stats.totalBuses}
+            <p className="font-medium text-gray-900">Total Buses</p>
+            <div className="mt-3 flex items-center gap-4 text-sm">
+              <span className="text-green-600 font-medium flex items-center gap-1">
+                <CheckCircle className="w-4 h-4" /> {stats.operationalBuses} Running
+              </span>
+              <span className="text-gray-500">{stats.totalBuses - stats.operationalBuses} Idle</span>
             </div>
-            <div className="text-sm text-gray-600 mb-2">Buses</div>
-            <div className="mt-2 text-xs text-green-600">
-              {stats.operationalBuses} operational
-            </div>
-            <Link href="/owner/bus" className="mt-3 inline-flex items-center text-xs text-blue-600 hover:text-blue-800 font-medium">
-              Manage Buses <ArrowRight size={12} className="ml-1" />
-            </Link>
-          </div>
+          </Link>
 
-          {/* Staff */}
-          <div className="bg-white rounded-xl shadow-sm p-4 sm:p-5 border border-gray-100 hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between mb-3 sm:mb-4">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                <Users className="text-white" size={20} />
+          <Link href="/owner/staff" className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-lg transition">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-purple-100 rounded-lg">
+                <Users className="w-6 h-6 text-purple-600" />
               </div>
-              <span className="text-xs text-gray-500 hidden sm:inline">Total</span>
+              <span className="text-3xl font-bold text-gray-900">{stats.totalStaff}</span>
             </div>
-            <div className="text-xl sm:text-2xl lg:text-2xl font-bold text-gray-900 mb-1">
-              {stats.totalStaff}
+            <p className="font-medium text-gray-900">Total Staff</p>
+            <div className="mt-3 text-sm text-green-600 font-medium flex items-center gap-1">
+              <CheckCircle className="w-4 h-4" /> {stats.activeStaff} Active
             </div>
-            <div className="text-sm text-gray-600 mb-2">Staff Members</div>
-            <div className="mt-2 text-xs text-green-600">
-              {stats.activeStaff} active
-            </div>
-            <Link href="/owner/staff" className="mt-3 inline-flex items-center text-xs text-blue-600 hover:text-blue-800 font-medium">
-              Manage Staff <ArrowRight size={12} className="ml-1" />
-            </Link>
-          </div>
+          </Link>
 
-          {/* Net Profit */}
-          <div className="bg-white rounded-xl shadow-sm p-4 sm:p-5 border border-gray-100 hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between mb-3 sm:mb-4">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                <DollarSign className="text-white" size={20} />
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-emerald-100 rounded-lg">
+                <IndianRupee className="w-6 h-6 text-emerald-600" />
               </div>
-              <span className="text-xs text-gray-500 hidden sm:inline">Today</span>
+              <span className={`text-3xl font-bold ${stats.netProfit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                {stats.netProfit >= 0 ? '+' : '-'}₹{Math.abs(stats.netProfit).toLocaleString('en-IN')}
+              </span>
             </div>
-            <div className={`text-xl sm:text-2xl lg:text-2xl font-bold ${stats.netProfit >= 0 ? "text-green-600" : "text-red-600"} mb-1`}>
-              ₹ {stats.netProfit.toFixed(0)}
-            </div>
-            <div className="text-sm text-gray-600 mb-2">Net Profit</div>
-            <div className="mt-2 text-xs flex flex-col sm:flex-row sm:items-center gap-2">
-              <span className="text-green-600">+₹{stats.todayIncome.toFixed(0)}</span>
-              <span className="text-red-600">-₹{stats.todayExpense.toFixed(0)}</span>
+            <p className="font-medium text-gray-900">Today's Net Profit</p>
+            <div className="mt-3 flex justify-between text-sm">
+              <span className="text-emerald-600">+₹{stats.todayIncome.toLocaleString('en-IN')}</span>
+              <span className="text-red-600">-₹{stats.todayExpense.toLocaleString('en-IN')}</span>
             </div>
           </div>
         </div>
 
-        {/* Recent Transactions */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-5 lg:p-6 mb-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6">
-            <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-4 sm:mb-0">
-              Recent Transactions
-            </h2>
-            <Link href="/owner/expense" className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1 font-medium self-start sm:self-auto">
-              View All <ArrowRight size={14} />
-            </Link>
-          </div>
-          {recentTransactions.length === 0 ? (
-            <div className="text-center py-8 sm:py-10">
-              <p className="text-sm text-gray-500">No transactions today</p>
-            </div>
-          ) : (
-            <div className="space-y-3 sm:space-y-4 max-h-80 overflow-y-auto pr-1 sm:pr-0">
-              {recentTransactions.map((t) => (
-                <div key={t.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                  <div className="flex items-start sm:items-center gap-3 sm:gap-4 mb-3 sm:mb-0">
-                    <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center flex-shrink-0 ${
-                      t.transaction_type === "INCOME" ? "bg-green-100 text-green-700" :
-                      t.transaction_type === "WITHDRAWAL" ? "bg-purple-100 text-purple-700" :
-                      "bg-red-100 text-red-700"
-                    }`}>
-                      {t.transaction_type === "INCOME" ? <TrendingUp size={14} /> :
-                       t.transaction_type === "WITHDRAWAL" ? <Wallet size={14} /> :
-                       <TrendingDown size={14} />}
+        {/* Recent Transactions + Quick Actions */}
+        <div className="grid lg:grid-cols-3 gap-6">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h3 className="font-bold text-gray-900 mb-4">Quick Actions</h3>
+            <div className="space-y-3">
+              {[
+                { to: "/owner/expense", label: "New Entry", icon: IndianRupee, color: "bg-emerald-500" },
+                { to: "/owner/bus", label: "Manage Buses", icon: Bus, color: "bg-blue-500" },
+                { to: "/owner/staff", label: "Manage Staff", icon: Users, color: "bg-purple-500" },
+                { to: "/owner/expense", label: "View Reports", icon: BarChart3, color: "bg-orange-500" },
+              ].map((item, i) => (
+                <Link key={i} href={item.to} className="flex items-center justify-between p-4 rounded-lg hover:bg-gray-50 transition group">
+                  <div className="flex items-center gap-4">
+                    <div className={`p-2.5 ${item.color} text-white rounded-lg`}>
+                      <item.icon className="w-5 h-5" />
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="text-sm font-medium text-gray-900 truncate">
-                        {t.category_name}
-                      </div>
-                      <div className="text-xs text-gray-500 truncate mt-1">
-                        {t.bus_name || "General"}
-                      </div>
-                    </div>
+                    <span className="font-medium text-gray-800">{item.label}</span>
                   </div>
-                  <div className="text-right sm:text-left">
-                    <div className={`text-sm sm:text-base font-semibold ${
-                      t.transaction_type === "INCOME" ? "text-green-600" :
+                  <ArrowRight className="w-5 h-5 text-gray-400 group-hover:translate-x-1 transition" />
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="font-bold text-gray-900">Recent Transactions</h3>
+              <Link href="/owner/expense" className="text-blue-600 hover:underline text-sm font-medium">View all</Link>
+            </div>
+            {recentTransactions.length === 0 ? (
+              <div className="text-center py-12 text-gray-500">
+                <IndianRupee className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                <p>No transactions today</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {recentTransactions.map((t) => (
+                  <div key={t.id} className="flex items-center justify-between p-4 rounded-lg hover:bg-gray-50 transition">
+                    <div className="flex items-center gap-4">
+                      <div className={`p-2.5 rounded-lg ${
+                        t.transaction_type === "INCOME" ? "bg-emerald-100 text-emerald-600" :
+                        t.transaction_type === "WITHDRAWAL" ? "bg-purple-100 text-purple-600" :
+                        "bg-red-100 text-red-600"
+                      }`}>
+                        {t.transaction_type === "INCOME" ? <TrendingUp className="w-5 h-5" /> :
+                         t.transaction_type === "WITHDRAWAL" ? <Wallet className="w-5 h-5" /> :
+                         <TrendingDown className="w-5 h-5" />}
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900">{t.category_name}</p>
+                        <p className="text-sm text-gray-500">{t.bus_name || "General"}</p>
+                      </div>
+                    </div>
+                    <span className={`font-bold text-lg ${
+                      t.transaction_type === "INCOME" ? "text-emerald-600" :
                       t.transaction_type === "WITHDRAWAL" ? "text-purple-600" :
                       "text-red-600"
                     }`}>
-                      {t.transaction_type === "INCOME" ? "+" : "-"}₹ {parseFloat(t.amount).toFixed(0)}
-                    </div>
+                      {t.transaction_type === "INCOME" ? "+" : "-"}₹{parseFloat(t.amount).toLocaleString('en-IN')}
+                    </span>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-          <Link href="/owner/expense" className="bg-blue-600 text-white p-4 sm:p-5 rounded-xl hover:bg-blue-700 transition-colors flex items-center justify-between group">
-            <div className="flex items-center gap-3 flex-1 min-w-0">
-              <DollarSign size={18} className="flex-shrink-0" />
-              <span className="font-medium truncate">New Entry</span>
-            </div>
-            <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform flex-shrink-0" />
-          </Link>
-          <Link href="/owner/bus" className="bg-blue-600 text-white p-4 sm:p-5 rounded-xl hover:bg-blue-700 transition-colors flex items-center justify-between group">
-            <div className="flex items-center gap-3 flex-1 min-w-0">
-              <Bus size={18} className="flex-shrink-0" />
-              <span className="font-medium truncate">Manage Buses</span>
-            </div>
-            <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform flex-shrink-0" />
-          </Link>
-          <Link href="/owner/staff" className="bg-blue-600 text-white p-4 sm:p-5 rounded-xl hover:bg-blue-700 transition-colors flex items-center justify-between group">
-            <div className="flex items-center gap-3 flex-1 min-w-0">
-              <Users size={18} className="flex-shrink-0" />
-              <span className="font-medium truncate">Manage Staff</span>
-            </div>
-            <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform flex-shrink-0" />
-          </Link>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Withdrawal Modal */}
+      {/* YOUR ORIGINAL, PERFECT WITHDRAWAL MODAL */}
       {showWithdrawModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">

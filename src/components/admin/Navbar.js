@@ -74,7 +74,7 @@ export default function Navbar({ onMenuToggle }) {
               onClick={() => setIsDropdownOpen(v => !v)}
               className="flex items-center gap-1.5 px-1.5 py-1 rounded-lg hover:bg-gray-50 transition-colors"
             >
-              <div className="w-8 h-8 bg-yellow-400 rounded-full flex items-center justify-center text-xs font-bold text-gray-800 sm:w-9 sm:h-9 sm:text-sm">
+              <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-xs font-bold text-white sm:w-9 sm:h-9 sm:text-sm">
                 {user.username ? user.username[0].toUpperCase() : 'A'}
               </div>
 

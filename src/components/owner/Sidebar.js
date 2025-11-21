@@ -12,7 +12,7 @@ const Sidebar = ({ isOpen, onClose }) => {
     { name: 'Dashboard', icon: LayoutDashboard, path: '/owner' },
     { name: 'Bus Management', icon: Building2, path: '/owner/bus' },
     { name: 'Staff Management', icon: CreditCard, path: '/owner/staff' },
-    { name: 'Expenses', icon: Users, path: '/owner/expense' },
+    { name: 'Collection Sheet', icon: Users, path: '/owner/expense' },
   ];
 
   return (

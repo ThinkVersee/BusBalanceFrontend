@@ -6,11 +6,12 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import axiosInstance from '@/config/axiosInstance';
 import {
-  DollarSign,
+ 
   Edit,
   Trash2,
   Ban,
   CheckCircle,
+  IndianRupee
 } from 'lucide-react';
 
 // ---------- COMMON COMPONENTS ----------
@@ -282,7 +283,7 @@ export default function SubscriptionManagement() {
                     bg-gradient-to-br from-blue-600 to-blue-700 
                     rounded-lg sm:rounded-xl 
                     flex items-center justify-center shadow-md">
-      <DollarSign className="text-white w-5 h-5 sm:w-5.5 lg:w-6" />
+      <IndianRupee className="text-white w-5 h-5 sm:w-5.5 lg:w-6" />
     </div>
 
     {/* Text – safe truncation & responsive font */}
@@ -338,7 +339,7 @@ export default function SubscriptionManagement() {
           isOpen={modalOpen}
           onClose={() => setModalOpen(false)}
           title={selected ? 'Edit Subscription Plan' : 'Add New Plan'}
-          icon={DollarSign}
+          icon={IndianRupee}
           sections={subscriptionSections}
           register={register}
           errors={errors}

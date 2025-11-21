@@ -13,6 +13,9 @@ export default function Navbar({ onMenuToggle }) {
 
   const dropdownRef = useRef(null);
 
+
+
+  
   // Load user from localStorage
   useEffect(() => {
     if (typeof window === 'undefined') return;
