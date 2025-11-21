@@ -70,10 +70,10 @@ export default function Navbar() {
         
         {/* Left: Brand */}
         <div className="flex items-center flex-1">
-          <h1 className="text-xl font-bold text-indigo-600 sm:text-2xl">
+          <h1 className="text-xl font-bold text-blue-600 sm:text-2xl">
             Bus Book
           </h1>
-          <span className="hidden ml-3 px-2 py-0.5 text-xs font-medium text-indigo-700 bg-indigo-100 rounded-full sm:inline-block">
+          <span className="hidden ml-3 px-2 py-0.5 text-xs font-medium text-blue-700 bg-blue-100 rounded-full sm:inline-block">
             Employee
           </span>
         </div>
@@ -85,7 +85,7 @@ export default function Navbar() {
             className="flex items-center gap-3 px-4 py-2 rounded-xl hover:bg-gray-50 transition-all duration-200"
           >
             {/* Avatar */}
-            <div className="flex items-center justify-center w-10 h-10 text-white font-bold text-sm bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full shadow-md">
+            <div className="flex items-center justify-center w-10 h-10 text-white font-bold text-sm bg-gradient-to-br from-blue-600 to-blue-600 rounded-full shadow-md">
               {user.username ? user.username[0].toUpperCase() : 'E'}
             </div>
 
@@ -110,7 +110,7 @@ export default function Navbar() {
             <div className="absolute right-0 z-50 w-64 mt-3 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden">
               
               {/* Mobile User Info */}
-              <div className="px-5 py-4 bg-gradient-to-r from-indigo-50 to-purple-50 border-b border-gray-200 sm:hidden">
+              <div className="px-5 py-4 bg-gradient-to-r from-blue-50 to-blue-50 border-b border-gray-200 sm:hidden">
                 <p className="font-semibold text-gray-800">{user.username || 'Employee'}</p>
                 <p className="text-sm text-gray-600">{user.email || 'employee@busbook.in'}</p>
               </div>
@@ -120,7 +120,7 @@ export default function Navbar() {
                 onClick={openChangePassword}
                 className="w-full px-5 py-3.5 text-left text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors"
               >
-                <KeyRound size={18} className="text-indigo-600" />
+                <KeyRound size={18} className="text-blue-600" />
                 Change Password
               </button>
 

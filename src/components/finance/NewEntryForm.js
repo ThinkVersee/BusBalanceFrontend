@@ -1,4 +1,3 @@
-// components/finance/NewEntryForm.js
 "use client";
 
 import React, { useRef } from "react";
