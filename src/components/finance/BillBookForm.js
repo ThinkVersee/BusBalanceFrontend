@@ -6,9 +6,6 @@ import {
   Eye,
   Loader2,
   IndianRupee,
-  CalendarDays,
-  BusFront,
-  AlertCircle,
 } from "lucide-react";
 
 import axiosInstance from "@/config/axiosInstance";
@@ -26,9 +23,11 @@ export default function BillBookPage() {
 
   const [ownedBuses, setOwnedBuses] = useState([]);
   const [incomeCategories, setIncomeCategories] = useState([]);
-  const [expenseCategories, setExpenseCategories] = useState([]);
+  const [expenseCategories, setExpenseCategories] = useState([]);        // Only EXPENSE
+  const [maintenanceCategories, setMaintenanceCategories] = useState([]); // Only MAINTENANCE
   const [showAddIncome, setShowAddIncome] = useState(false);
   const [showAddExpense, setShowAddExpense] = useState(false);
+  const [showAddMaintenance, setShowAddMaintenance] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [expenseFiles, setExpenseFiles] = useState([]);
   const [records, setRecords] = useState([]);
@@ -37,21 +36,18 @@ export default function BillBookPage() {
   const [filterBus, setFilterBus] = useState("");
   const [openDates, setOpenDates] = useState({});
   const [modalOpen, setModalOpen] = useState(false);
-  const [modalTitle, setModalTitle] = useState("");
+  const [modalOrder, setModalOrder] = useState("");
   const [modalAttachments, setModalAttachments] = useState([]);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
-
-  // Real-time duplicate warnings
   const [duplicateWarnings, setDuplicateWarnings] = useState({});
-
+const [modalTitle, setModalTitle] = useState("");
   const isOwner = currentUser?.is_owner === true;
 
   const toggleDate = (date) => {
     setOpenDates((prev) => ({ ...prev, [date]: !prev[date] }));
   };
 
-  // Load user
   useEffect(() => {
     const userData = localStorage.getItem("user");
     if (userData) {
@@ -63,7 +59,6 @@ export default function BillBookPage() {
     }
   }, []);
 
-  // Load buses + categories
   useEffect(() => {
     if (!currentUser) return;
 
@@ -90,6 +85,13 @@ export default function BillBookPage() {
             .filter((c) => c.transaction_type === "EXPENSE")
             .map((c) => ({ ...c, amount: "" }))
         );
+
+        setMaintenanceCategories(
+          sorted
+            .filter((c) => c.transaction_type === "MAINTENANCE")
+            .map((c) => ({ ...c, amount: "" }))
+        );
+
       } catch (err) {
         console.error(err);
       } finally {
@@ -100,7 +102,6 @@ export default function BillBookPage() {
     fetchData();
   }, [currentUser]);
 
-  // Load records only when on Records tab
   useEffect(() => {
     if (activeTab !== "records" || !currentUser) return;
 
@@ -128,33 +129,21 @@ export default function BillBookPage() {
     setOpenDates({});
   }, [activeTab, filterDate, filterBus, currentUser, isOwner]);
 
-  // SAFE DUPLICATE CHECK – Prevents crash when owner_category is null
   const checkForDuplicate = (categoryId, date, busId) => {
     if (!date || !busId || !records.length) return false;
-
     return records.some((r) => {
       return (
-        r.owner_category?.id === categoryId &&   // ← SAFE ACCESS
+        r.owner_category?.id === categoryId &&
         r.date === date &&
         String(r.bus?.id || "") === String(busId)
       );
     });
   };
 
-  // Update handlers with safe duplicate check
   const updateIncomeAmount = (id, value) => {
     const key = `${id}-${formData.date}-${formData.bus}`;
-
-    if (value && formData.date && formData.bus) {
-      if (checkForDuplicate(id, formData.date, formData.bus)) {
-        setDuplicateWarnings((prev) => ({ ...prev, [key]: true }));
-      } else {
-        setDuplicateWarnings((prev) => {
-          const updated = { ...prev };
-          delete updated[key];
-          return updated;
-        });
-      }
+    if (value && formData.date && formData.bus && checkForDuplicate(id, formData.date, formData.bus)) {
+      setDuplicateWarnings((prev) => ({ ...prev, [key]: true }));
     } else {
       setDuplicateWarnings((prev) => {
         const updated = { ...prev };
@@ -162,7 +151,6 @@ export default function BillBookPage() {
         return updated;
       });
     }
-
     setIncomeCategories((prev) =>
       prev.map((cat) => (cat.id === id ? { ...cat, amount: value } : cat))
     );
@@ -170,17 +158,8 @@ export default function BillBookPage() {
 
   const updateExpenseAmount = (id, value) => {
     const key = `${id}-${formData.date}-${formData.bus}`;
-
-    if (value && formData.date && formData.bus) {
-      if (checkForDuplicate(id, formData.date, formData.bus)) {
-        setDuplicateWarnings((prev) => ({ ...prev, [key]: true }));
-      } else {
-        setDuplicateWarnings((prev) => {
-          const updated = { ...prev };
-          delete updated[key];
-          return updated;
-        });
-      }
+    if (value && formData.date && formData.bus && checkForDuplicate(id, formData.date, formData.bus)) {
+      setDuplicateWarnings((prev) => ({ ...prev, [key]: true }));
     } else {
       setDuplicateWarnings((prev) => {
         const updated = { ...prev };
@@ -188,26 +167,37 @@ export default function BillBookPage() {
         return updated;
       });
     }
-
     setExpenseCategories((prev) =>
       prev.map((cat) => (cat.id === id ? { ...cat, amount: value } : cat))
     );
   };
 
-  // Calculations
-  const totalIncome = incomeCategories.reduce((sum, c) => sum + (parseFloat(c.amount || "") || 0), 0);
-  const totalExpense = expenseCategories.reduce((sum, c) => sum + (parseFloat(c.amount || "") || 0), 0);
+  const updateMaintenanceAmount = (id, value) => {
+    const key = `${id}-${formData.date}-${formData.bus}`;
+    if (value && formData.date && formData.bus && checkForDuplicate(id, formData.date, formData.bus)) {
+      setDuplicateWarnings((prev) => ({ ...prev, [key]: true }));
+    } else {
+      setDuplicateWarnings((prev) => {
+        const updated = { ...prev };
+        delete updated[key];
+        return updated;
+      });
+    }
+    setMaintenanceCategories((prev) =>
+      prev.map((cat) => (cat.id === id ? { ...cat, amount: value } : cat))
+    );
+  };
+
+  const totalIncome = incomeCategories.reduce((sum, c) => sum + (parseFloat(c.amount || 0) || 0), 0);
+  const totalRegularExpense = expenseCategories.reduce((sum, c) => sum + (parseFloat(c.amount || 0) || 0), 0);
+  const totalMaintenance = maintenanceCategories.reduce((sum, c) => sum + (parseFloat(c.amount || 0) || 0), 0);
+  const totalExpense = totalRegularExpense + totalMaintenance;
   const balance = totalIncome - totalExpense;
 
-  const grandIncome = records
-    .filter((r) => r.transaction_type === "INCOME")
-    .reduce((sum, r) => sum + (parseFloat(r.amount || 0) || 0), 0);
-  const grandExpense = records
-    .filter((r) => r.transaction_type === "EXPENSE")
-    .reduce((sum, r) => sum + (parseFloat(r.amount || 0) || 0), 0);
+  const grandIncome = records.filter(r => r.transaction_type === "INCOME").reduce((s, r) => s + (parseFloat(r.amount) || 0), 0);
+  const grandExpense = records.filter(r => r.transaction_type === "EXPENSE" || r.transaction_type === "MAINTENANCE").reduce((s, r) => s + (parseFloat(r.amount) || 0), 0);
   const grandBalance = grandIncome - grandExpense;
 
-  // Category CRUD
   const addNewCategory = async (type) => {
     if (!newCategoryName.trim()) return alert("Category name required");
 
@@ -218,12 +208,16 @@ export default function BillBookPage() {
       });
 
       const newCat = { ...res.data, amount: "" };
+
       if (type === "INCOME") {
-        setIncomeCategories((prev) => [...prev, newCat]);
+        setIncomeCategories(prev => [...prev, newCat]);
         setShowAddIncome(false);
-      } else {
-        setExpenseCategories((prev) => [...prev, newCat]);
+      } else if (type === "EXPENSE") {
+        setExpenseCategories(prev => [...prev, newCat]);
         setShowAddExpense(false);
+      } else if (type === "MAINTENANCE") {
+        setMaintenanceCategories(prev => [...prev, newCat]);
+        setShowAddMaintenance(false);
       }
       setNewCategoryName("");
       alert("Category added!");
@@ -232,19 +226,17 @@ export default function BillBookPage() {
     }
   };
 
-  const deleteCategory = async (id, type) => {
+  const deleteCategory = async (id) => {
     if (!isOwner) return alert("Only owners can delete categories.");
     if (!confirm("Delete permanently?")) return;
 
     try {
       await axiosInstance.delete(`/finance/categories/${id}/`);
-      if (type === "INCOME") {
-        setIncomeCategories((prev) => prev.filter((c) => c.id !== id));
-      } else {
-        setExpenseCategories((prev) => prev.filter((c) => c.id !== id));
-      }
+      setIncomeCategories(prev => prev.filter(c => c.id !== id));
+      setExpenseCategories(prev => prev.filter(c => c.id !== id));
+      setMaintenanceCategories(prev => prev.filter(c => c.id !== id));
     } catch (err) {
-      alert(err.response?.data?.detail || "Failed to delete");
+      alert("Failed to delete");
     }
   };
 
@@ -253,111 +245,91 @@ export default function BillBookPage() {
     if (!confirm("Delete this transaction?")) return;
     try {
       await axiosInstance.delete(`/finance/transactions/${id}/`);
-      setRecords((prev) => prev.filter((r) => r.id !== id));
+      setRecords(prev => prev.filter(r => r.id !== id));
     } catch (err) {
-      alert(err.response?.data?.detail || "Failed to delete");
+      alert("Failed to delete");
     }
   };
 
-  // SAVE WITH BACKEND DUPLICATE WARNING
-const handleSave = async () => {
-  if (!formData.date || !formData.bus) {
-    alert("Please select date and bus");
-    return;
-  }
+  const handleSave = async () => {
+    if (!formData.date || !formData.bus) return alert("Please select date and bus");
+    const busId = Number(formData.bus);
+    if (isNaN(busId)) return alert("Invalid bus");
 
-  const busId = Number(formData.bus);
-  if (isNaN(busId)) {
-    alert("Invalid bus selected");
-    return;
-  }
+    const transactions = [];
+    let hasExpense = false;
 
-  const transactions = [];
-  let hasExpense = false;
-
-  incomeCategories.forEach((cat) => {
-    const amount = Number(cat.amount || 0);
-    if (amount > 0) {
-      transactions.push({
-        owner_category_id: cat.id,
-        amount,
-        date: formData.date,
-        bus_id: busId,
-        transaction_type: "INCOME",
-      });
-    }
-  });
-
-  expenseCategories.forEach((cat) => {
-    const amount = Number(cat.amount || 0);
-    if (amount > 0) {
-      transactions.push({
-        owner_category_id: cat.id,
-        amount,
-        date: formData.date,
-        bus_id: busId,
-        transaction_type: "EXPENSE",
-      });
-      hasExpense = true;
-    }
-  });
-
-  if (transactions.length === 0) {
-    alert("Please enter at least one amount");
-    return;
-  }
-
-  try {
-    // 1️⃣ DUPLICATE CHECK
-    const checkRes = await axiosInstance.post(
-      "/finance/transactions/bulk/?check_only=1",
-      { transactions }
-    );
-
-    if (checkRes.data.warning) {
-      const confirmed = confirm(checkRes.data.warning);
-      if (!confirmed) {
-        alert("Cancelled — not saved.");
-        return;
+    incomeCategories.forEach(cat => {
+      const amount = Number(cat.amount || 0);
+      if (amount > 0) {
+        transactions.push({
+          owner_category_id: cat.id,
+          amount,
+          date: formData.date,
+          bus_id: busId,
+          transaction_type: "INCOME",
+        });
       }
-    }
+    });
 
-    // 2️⃣ ACTUAL SAVE (WITH FORM DATA)
-    const form = new FormData();
-    form.append("transactions", JSON.stringify(transactions));
+    expenseCategories.forEach(cat => {
+      const amount = Number(cat.amount || 0);
+      if (amount > 0) {
+        transactions.push({
+          owner_category_id: cat.id,
+          amount,
+          date: formData.date,
+          bus_id: busId,
+          transaction_type: "EXPENSE",
+        });
+        hasExpense = true;
+      }
+    });
 
-    if (hasExpense && expenseFiles.length > 0) {
-      expenseFiles.forEach((file, i) => {
-        form.append(`expense_file_${i}`, file);
+    maintenanceCategories.forEach(cat => {
+      const amount = Number(cat.amount || 0);
+      if (amount > 0) {
+        transactions.push({
+          owner_category_id: cat.id,
+          amount,
+          date: formData.date,
+          bus_id: busId,
+          transaction_type: "MAINTENANCE",
+        });
+        hasExpense = true;
+      }
+    });
+
+    if (transactions.length === 0) return alert("Please enter at least one amount");
+
+    try {
+      const checkRes = await axiosInstance.post("/finance/transactions/bulk/?check_only=1", { transactions });
+      if (checkRes.data.warning && !confirm(checkRes.data.warning)) {
+        return alert("Cancelled");
+      }
+
+      const form = new FormData();
+      form.append("transactions", JSON.stringify(transactions));
+      expenseFiles.forEach((file, i) => form.append(`expense_file_${i}`, file));
+
+      setSaving(true);
+      await axiosInstance.post("/finance/transactions/bulk/", form, {
+        headers: { "Content-Type": "multipart/form-data" }
       });
+
+      alert("Saved successfully!");
+      setIncomeCategories(prev => prev.map(c => ({ ...c, amount: "" })));
+      setExpenseCategories(prev => prev.map(c => ({ ...c, amount: "" })));
+      setMaintenanceCategories(prev => prev.map(c => ({ ...c, amount: "" })));
+      setExpenseFiles([]);
+      setDuplicateWarnings({});
+    } catch (err) {
+      alert(err.response?.data?.error || "Save failed");
+    } finally {
+      setSaving(false);
     }
+  };
 
-    setSaving(true);
-
-    const saveRes = await axiosInstance.post(
-      "/finance/transactions/bulk/",
-      form,
-      { headers: { "Content-Type": "multipart/form-data" } }
-    );
-
-    alert(saveRes.data.message || "Saved!");
-
-    // RESET FIELDS
-    setIncomeCategories((prev) => prev.map((c) => ({ ...c, amount: "" })));
-    setExpenseCategories((prev) => prev.map((c) => ({ ...c, amount: "" })));
-    setExpenseFiles([]);
-    setDuplicateWarnings({});
-
-  } catch (err) {
-    console.log(err);
-    alert(err.response?.data?.error || "Save failed");
-  } finally {
-    setSaving(false);
-  }
-};
-
-
-  // Loading UI
   if (!currentUser || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
@@ -372,7 +344,6 @@ const handleSave = async () => {
   return (
     <>
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 pb-24 sm:pb-8">
-        {/* Header */}
         <header className="z-50 backdrop-blur-2xl bg-white/70 border-b border-white/30">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between h-20">
@@ -389,23 +360,14 @@ const handleSave = async () => {
           </div>
         </header>
 
-        {/* Tab Bar */}
         <div className="fixed bottom-0 left-0 right-0 z-50 sm:sticky sm:top-20 bg-white/90 backdrop-blur border-t sm:border-b border-gray-200">
           <div className="max-w-7xl mx-auto flex">
-            {[
-              { key: "new", icon: FileText, label: "New Entry" },
-              { key: "records", icon: Eye, label: "View Records" },
-            ].map((tab) => {
+            {[{ key: "new", icon: FileText, label: "New Entry" }, { key: "records", icon: Eye, label: "View Records" }].map(tab => {
               const Icon = tab.icon;
               const active = activeTab === tab.key;
               return (
-                <button
-                  key={tab.key}
-                  onClick={() => setActiveTab(tab.key)}
-                  className={`flex-1 flex flex-col items-center gap-1 py-4 sm:flex-row sm:justify-center sm:gap-3 transition-colors ${
-                    active ? "text-blue-600 border-b-2 border-blue-600" : "text-gray-700"
-                  }`}
-                >
+                <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+                  className={`flex-1 flex flex-col items-center gap-1 py-4 sm:flex-row sm:justify-center sm:gap-3 transition-colors ${active ? "text-blue-600 border-b-2 border-blue-600" : "text-gray-700"}`}>
                   <Icon size={24} />
                   <span className="text-xs font-medium sm:text-sm">{tab.label}</span>
                 </button>
@@ -414,7 +376,6 @@ const handleSave = async () => {
           </div>
         </div>
 
-        {/* Content */}
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {activeTab === "new" && (
             <NewEntryForm
@@ -423,12 +384,16 @@ const handleSave = async () => {
               ownedBuses={ownedBuses}
               incomeCategories={incomeCategories}
               expenseCategories={expenseCategories}
+              maintenanceCategories={maintenanceCategories}
               updateIncomeAmount={updateIncomeAmount}
               updateExpenseAmount={updateExpenseAmount}
+              updateMaintenanceAmount={updateMaintenanceAmount}
               showAddIncome={showAddIncome}
               setShowAddIncome={setShowAddIncome}
               showAddExpense={showAddExpense}
               setShowAddExpense={setShowAddExpense}
+              showAddMaintenance={showAddMaintenance}
+              setShowAddMaintenance={setShowAddMaintenance}
               newCategoryName={newCategoryName}
               setNewCategoryName={setNewCategoryName}
               addNewCategory={addNewCategory}
@@ -437,6 +402,7 @@ const handleSave = async () => {
               setExpenseFiles={setExpenseFiles}
               totalIncome={totalIncome}
               totalExpense={totalExpense}
+              totalMaintenance={totalMaintenance}
               balance={balance}
               handleSave={handleSave}
               saving={saving}
@@ -446,30 +412,31 @@ const handleSave = async () => {
           )}
 
           {activeTab === "records" && (
-            <RecordsTab
-              ownedBuses={ownedBuses}
-              records={records}
-              loadingRecords={loadingRecords}
-              filterDate={filterDate}
-              setFilterDate={setFilterDate}
-              filterBus={filterBus}
-              setFilterBus={setFilterBus}
-              grandIncome={grandIncome}
-              grandExpense={grandExpense}
-              grandBalance={grandBalance}
-              openDates={openDates}
-              toggleDate={toggleDate}
-              deleteRecord={deleteRecord}
-              isOwner={isOwner}
-              modalOpen={modalOpen}
-              setModalOpen={setModalOpen}
-              modalTitle={modalTitle}
-              setModalTitle={setModalTitle}
-              modalAttachments={modalAttachments}
-              setModalAttachments={setModalAttachments}
-              incomeCategories={incomeCategories}
-              expenseCategories={expenseCategories}
-            />
+  <RecordsTab
+    ownedBuses={ownedBuses}
+    records={records}
+    loadingRecords={loadingRecords}
+    filterDate={filterDate}
+    setFilterDate={setFilterDate}
+    filterBus={filterBus}
+    setFilterBus={setFilterBus}
+    grandIncome={grandIncome}
+    grandExpense={grandExpense}
+    grandBalance={grandBalance}
+    openDates={openDates}
+    toggleDate={toggleDate}
+    deleteRecord={deleteRecord}
+    isOwner={isOwner}
+    modalOpen={modalOpen}
+    setModalOpen={setModalOpen}
+    modalOrder={modalOrder}
+    setModalOrder={setModalOrder}
+    modalAttachments={modalAttachments}
+    setModalAttachments={setModalAttachments}
+    modalTitle={modalTitle}
+    setModalTitle={setModalTitle}    
+  />
+
           )}
         </main>
       </div>
