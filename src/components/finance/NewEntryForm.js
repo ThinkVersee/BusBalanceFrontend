@@ -106,10 +106,10 @@ export default function NewEntryForm({
   balance,
   handleSave,
   saving,
-  error,
   isOwner,
-  isFormValid,
+  duplicateWarnings,
 }) {
+
   return (
     <div className="bg-white rounded-lg shadow overflow-hidden">
 
@@ -383,37 +383,31 @@ export default function NewEntryForm({
     {/* Save Button */}
    <div className="mt-5 flex justify-end">
 
-      <button
-        onClick={handleSave}
-        disabled={saving || !isFormValid}
-        className={`w-65 py-3 rounded-lg font-semibold text-white text-sm sm:text-base 
-          flex items-center justify-center gap-2 transition-all shadow-sm
-          ${
-            saving || !isFormValid
-              ? "bg-blue-400 cursor-not-allowed"
-              : "bg-blue-600 hover:bg-blue-700 active:scale-98"
-          }`}
-      >
-        {saving ? (
-          <>
-            <Loader2 className="animate-spin" size={18} />
-            Saving...
-          </>
-        ) : (
-          <>
-            <Save size={18} />
-            Save Entry
-          </>
-        )}
-      </button>
+<button
+  onClick={handleSave}
+  disabled={saving}
+  className={`w-full sm:w-64 py-3 rounded-lg font-semibold text-white text-sm sm:text-base 
+    flex items-center justify-center gap-2 transition-all shadow-sm
+    ${saving 
+      ? "bg-blue-400 cursor-not-allowed" 
+      : "bg-blue-600 hover:bg-blue-700 active:scale-98"
+    }`}
+>
+  {saving ? (
+    <>
+      <Loader2 className="animate-spin" size={18} />
+      Saving...
+    </>
+  ) : (
+    <>
+      <Save size={18} />
+      Save Entry
+    </>
+  )}
+</button>
     </div>
 
-    {error && (
-      <div className="mt-3 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-xs sm:text-sm flex items-center gap-2">
-        <AlertCircle size={14} />
-        {error}
-      </div>
-    )}
+    
   </div>
 </div>
 
