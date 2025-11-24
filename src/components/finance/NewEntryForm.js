@@ -35,9 +35,20 @@ const NumberInput = ({ value, onChange }) => {
 };
 
 const FileInputSection = ({ files, setFiles }) => {
+  const MAX_SIZE = 5 * 1024 * 1024;
   const handleFileChange = (e) => {
     const newFiles = Array.from(e.target.files || []);
-    setFiles((prev) => [...prev, ...newFiles]);
+
+    const validFiles = [];
+    newFiles.forEach((file) => {
+      if (file.size > MAX_SIZE) {
+        alert(`${file.name} is larger than 5MB and was not added.`);
+      } else {
+        validFiles.push(file);
+      }
+    });
+
+    setFiles((prev) => [...prev, ...validFiles]);
   };
 
   const removeFile = (index) => {
@@ -45,11 +56,12 @@ const FileInputSection = ({ files, setFiles }) => {
   };
 
   return (
-    <div className="mt-4 p-4 border rounded-lg bg-gray-50">
+<div className="mt-4 p-4 border rounded-lg bg-gray-50">
       <div className="flex items-center gap-2 mb-2">
         <Upload size={18} className="text-red-600" />
         <h4 className="font-medium text-sm">Expense Attachments</h4>
       </div>
+
       <input
         type="file"
         multiple
@@ -57,6 +69,7 @@ const FileInputSection = ({ files, setFiles }) => {
         onChange={handleFileChange}
         className="block w-full text-sm text-gray-900 file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-sm file:bg-red-50 file:text-red-700 hover:file:bg-red-100 bg-white"
       />
+
       {files.length > 0 && (
         <div className="mt-3 space-y-2 max-h-48 overflow-y-auto">
           {files.map((file, index) => (
@@ -82,6 +95,7 @@ const FileInputSection = ({ files, setFiles }) => {
     </div>
   );
 };
+ 
 
 export default function NewEntryForm({
   formData,

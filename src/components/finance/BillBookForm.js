@@ -261,76 +261,101 @@ export default function BillBookPage() {
 
   // SAVE WITH BACKEND DUPLICATE WARNING
 const handleSave = async () => {
-    if (!formData.date || !formData.bus) {
-      alert("Please select date and bus");
-      return;
+  if (!formData.date || !formData.bus) {
+    alert("Please select date and bus");
+    return;
+  }
+
+  const busId = Number(formData.bus);
+  if (isNaN(busId)) {
+    alert("Invalid bus selected");
+    return;
+  }
+
+  const transactions = [];
+  let hasExpense = false;
+
+  incomeCategories.forEach((cat) => {
+    const amount = Number(cat.amount || 0);
+    if (amount > 0) {
+      transactions.push({
+        owner_category_id: cat.id,
+        amount,
+        date: formData.date,
+        bus_id: busId,
+        transaction_type: "INCOME",
+      });
+    }
+  });
+
+  expenseCategories.forEach((cat) => {
+    const amount = Number(cat.amount || 0);
+    if (amount > 0) {
+      transactions.push({
+        owner_category_id: cat.id,
+        amount,
+        date: formData.date,
+        bus_id: busId,
+        transaction_type: "EXPENSE",
+      });
+      hasExpense = true;
+    }
+  });
+
+  if (transactions.length === 0) {
+    alert("Please enter at least one amount");
+    return;
+  }
+
+  try {
+    // 1️⃣ DUPLICATE CHECK
+    const checkRes = await axiosInstance.post(
+      "/finance/transactions/bulk/?check_only=1",
+      { transactions }
+    );
+
+    if (checkRes.data.warning) {
+      const confirmed = confirm(checkRes.data.warning);
+      if (!confirmed) {
+        alert("Cancelled — not saved.");
+        return;
+      }
     }
 
-    const transactions = [];
-    let hasExpense = false;
-
-    incomeCategories.forEach((cat) => {
-      const amount = parseFloat(cat.amount || 0);
-      if (amount > 0) {
-        transactions.push({
-          owner_category_id: cat.id,
-          amount,
-          date: formData.date,
-          bus_id: parseInt(formData.bus),
-          transaction_type: "INCOME",
-        });
-      }
-    });
-
-    expenseCategories.forEach((cat) => {
-      const amount = parseFloat(cat.amount || 0);
-      if (amount > 0) {
-        transactions.push({
-          owner_category_id: cat.id,
-          amount,
-          date: formData.date,
-          bus_id: parseInt(formData.bus),
-          transaction_type: "EXPENSE",
-        });
-        hasExpense = true;
-      }
-    });
-
-    if (transactions.length === 0) {
-      alert("Please enter at least one amount");
-      return;
-    }
-
+    // 2️⃣ ACTUAL SAVE (WITH FORM DATA)
     const form = new FormData();
     form.append("transactions", JSON.stringify(transactions));
+
     if (hasExpense && expenseFiles.length > 0) {
-      expenseFiles.forEach((file, i) => form.append(`expense_file_${i}`, file));
+      expenseFiles.forEach((file, i) => {
+        form.append(`expense_file_${i}`, file);
+      });
     }
 
     setSaving(true);
-    try {
-      const response = await axiosInstance.post("/finance/transactions/bulk/", form, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
 
-      if (response.data.warning) {
-        const confirmed = confirm(response.data.warning + "\n\nPress OK to confirm.");
-        if (!confirmed) alert("Saved but flagged. Check Records tab.");
-      }
+    const saveRes = await axiosInstance.post(
+      "/finance/transactions/bulk/",
+      form,
+      { headers: { "Content-Type": "multipart/form-data" } }
+    );
 
-      alert("Saved successfully!");
+    alert(saveRes.data.message || "Saved!");
 
-      setIncomeCategories(prev => prev.map(c => ({ ...c, amount: "" })));
-      setExpenseCategories(prev => prev.map(c => ({ ...c, amount: "" })));
-      setExpenseFiles([]);
-      setDuplicateWarnings({});
+    // RESET FIELDS
+    setIncomeCategories((prev) => prev.map((c) => ({ ...c, amount: "" })));
+    setExpenseCategories((prev) => prev.map((c) => ({ ...c, amount: "" })));
+    setExpenseFiles([]);
+    setDuplicateWarnings({});
 
-    } catch (err) {
-      alert(err.response?.data?.error || "Save failed");
-    } finally {
-      setSaving(false);
-    }
-  };
+  } catch (err) {
+    console.log(err);
+    alert(err.response?.data?.error || "Save failed");
+  } finally {
+    setSaving(false);
+  }
+};
+
 
   // Loading UI
   if (!currentUser || loading) {
