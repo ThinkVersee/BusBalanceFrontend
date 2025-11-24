@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import {
   TrendingUp,
   TrendingDown,
@@ -13,6 +13,9 @@ import {
   CheckCircle,
   AlertCircle,
   Trash2,
+  Wrench,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
 
 const NumberInput = ({ value, onChange }) => {
@@ -56,7 +59,7 @@ const FileInputSection = ({ files, setFiles }) => {
   };
 
   return (
-<div className="mt-4 p-4 border rounded-lg bg-gray-50">
+    <div className="mt-4 p-4 border rounded-lg bg-gray-50">
       <div className="flex items-center gap-2 mb-2">
         <Upload size={18} className="text-red-600" />
         <h4 className="font-medium text-sm">Expense Attachments</h4>
@@ -95,7 +98,6 @@ const FileInputSection = ({ files, setFiles }) => {
     </div>
   );
 };
- 
 
 export default function NewEntryForm({
   formData,
@@ -103,12 +105,16 @@ export default function NewEntryForm({
   ownedBuses,
   incomeCategories,
   expenseCategories,
+  maintenanceCategories,        // ← NEW PROP
   updateIncomeAmount,
   updateExpenseAmount,
+  updateMaintenanceAmount,     // ← NEW PROP
   showAddIncome,
   setShowAddIncome,
   showAddExpense,
   setShowAddExpense,
+  showAddMaintenance,          // ← NEW PROP
+  setShowAddMaintenance,       // ← NEW PROP
   newCategoryName,
   setNewCategoryName,
   addNewCategory,
@@ -117,17 +123,19 @@ export default function NewEntryForm({
   setExpenseFiles,
   totalIncome,
   totalExpense,
+  totalMaintenance,            // ← NEW PROP (for display)
   balance,
   handleSave,
   saving,
   isOwner,
   duplicateWarnings,
 }) {
+  const [maintenanceOpen, setMaintenanceOpen] = useState(true);
 
   return (
     <div className="bg-white rounded-lg shadow overflow-hidden">
 
-      {/* Header */}
+      {/* Header - unchanged */}
       <div className="px-4 sm:px-6 py-4 border-b bg-gray-50">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
@@ -197,15 +205,14 @@ export default function NewEntryForm({
                 <X size={18} />
               </button>
             </div>
-           <div className="mt-5 flex justify-center">
-  <button
-    onClick={() => addNewCategory("EXPENSE")}
-    className="w-full sm:w-auto px-3 py-1.5 text-sm bg-red-600 text-white rounded-md hover:bg-red-700"
-  >
-    Add Category
-  </button>
-</div>
-
+            <div className="mt-5 flex justify-center">
+              <button
+                onClick={() => addNewCategory("EXPENSE")}
+                className="w-full sm:w-auto px-3 py-1.5 text-sm bg-red-600 text-white rounded-md hover:bg-red-700"
+              >
+                Add Category
+              </button>
+            </div>
           </div>
         )}
 
@@ -231,10 +238,97 @@ export default function NewEntryForm({
           ))}
         </div>
 
+        {/* ========== MAINTENANCE COLLAPSIBLE SECTION (NEW) ========== */}
+        <div className="mt-6 border-t-2 border-dashed border-orange-400 pt-4">
+          <button
+            onClick={() => setMaintenanceOpen(!maintenanceOpen)}
+            className="w-full flex items-center justify-between text-left font-bold text-orange-700 hover:text-orange-800"
+          >
+            <div className="flex items-center gap-2">
+              <Wrench size={20} />
+              Maintenance
+              {totalMaintenance > 0 && (
+                <span className="ml-2 text-sm font-normal text-orange-600">
+                  ₹{totalMaintenance.toFixed(0)}
+                </span>
+              )}
+            </div>
+            {maintenanceOpen ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
+          </button>
+
+          {maintenanceOpen && (
+            <div className="mt-4 space-y-3 pl-6 border-l-4 border-orange-400">
+              {/* Add Maintenance Category */}
+              {showAddMaintenance && (
+                <div className="mb-4 p-3 bg-orange-50 rounded-md">
+                  <div className="flex items-center gap-2 mb-2">
+                    <input
+                      type="text"
+                      value={newCategoryName}
+                      onChange={(e) => setNewCategoryName(e.target.value)}
+                      placeholder="e.g. Engine Oil, Tyre Change"
+                      className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-md bg-white text-gray-900"
+                    />
+                    <button
+                      onClick={() => {
+                        setShowAddMaintenance(false);
+                        setNewCategoryName("");
+                      }}
+                      className="p-2 text-gray-500 hover:text-gray-700"
+                    >
+                      <X size={18} />
+                    </button>
+                  </div>
+                  <div className="flex justify-center">
+                    <button
+                      onClick={() => addNewCategory("MAINTENANCE")}
+                      className="w-full sm:w-auto px-3 py-1.5 text-sm bg-orange-600 text-white rounded-md hover:bg-orange-700"
+                    >
+                      Add Maintenance Category
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Maintenance Items */}
+              {maintenanceCategories?.map((cat) => (
+                <div key={cat.id} className="flex items-center gap-2">
+                  <Wrench size={16} className="text-orange-600" />
+                  <div className="flex-1 text-sm text-gray-700 font-medium truncate">
+                    {cat.name}
+                  </div>
+                  <NumberInput
+                    value={cat.amount}
+                    onChange={(v) => updateMaintenanceAmount(cat.id, v)}
+                  />
+                  {isOwner && (
+                    <button
+                      onClick={() => deleteCategory(cat.id, "MAINTENANCE")}
+                      className="p-1 text-gray-400 hover:text-red-600"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  )}
+                </div>
+              ))}
+
+              {/* Add Button */}
+              <button
+                onClick={() => setShowAddMaintenance(true)}
+                className="text-orange-600 text-sm font-medium hover:text-orange-700 flex items-center gap-1"
+              >
+                <Plus size={16} />
+                Add Maintenance Item
+              </button>
+            </div>
+          )}
+        </div>
+        {/* ========== END MAINTENANCE SECTION ========== */}
+
         <FileInputSection files={expenseFiles} setFiles={setExpenseFiles} />
       </div>
 
-      {/* Income Section */}
+      {/* Income Section - unchanged */}
       <div className="p-4 sm:p-6 border-t bg-white">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
@@ -271,14 +365,13 @@ export default function NewEntryForm({
               </button>
             </div>
             <div className="mt-5 flex justify-center">
-  <button
-    onClick={() => addNewCategory("INCOME")}
-    className="w-full sm:w-auto px-3 py-1.5 text-sm bg-green-600 text-white rounded-md hover:bg-green-700"
-  >
-    Add Category
-  </button>
-</div>
-
+              <button
+                onClick={() => addNewCategory("INCOME")}
+                className="w-full sm:w-auto px-3 py-1.5 text-sm bg-green-600 text-white rounded-md hover:bg-green-700"
+              >
+                Add Category
+              </button>
+            </div>
           </div>
         )}
 
@@ -305,126 +398,102 @@ export default function NewEntryForm({
         </div>
       </div>
 
-      {/* Summary - Compact & Mobile-Optimized */}
-{/* Summary - Compact for Mobile, Old Layout for Desktop */}
-<div className="border-t bg-gray-50">
-  <div className="p-4 sm:p-6">
-    <div className="flex items-center gap-2 mb-3">
-      <div className="p-1.5 rounded-lg bg-blue-100 text-blue-600">
-        <IndianRupee size={18} />
-      </div>
-      <h3 className="font-bold text-gray-800 text-sm sm:text-base">Summary</h3>
-    </div>
+      {/* Summary - unchanged */}
+      <div className="border-t bg-gray-50">
+        <div className="p-4 sm:p-6">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="p-1.5 rounded-lg bg-blue-100 text-blue-600">
+              <IndianRupee size={18} />
+            </div>
+            <h3 className="font-bold text-gray-800 text-sm sm:text-base">Summary</h3>
+          </div>
 
-    {/* Grid */}
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="bg-green-50 rounded-lg p-3 border border-green-200">
+              <div className="flex sm:hidden items-center justify-between text-sm font-semibold text-green-700">
+                <span>Income</span>
+                <span>₹{totalIncome.toFixed(0)}</span>
+              </div>
+              <div className="hidden sm:block text-green-700">
+                <div className="text-xs font-medium">Income</div>
+                <div className="text-xl font-extrabold mt-1">
+                  ₹{totalIncome.toFixed(0)}
+                </div>
+              </div>
+            </div>
 
-      {/* Income */}
-      <div className="bg-green-50 rounded-lg p-3 border border-green-200">
-        
-        {/* MOBILE (single line) */}
-        <div className="flex sm:hidden items-center justify-between text-sm font-semibold text-green-700">
-          <span>Income</span>
-          <span>₹{totalIncome.toFixed(0)}</span>
-        </div>
+            <div className="bg-red-50 rounded-lg p-3 border border-red-200">
+              <div className="flex sm:hidden items-center justify-between text-sm font-semibold text-red-700">
+                <span>Expense</span>
+                <span>₹{totalExpense.toFixed(0)}</span>
+              </div>
+              <div className="hidden sm:block text-red-700">
+                <div className="text-xs font-medium">Expense</div>
+                <div className="text-xl font-extrabold mt-1">
+                  ₹{totalExpense.toFixed(0)}
+                </div>
+              </div>
+            </div>
 
-        {/* DESKTOP (old layout) */}
-        <div className="hidden sm:block text-green-700">
-          <div className="text-xs font-medium">Income</div>
-          <div className="text-xl font-extrabold mt-1">
-            ₹{totalIncome.toFixed(0)}
+            <div
+              className={`rounded-lg p-3 border ${
+                balance >= 0
+                  ? "bg-green-50 border-green-200"
+                  : "bg-red-50 border-red-200"
+              }`}
+            >
+              <div
+                className={`flex sm:hidden items-center justify-between text-sm font-semibold ${
+                  balance >= 0 ? "text-green-700" : "text-red-700"
+                }`}
+              >
+                <span>Net</span>
+                <span>
+                  {balance >= 0 ? "₹" : "-₹"}
+                  {Math.abs(balance).toFixed(0)}
+                </span>
+              </div>
+
+              <div
+                className={`hidden sm:block ${
+                  balance >= 0 ? "text-green-700" : "text-red-700"
+                }`}
+              >
+                <div className="text-xs font-medium">Net</div>
+                <div className="text-xl font-extrabold mt-1">
+                  {balance >= 0 ? "₹" : "-₹"}
+                  {Math.abs(balance).toFixed(0)}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-5 flex justify-end">
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className={`w-full sm:w-64 py-3 rounded-lg font-semibold text-white text-sm sm:text-base 
+                flex items-center justify-center gap-2 transition-all shadow-sm
+                ${saving 
+                  ? "bg-blue-400 cursor-not-allowed" 
+                  : "bg-blue-600 hover:bg-blue-700 active:scale-98"
+                }`}
+            >
+              {saving ? (
+                <>
+                  <Loader2 className="animate-spin" size={18} />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save size={18} />
+                  Save Entry
+                </>
+              )}
+            </button>
           </div>
         </div>
-
       </div>
-
-      {/* Expense */}
-      <div className="bg-red-50 rounded-lg p-3 border border-red-200">
-
-        {/* MOBILE (single line) */}
-        <div className="flex sm:hidden items-center justify-between text-sm font-semibold text-red-700">
-          <span>Expense</span>
-          <span>₹{totalExpense.toFixed(0)}</span>
-        </div>
-
-        {/* DESKTOP (old layout) */}
-        <div className="hidden sm:block text-red-700">
-          <div className="text-xs font-medium">Expense</div>
-          <div className="text-xl font-extrabold mt-1">
-            ₹{totalExpense.toFixed(0)}
-          </div>
-        </div>
-
-      </div>
-
-      {/* Net Balance */}
-      <div
-        className={`rounded-lg p-3 border ${
-          balance >= 0
-            ? "bg-green-50 border-green-200"
-            : "bg-red-50 border-red-200"
-        }`}
-      >
-        {/* MOBILE (single line) */}
-        <div
-          className={`flex sm:hidden items-center justify-between text-sm font-semibold ${
-            balance >= 0 ? "text-green-700" : "text-red-700"
-          }`}
-        >
-          <span>Net</span>
-          <span>
-            {balance >= 0 ? "₹" : "-₹"}
-            {Math.abs(balance).toFixed(0)}
-          </span>
-        </div>
-
-        {/* DESKTOP (old layout) */}
-        <div
-          className={`hidden sm:block ${
-            balance >= 0 ? "text-green-700" : "text-red-700"
-          }`}
-        >
-          <div className="text-xs font-medium">Net</div>
-          <div className="text-xl font-extrabold mt-1">
-            {balance >= 0 ? "₹" : "-₹"}
-            {Math.abs(balance).toFixed(0)}
-          </div>
-        </div>
-      </div>
-
-    </div>
-
-    {/* Save Button */}
-   <div className="mt-5 flex justify-end">
-
-<button
-  onClick={handleSave}
-  disabled={saving}
-  className={`w-full sm:w-64 py-3 rounded-lg font-semibold text-white text-sm sm:text-base 
-    flex items-center justify-center gap-2 transition-all shadow-sm
-    ${saving 
-      ? "bg-blue-400 cursor-not-allowed" 
-      : "bg-blue-600 hover:bg-blue-700 active:scale-98"
-    }`}
->
-  {saving ? (
-    <>
-      <Loader2 className="animate-spin" size={18} />
-      Saving...
-    </>
-  ) : (
-    <>
-      <Save size={18} />
-      Save Entry
-    </>
-  )}
-</button>
-    </div>
-
-    
-  </div>
-</div>
-
     </div>
   );
 }
