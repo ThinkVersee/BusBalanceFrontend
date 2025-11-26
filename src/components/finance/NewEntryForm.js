@@ -459,7 +459,7 @@ export default function NewEntryForm({
                   balance >= 0 ? "text-green-700" : "text-red-700"
                 }`}
               >
-                <div className="text-xs font-medium">Net</div>
+                <div className="text-xs font-medium">Net Balance</div>
                 <div className="text-xl font-extrabold mt-1">
                   {balance >= 0 ? "₹" : "-₹"}
                   {Math.abs(balance).toFixed(0)}
