@@ -41,7 +41,7 @@ export default function BillBookPage() {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [duplicateWarnings, setDuplicateWarnings] = useState({});
-const [modalTitle, setModalTitle] = useState("");
+  const [modalTitle, setModalTitle] = useState("");
   const isOwner = currentUser?.is_owner === true;
 
   const toggleDate = (date) => {
@@ -412,30 +412,30 @@ const [modalTitle, setModalTitle] = useState("");
           )}
 
           {activeTab === "records" && (
-  <RecordsTab
-    ownedBuses={ownedBuses}
-    records={records}
-    loadingRecords={loadingRecords}
-    filterDate={filterDate}
-    setFilterDate={setFilterDate}
-    filterBus={filterBus}
-    setFilterBus={setFilterBus}
-    grandIncome={grandIncome}
-    grandExpense={grandExpense}
-    grandBalance={grandBalance}
-    openDates={openDates}
-    toggleDate={toggleDate}
-    deleteRecord={deleteRecord}
-    isOwner={isOwner}
-    modalOpen={modalOpen}
-    setModalOpen={setModalOpen}
-    modalOrder={modalOrder}
-    setModalOrder={setModalOrder}
-    modalAttachments={modalAttachments}
-    setModalAttachments={setModalAttachments}
-    modalTitle={modalTitle}
-    setModalTitle={setModalTitle}    
-  />
+            <RecordsTab
+              ownedBuses={ownedBuses}
+              records={records}
+              loadingRecords={loadingRecords}
+              filterDate={filterDate}
+              setFilterDate={setFilterDate}
+              filterBus={filterBus}
+              setFilterBus={setFilterBus}
+              grandIncome={grandIncome}
+              grandExpense={grandExpense}
+              grandBalance={grandBalance}
+              openDates={openDates}
+              toggleDate={toggleDate}
+              deleteRecord={deleteRecord}
+              isOwner={isOwner}
+              modalOpen={modalOpen}
+              setModalOpen={setModalOpen}
+              modalOrder={modalOrder}
+              setModalOrder={setModalOrder}
+              modalAttachments={modalAttachments}
+              setModalAttachments={setModalAttachments}
+              modalTitle={modalTitle}
+              setModalTitle={setModalTitle}
+            />
 
           )}
         </main>
