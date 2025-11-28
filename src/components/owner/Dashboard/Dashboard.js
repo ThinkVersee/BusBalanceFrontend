@@ -147,7 +147,7 @@ export default function OwnerDashboard() {
               </div>
               <Wallet className="w-16 h-16 opacity-30" />
             </div>
-            <button 
+            <button
               onClick={() => setShowWithdrawModal(true)}
               className="mt-5 w-full sm:w-auto px-6 py-3 bg-white/20 backdrop-blur-sm rounded-xl font-medium hover:bg-white/30 transition"
             >
@@ -210,10 +210,10 @@ export default function OwnerDashboard() {
             <h3 className="font-bold text-gray-900 mb-4">Quick Actions</h3>
             <div className="space-y-3">
               {[
-                { to: "/owner/expense", label: "New Entry", icon: IndianRupee, color: "bg-emerald-500" },
+                { to: "/owner/expense?tab=new", label: "New Entry", icon: IndianRupee, color: "bg-emerald-500" },
                 { to: "/owner/bus", label: "Manage Buses", icon: Bus, color: "bg-blue-500" },
                 { to: "/owner/staff", label: "Manage Staff", icon: Users, color: "bg-purple-500" },
-                { to: "/owner/expense", label: "View Reports", icon: BarChart3, color: "bg-orange-500" },
+                { to: "/owner/expense?tab=records", label: "View Reports", icon: BarChart3, color: "bg-orange-500" },
               ].map((item, i) => (
                 <Link key={i} href={item.to} className="flex items-center justify-between p-4 rounded-lg hover:bg-gray-50 transition group">
                   <div className="flex items-center gap-4">
@@ -231,7 +231,9 @@ export default function OwnerDashboard() {
           <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-5">
               <h3 className="font-bold text-gray-900">Recent Transactions</h3>
-              <Link href="/owner/expense" className="text-blue-600 hover:underline text-sm font-medium">View all</Link>
+              <Link href="/owner/expense?tab=records" className="text-blue-600 hover:underline text-sm font-medium">
+                View all
+              </Link>
             </div>
             {recentTransactions.length === 0 ? (
               <div className="text-center py-12 text-gray-500">
@@ -243,25 +245,23 @@ export default function OwnerDashboard() {
                 {recentTransactions.map((t) => (
                   <div key={t.id} className="flex items-center justify-between p-4 rounded-lg hover:bg-gray-50 transition">
                     <div className="flex items-center gap-4">
-                      <div className={`p-2.5 rounded-lg ${
-                        t.transaction_type === "INCOME" ? "bg-emerald-100 text-emerald-600" :
+                      <div className={`p-2.5 rounded-lg ${t.transaction_type === "INCOME" ? "bg-emerald-100 text-emerald-600" :
                         t.transaction_type === "WITHDRAWAL" ? "bg-purple-100 text-purple-600" :
-                        "bg-red-100 text-red-600"
-                      }`}>
+                          "bg-red-100 text-red-600"
+                        }`}>
                         {t.transaction_type === "INCOME" ? <TrendingUp className="w-5 h-5" /> :
-                         t.transaction_type === "WITHDRAWAL" ? <Wallet className="w-5 h-5" /> :
-                         <TrendingDown className="w-5 h-5" />}
+                          t.transaction_type === "WITHDRAWAL" ? <Wallet className="w-5 h-5" /> :
+                            <TrendingDown className="w-5 h-5" />}
                       </div>
                       <div>
                         <p className="font-medium text-gray-900">{t.category_name}</p>
                         <p className="text-sm text-gray-500">{t.bus_name || "General"}</p>
                       </div>
                     </div>
-                    <span className={`font-bold text-lg ${
-                      t.transaction_type === "INCOME" ? "text-emerald-600" :
+                    <span className={`font-bold text-lg ${t.transaction_type === "INCOME" ? "text-emerald-600" :
                       t.transaction_type === "WITHDRAWAL" ? "text-purple-600" :
-                      "text-red-600"
-                    }`}>
+                        "text-red-600"
+                      }`}>
                       {t.transaction_type === "INCOME" ? "+" : "-"}₹{parseFloat(t.amount).toLocaleString('en-IN')}
                     </span>
                   </div>

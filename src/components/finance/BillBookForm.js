@@ -60,6 +60,14 @@ export default function BillBookPage() {
   }, []);
 
   useEffect(() => {
+  const params = new URLSearchParams(window.location.search);
+  const tab = params.get("tab");
+  if (tab === "new" || tab === "records") {
+    setActiveTab(tab);
+  }
+}, []);
+
+  useEffect(() => {
     if (!currentUser) return;
 
     const fetchData = async () => {
