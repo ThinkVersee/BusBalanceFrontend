@@ -18,7 +18,15 @@ const busSchema = z.object({
   registration_number: z.string().min(1, 'Registration number required').max(20, 'Max 20 characters'),
   bus_name: z.string().min(1, 'Bus name required'),
   route: z.string().min(1, 'Primary route required'),
-  bus_type: z.enum(['AC_SLEEPER', 'NON_AC_SLEEPER', 'AC_SEATER', 'NON_AC_SEATER', 'SEMI_SLEEPER', 'VOLVO', 'ORDINARY']).optional(),
+  bus_type: z.enum([
+    'AC_SLEEPER',
+    'NON_AC_SLEEPER',
+    'AC_SEATER',
+    'NON_AC_SEATER',
+    'SEMI_SLEEPER',
+    'VOLVO',
+    'ORDINARY'
+  ]).optional(),
   manufacturer: z.string().optional(),
   model: z.string().optional(),
   year_of_manufacture: z.coerce.number().int().optional(),
