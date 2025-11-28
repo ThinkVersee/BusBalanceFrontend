@@ -299,7 +299,7 @@ export default function RecordsTab({
                                         </div>
                                     </div>
                                     <div className="text-right">
-                                        <div className="text-[10px] sm:text-xs text-gray-500">Net</div>
+                                        <div className="text-[10px] sm:text-xs text-gray-500">Net Balance</div>
                                         <div className={`font-bold ${dayBalance >= 0 ? "text-green-600" : "text-red-600"} text-lg sm:text-xl`}>
                                             {dayBalance >= 0 ? "₹" : "-₹"}
                                             {Math.abs(dayBalance).toFixed(0)}
