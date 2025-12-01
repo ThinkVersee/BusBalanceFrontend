@@ -21,7 +21,6 @@ export default function ChangePasswordModal({ isOpen, onClose, isSuperAdmin = fa
     setError('');
     setSuccess('');
 
-    // Frontend validation
     if (newPassword !== confirmPassword) {
       setError('New password and confirm password do not match.');
       return;
@@ -45,7 +44,6 @@ export default function ChangePasswordModal({ isOpen, onClose, isSuperAdmin = fa
       setNewPassword('');
       setConfirmPassword('');
 
-      // Auto logout after 1.5s
       setTimeout(() => {
         onClose();
         clearAuthAndRedirect();
@@ -72,99 +70,118 @@ export default function ChangePasswordModal({ isOpen, onClose, isSuperAdmin = fa
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 px-4 overflow-y-auto">
-      <div className="relative w-full max-w-md bg-white rounded-lg shadow-xl my-8">
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+      {/* Backdrop - Light blur, not full black */}
+      <div 
+        className="absolute inset-0 bg-black/30 backdrop-blur-sm transition-opacity"
+        onClick={onClose}
+      />
+
+      {/* Modal */}
+      <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900">Change Password</h3>
+        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+          <h3 className="text-xl font-semibold text-gray-900">Change Password</h3>
           <button
             onClick={onClose}
-            className="p-1 rounded-full hover:bg-gray-100 transition-colors"
-            aria-label="Close modal"
+            className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+            aria-label="Close"
           >
-            <X size={20} className="text-gray-600" />
+            <X className="w-5 h-5 text-gray-500" />
           </button>
         </div>
 
         {/* Body */}
-        <form onSubmit={handleSubmit} className="p-4 space-y-4">
+        <form onSubmit={handleSubmit} className="p-6 space-y-5">
           {/* Current Password */}
           <div>
-            <label htmlFor="current-password" className="block text-sm font-medium text-gray-800 mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Current Password
             </label>
             <input
-              id="current-password"
               type="password"
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
               required
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-gray-900 bg-white placeholder-gray-400"
+              style={{ color: '#1f2937', backgroundColor: 'white' }} // MacBook fix
               placeholder="Enter current password"
-              className="w-full px-3 py-2 text-gray-900 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
             />
           </div>
 
           {/* New Password */}
           <div>
-            <label htmlFor="new-password" className="block text-sm font-medium text-gray-800 mb-1">
-              New Password (min 5 characters)
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              New Password
             </label>
             <input
-              id="new-password"
               type="password"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               required
               minLength={5}
-              placeholder="Enter new password"
-              className="w-full px-3 py-2 text-gray-900 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-gray-900 bg-white placeholder-gray-400"
+              style={{ color: '#1f2937', backgroundColor: 'white' }}
+              placeholder="At least 5 characters"
             />
           </div>
 
           {/* Confirm Password */}
           <div>
-            <label htmlFor="confirm-password" className="block text-sm font-medium text-gray-800 mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Confirm New Password
             </label>
             <input
-              id="confirm-password"
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
               minLength={5}
-              placeholder="Confirm new password"
-              className="w-full px-3 py-2 text-gray-900 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-gray-900 bg-white placeholder-gray-400"
+              style={{ color: '#1f2937', backgroundColor: 'white' }}
+              placeholder="Retype new password"
             />
           </div>
 
-          {/* Error / Success Messages */}
+          {/* Messages */}
           {error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-              <p className="text-sm font-medium text-red-800">{error}</p>
+            <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
+              <p className="text-sm text-red-700 flex items-center gap-2">
+                {error}
+              </p>
             </div>
           )}
+
           {success && (
-            <div className="p-3 bg-green-50 border border-green-200 rounded-md">
-              <p className="text-sm font-medium text-green-800">{success}</p>
+            <div className="p-4 bg-green-50 border border-green-200 rounded-xl">
+              <p className="text-sm text-green-700 font-medium flex items-center gap-2">
+                {success}
+              </p>
             </div>
           )}
 
           {/* Buttons */}
-          <div className="flex gap-3 pt-2">
+          <div className="flex gap-3 pt-4">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
+              className="flex-1 px-5 py-3 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading || !currentPassword || !newPassword || !confirmPassword}
-              className="flex-1 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed transition-colors"
+              className="flex-1 px-5 py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
             >
-              {loading ? 'Changing...' : 'Change Password'}
+              {loading ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Changing...
+                </>
+              ) : (
+                'Change Password'
+              )}
             </button>
           </div>
         </form>

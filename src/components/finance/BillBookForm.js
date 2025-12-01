@@ -351,7 +351,7 @@ export default function BillBookPage() {
 
   return (
     <>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 pb-24 sm:pb-8">
+      <div className="min-h-screen  pb-24 sm:pb-8">
         <header className="z-50 backdrop-blur-2xl bg-white/70 border-b border-white/30">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between h-20">
@@ -368,7 +368,7 @@ export default function BillBookPage() {
           </div>
         </header>
 
-        <div className="fixed bottom-0 left-0 right-0 z-50 sm:sticky sm:top-20 bg-white/90 backdrop-blur border-t sm:border-b border-gray-200">
+        <div className="fixed bottom-0 left-0 right-0 z-40 sm:sticky sm:top-20 bg-white/90 backdrop-blur border-t sm:border-b border-gray-200">
           <div className="max-w-7xl mx-auto flex">
             {[{ key: "new", icon: FileText, label: "New Entry" }, { key: "records", icon: Eye, label: "View Records" }].map(tab => {
               const Icon = tab.icon;

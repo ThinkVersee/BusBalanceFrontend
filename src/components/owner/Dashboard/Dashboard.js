@@ -119,7 +119,7 @@ export default function OwnerDashboard() {
         {/* Header */}
         <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg">
+            <div className="w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg">
               <Activity className="w-7 h-7 text-white" />
             </div>
             <div>
@@ -131,7 +131,7 @@ export default function OwnerDashboard() {
             <button className="px-4 py-2.5 bg-white border border-gray-300 rounded-lg font-medium text-sm flex items-center gap-2 hover:bg-gray-50">
               <Calendar className="w-4 h-4" /> Today
             </button>
-            <Link href="/owner/expense" className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg font-medium flex items-center gap-2 hover:from-blue-700 hover:to-indigo-700 shadow-sm">
+            <Link href="/owner/expense" className="px-5 py-2.5 bg-blue-600 text-white rounded-lg font-medium flex items-center gap-2 hover:bg-blue-700 shadow-sm">
               <BarChart3 className="w-4 h-4" /> Reports
             </Link>
           </div>
@@ -139,7 +139,7 @@ export default function OwnerDashboard() {
 
         {/* Current Balance Card */}
         <div className="mb-8">
-          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-6 text-white shadow-xl">
+          <div className="bg-blue-600 rounded-2xl p-6 text-white shadow-xl">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-blue-100 text-sm font-medium">Current Balance</p>
@@ -272,7 +272,7 @@ export default function OwnerDashboard() {
         </div>
       </div>
 
-      {/* YOUR ORIGINAL, PERFECT WITHDRAWAL MODAL */}
+      {/* FIXED WITHDRAWAL MODAL - Text now visible on MacBook */}
       {showWithdrawModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
@@ -287,7 +287,8 @@ export default function OwnerDashboard() {
                     required
                     value={withdrawForm.amount}
                     onChange={(e) => setWithdrawForm(prev => ({ ...prev, amount: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-400 bg-white"
+                    style={{ color: '#1f2937', backgroundColor: 'white' }} // Force dark text
                     placeholder="0.00"
                   />
                 </div>
@@ -298,7 +299,8 @@ export default function OwnerDashboard() {
                     rows={3}
                     value={withdrawForm.reason}
                     onChange={(e) => setWithdrawForm(prev => ({ ...prev, reason: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-400 bg-white resize-none"
+                    style={{ color: '#1f2937', backgroundColor: 'white' }}
                     placeholder="Purpose of withdrawal..."
                   />
                 </div>
@@ -307,7 +309,8 @@ export default function OwnerDashboard() {
                   <select
                     value={withdrawForm.method}
                     onChange={(e) => setWithdrawForm(prev => ({ ...prev, method: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
+                    style={{ color: '#1f2937', backgroundColor: 'white' }}
                   >
                     <option value="Cash">Cash</option>
                     <option value="Bank Transfer">Bank Transfer</option>
@@ -320,7 +323,8 @@ export default function OwnerDashboard() {
                     type="text"
                     value={withdrawForm.reference}
                     onChange={(e) => setWithdrawForm(prev => ({ ...prev, reference: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-400 bg-white"
+                    style={{ color: '#1f2937', backgroundColor: 'white' }}
                     placeholder="Transaction ID, UTR, etc."
                   />
                 </div>
@@ -347,7 +351,7 @@ export default function OwnerDashboard() {
                 <button
                   type="submit"
                   disabled={withdrawLoading}
-                  className="px-4 py-2 bg-purple-600 text-white hover:bg-purple-700 rounded-lg font-medium transition-colors disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2"
+                  className="px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg font-medium transition-colors disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2"
                 >
                   {withdrawLoading && <Loader2 size={16} className="animate-spin" />}
                   Withdraw
