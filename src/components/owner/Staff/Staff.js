@@ -14,12 +14,12 @@ import { FormModal } from '@/components/common/FormModal';
 import { ConfirmModal } from '@/components/common/ConfirmModal';
 
 /* ------------------------------------------------------------------
-   ZOD SCHEMA
+   ZOD SCHEMA - EMAIL & PHONE NOW MANDATORY
    ------------------------------------------------------------------ */
 const employeeSchema = z.object({
   name: z.string().min(1, 'Full name is required'),
-  email: z.string().email('Invalid email').optional().or(z.literal('')),
-  phone: z.string().regex(/^\d{10}$/, 'Phone must be exactly 10 digits').optional().or(z.literal('')),
+  email: z.string().email('Please enter a valid email address'),
+  phone: z.string().regex(/^\d{10}$/, 'Phone must be exactly 10 digits'),
   employee_type: z.enum(['DRIVER', 'CONDUCTOR', 'MANAGER', 'CLEANER', 'MECHANIC']),
   license_number: z.string().optional(),
   license_expiry: z.string().optional(),
@@ -100,11 +100,9 @@ export default function StaffManagement() {
 
     const data = error.response.data;
 
-    // Case 1: Simple string or detail
     if (typeof data === 'string') return data;
     if (data.detail) return data.detail;
 
-    // Case 2: Nested DRF errors like { user: { email: "Already exists." } }
     const messages = [];
 
     const traverse = (obj) => {
@@ -190,7 +188,11 @@ export default function StaffManagement() {
     setLoading(true);
     try {
       const payload = {
-        user: { name: data.name, email: data.email || null, phone: data.phone || '' },
+        user: { 
+          name: data.name, 
+          email: data.email, 
+          phone: data.phone 
+        },
         employee_type: data.employee_type,
         license_number: data.license_number || null,
         license_expiry: data.license_expiry || null,
@@ -279,8 +281,8 @@ export default function StaffManagement() {
         title: 'Basic Information',
         fields: [
           { label: 'Full Name', name: 'name', required: true },
-          { label: 'Email', name: 'email', type: 'email' },
-          { label: 'Phone', name: 'phone', type: 'tel' },
+          { label: 'Email', name: 'email', type: 'email', required: true },
+          { label: 'Phone', name: 'phone', type: 'tel', required: true, placeholder: 'e.g. 9876543210' },
         ],
       },
       {
@@ -402,27 +404,21 @@ export default function StaffManagement() {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-8">
-  <div className="flex items-center gap-3 flex-1 min-w-0">
-
-    {/* Icon - responsive size */}
-    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl 
-      flex items-center justify-center shadow-lg flex-shrink-0">
-      <Users className="text-white w-5 h-5 sm:w-6 sm:h-6" />
-    </div>
-
-    {/* Text - responsive & trimmed */}
-    <div className="min-w-0 flex-1">
-      <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 truncate">
-        Staff Management
-      </h1>
-      <p className="text-gray-600 text-xs sm:text-sm mt-0.5 line-clamp-2">
-        Manage drivers, conductors, mechanics, cleaners & managers
-      </p>
-    </div>
-
-  </div>
-</div>
-
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl 
+              flex items-center justify-center shadow-lg flex-shrink-0">
+              <Users className="text-white w-5 h-5 sm:w-6 sm:h-6" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 truncate">
+                Staff Management
+              </h1>
+              <p className="text-gray-600 text-xs sm:text-sm mt-0.5 line-clamp-2">
+                Manage drivers, conductors, mechanics, cleaners & managers
+              </p>
+            </div>
+          </div>
+        </div>
 
         {/* API Error */}
         {apiError && (
