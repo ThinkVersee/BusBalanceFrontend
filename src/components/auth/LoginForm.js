@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { Eye, EyeOff, Bus, Loader2, AlertCircle } from 'lucide-react';
+import Link from 'next/link';
 
 const LoginForm = () => {
   const [username, setUsername] = useState('');
@@ -18,8 +19,8 @@ const LoginForm = () => {
     if (error && !errorCaptured.current) {
       setDisplayError(error);
       errorCaptured.current = true;
-      
-      // Don't let it be cleared for at least 100ms
+
+      // Allow it to be cleared again after a short delay
       setTimeout(() => {
         errorCaptured.current = false;
       }, 100);
@@ -29,7 +30,7 @@ const LoginForm = () => {
   useEffect(() => {
     if (isAuthenticated) {
       setDisplayError(null);
-      const user = JSON.parse(localStorage.getItem('user'));
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
 
       if (user?.is_superuser) {
         router.push('/admin/');
@@ -42,13 +43,10 @@ const LoginForm = () => {
   }, [isAuthenticated, router]);
 
   const handleSubmit = async () => {
-    // Clear previous errors
     setDisplayError(null);
     errorCaptured.current = false;
-    
-    if (clearError) {
-      clearError();
-    }
+
+    if (clearError) clearError();
 
     try {
       await login({
@@ -69,38 +67,21 @@ const LoginForm = () => {
 
   const handleInputChange = (setter) => (e) => {
     setter(e.target.value);
-    // Clear error when user starts typing
-    if (displayError) {
-      setDisplayError(null);
-    }
+    if (displayError) setDisplayError(null);
   };
 
-  // Function to get error message
   const getErrorMessage = () => {
     if (!displayError) return null;
-    
-    if (typeof displayError === 'string') {
-      return displayError;
-    }
-    
-    if (displayError.detail) {
-      return displayError.detail;
-    }
-    
-    if (displayError.message) {
-      return displayError.message;
-    }
-    
-    if (displayError.non_field_errors) {
-      return Array.isArray(displayError.non_field_errors) 
+
+    if (typeof displayError === 'string') return displayError;
+    if (displayError.detail) return displayError.detail;
+    if (displayError.message) return displayError.message;
+    if (displayError.non_field_errors)
+      return Array.isArray(displayError.non_field_errors)
         ? displayError.non_field_errors.join(', ')
         : displayError.non_field_errors;
-    }
-    
-    if (displayError.error) {
-      return displayError.error;
-    }
-    
+    if (displayError.error) return displayError.error;
+
     return 'Login failed. Please check your credentials.';
   };
 
@@ -124,7 +105,6 @@ const LoginForm = () => {
             <h1 className="text-2xl font-bold text-gray-900">BUSBOOK</h1>
           </div>
 
-          {/* Title */}
           <h2 className="text-2xl font-semibold mb-8 text-gray-900">Login</h2>
 
           {/* Error Message */}
@@ -132,21 +112,7 @@ const LoginForm = () => {
             <div className="mb-6 p-4 bg-red-50 border-2 border-red-300 rounded-lg">
               <div className="flex items-start">
                 <AlertCircle className="w-5 h-5 text-red-600 mr-3 flex-shrink-0 mt-0.5" />
-                <div className="text-sm text-red-700 font-medium">
-                  {errorMessage}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Fallback error display */}
-          {!errorMessage && displayError && (
-            <div className="mb-6 p-4 bg-red-50 border-2 border-red-300 rounded-lg">
-              <div className="flex items-start">
-                <AlertCircle className="w-5 h-5 text-red-600 mr-3 flex-shrink-0 mt-0.5" />
-                <div className="text-sm text-red-700 font-medium">
-                  Login failed. Please check your credentials.
-                </div>
+                <div className="text-sm text-red-700 font-medium">{errorMessage}</div>
               </div>
             </div>
           )}
@@ -177,7 +143,7 @@ const LoginForm = () => {
               </label>
               <div className="relative">
                 <input
-                  type={showPassword ? "text" : "password"}
+                  type={showPassword ? 'text' : 'password'}
                   id="password"
                   value={password}
                   onChange={handleInputChange(setPassword)}
@@ -197,11 +163,6 @@ const LoginForm = () => {
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
               </div>
-              {/* <div className="mt-2 text-right">
-                <a href="/forgot-password" className="text-sm text-blue-600 hover:text-blue-700 transition duration-200">
-                  Forgot password?
-                </a>
-              </div> */}
             </div>
 
             <button
@@ -220,6 +181,19 @@ const LoginForm = () => {
                 'Login'
               )}
             </button>
+          </div>
+
+          {/* Register Link */}
+          <div className="mt-8 text-center">
+            <p className="text-sm text-gray-600">
+              Don’t have an account?{' '}
+              <Link
+                href="/register"
+                className="font-semibold text-blue-600 hover:text-blue-700 underline transition duration-200"
+              >
+                Register here
+              </Link>
+            </p>
           </div>
         </div>
       </div>

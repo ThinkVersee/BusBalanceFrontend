@@ -1,26 +1,40 @@
 "use client";
+
+import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
 export default function HeroSection() {
   return (
     <section className="relative overflow-hidden pt-32 pb-20 px-4 sm:px-6 lg:px-8 bg-white">
       <div className="max-w-7xl mx-auto">
+        {/* Headline & CTA */}
         <div className="text-center max-w-4xl mx-auto space-y-8">
-          <h1 className="text-xl md:text-6xl font-bold text-gray-900 leading-tight">
+          <h1 className="text-4xl md:text-6xl font-bold text-gray-900 leading-tight">
             Manage Your Bus<br />
             <span className="text-gray-900">Business Finances Effortlessly</span>
           </h1>
-          <p className="text-gray-600 max-w-2xl mx-auto">
-          Smart financial tracking to keep your bus business organized, profitable, and stress-free.
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            Smart financial tracking to keep your bus business organized, profitable, and stress-free.
           </p>
+
+          {/* Try Demo Button */}
+          <div className="pt-6">
+            <Link
+              href="/register"
+              className="inline-flex items-center gap-3 bg-blue-600 text-white font-semibold px-8 py-4 rounded-xl hover:bg-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+            >
+              Try Demo for Free
+              <ArrowRight className="w-5 h-5" />
+            </Link>
+          </div>
         </div>
 
         {/* Dashboard Mockup */}
-        <div className="mt-16 relative">
+        <div className="mt-20 relative">
           <div className="relative mx-auto max-w-5xl">
             <div className="absolute inset-0 bg-gradient-to-b from-blue-100/50 to-transparent rounded-t-2xl blur-2xl"></div>
             <div className="relative bg-white rounded-t-2xl shadow-2xl border border-gray-200 p-6">
-              {/* Header */}
+              {/* Browser Header */}
               <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
                 <div className="flex items-center gap-4">
                   <div className="flex gap-2">
@@ -39,18 +53,18 @@ export default function HeroSection() {
                 </div>
               </div>
 
-              {/* Sessions */}
-              <div className="bg-gray-50 rounded-xl p-2 sm:p-3">
-                <div className="flex items-center justify-between mb-3">
+              {/* Sessions Section */}
+              <div className="bg-gray-50 rounded-xl p-4 sm:p-6">
+                <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold text-gray-900">Sessions</h3>
-                  <select className="text-sm border border-gray-300 rounded-lg px-2 py-1">
+                  <select className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 bg-white">
                     <option>Last 7 days</option>
                   </select>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {/* Card 1 */}
-                  <div className="bg-white rounded-lg p-4 shadow-sm">
+                  <div className="bg-white rounded-lg p-5 shadow-sm border border-gray-100">
                     <div className="flex items-center gap-3 mb-4">
                       <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
                         <div className="w-6 h-6 rounded-full bg-blue-600"></div>
@@ -70,7 +84,7 @@ export default function HeroSection() {
                         <span className="font-semibold">2 mins</span>
                       </div>
                       <div className="text-xs text-gray-500">Good work</div>
-                      <div className="h-16 mt-3">
+                      <div className="h-16 mt-4">
                         <svg viewBox="0 0 100 40" className="w-full h-full">
                           <polyline
                             points="0,35 20,28 40,32 60,20 80,25 100,15"
@@ -84,7 +98,7 @@ export default function HeroSection() {
                   </div>
 
                   {/* Card 2 */}
-                  <div className="bg-white rounded-lg p-4 shadow-sm">
+                  <div className="bg-white rounded-lg p-5 shadow-sm border border-gray-100">
                     <div className="flex items-center gap-3 mb-4">
                       <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
                         <div className="w-6 h-6 rounded-full bg-purple-600"></div>
@@ -104,7 +118,7 @@ export default function HeroSection() {
                         <span className="font-semibold">5 mins</span>
                       </div>
                       <div className="text-xs text-gray-500">Good work</div>
-                      <div className="h-16 mt-3">
+                      <div className="h-16 mt-4">
                         <svg viewBox="0 0 100 40" className="w-full h-full">
                           <polyline
                             points="0,30 20,25 40,28 60,18 80,22 100,12"
@@ -118,7 +132,7 @@ export default function HeroSection() {
                   </div>
 
                   {/* Card 3 */}
-                  <div className="bg-white rounded-lg p-4 shadow-sm">
+                  <div className="bg-white rounded-lg p-5 shadow-sm border border-gray-100">
                     <div className="flex items-center gap-3 mb-4">
                       <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
                         <div className="w-6 h-6 rounded-full bg-green-600"></div>
@@ -138,7 +152,7 @@ export default function HeroSection() {
                         <span className="font-semibold">1 min</span>
                       </div>
                       <div className="text-xs text-gray-500">Good work</div>
-                      <div className="h-16 mt-3">
+                      <div className="h-16 mt-4">
                         <svg viewBox="0 0 100 40" className="w-full h-full">
                           <polyline
                             points="0,32 20,30 40,35 60,25 80,28 100,20"
