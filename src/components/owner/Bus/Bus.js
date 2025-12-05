@@ -13,7 +13,7 @@ import { GenericTable } from '@/components/common/GenericTable';
 import { FormModal } from '@/components/common/FormModal';
 import { ConfirmModal } from '@/components/common/ConfirmModal';
 
-// ---------- ZOD SCHEMA (NO owner_id) ----------
+// ---------- ZOD SCHEMA ----------
 const busSchema = z.object({
   registration_number: z.string().min(1, 'Registration number required').max(20, 'Max 20 characters'),
   bus_name: z.string().min(1, 'Bus name required'),
@@ -41,56 +41,6 @@ const busSchema = z.object({
   is_operational: z.boolean().default(true),
 });
 
-// ---------- FORM SECTIONS (NO owner dropdown) ----------
-const busSections = () => [
-  {
-    title: 'Basic Info',
-    fields: [
-      { label: 'Registration Number', name: 'registration_number', required: true },
-      { label: 'Bus Name', name: 'bus_name', required: true },
-      { label: 'Primary Route', name: 'route', required: true, colSpan: 'col-span-1 sm:col-span-2' },
-      { label: 'Seating Capacity', name: 'seating_capacity', type: 'number', required: true },
-      {
-        label: 'Bus Type',
-        name: 'bus_type',
-        type: 'select',
-        required: true,
-        options: [
-          { value: '', label: '— Select Type —' },
-          { value: 'ORDINARY', label: 'Ordinary' },
-          { value: 'AC_SLEEPER', label: 'AC Sleeper' },
-          { value: 'NON_AC_SLEEPER', label: 'Non-AC Sleeper' },
-          { value: 'AC_SEATER', label: 'AC Seater' },
-          { value: 'NON_AC_SEATER', label: 'Non-AC Seater' },
-          { value: 'SEMI_SLEEPER', label: 'Semi Sleeper' },
-          { value: 'VOLVO', label: 'Volvo' },
-        ]
-      },
-    ],
-  },
-  {
-    title: 'Optional Specifications',
-    fields: [
-
-      { label: 'Manufacturer', name: 'manufacturer' },
-      { label: 'Model', name: 'model' },
-      { label: 'Year of Manufacture', name: 'year_of_manufacture', type: 'number' },
-      { label: 'Chassis Number', name: 'chassis_number' },
-      { label: 'Engine Number', name: 'engine_number' },
-    ],
-  },
-  {
-    title: 'Optional Documents & Permits',
-    fields: [
-      { label: 'Permit Number', name: 'permit_number' },
-      { label: 'Permit Expiry', name: 'permit_expiry', type: 'date' },
-      { label: 'Insurance Number', name: 'insurance_number' },
-      { label: 'Insurance Expiry', name: 'insurance_expiry', type: 'date' },
-      { label: 'Fitness Certificate Expiry', name: 'fitness_certificate_expiry', type: 'date' },
-    ],
-  },
-];
-
 export default function BusManagement() {
   const [buses, setBuses] = useState([]);
   const [filteredBuses, setFilteredBuses] = useState([]);
@@ -104,13 +54,14 @@ export default function BusManagement() {
   const [apiLoading, setApiLoading] = useState(false);
   const [apiError, setApiError] = useState(null);
 
-  const currentOwnerId = axiosInstance.defaults.ownerId; // From login
+  const currentOwnerId = axiosInstance.defaults.ownerId;
 
   const {
     register,
     handleSubmit,
     reset,
     setValue,
+    watch,
     formState: { errors }
   } = useForm({
     resolver: zodResolver(busSchema),
@@ -122,8 +73,21 @@ export default function BusManagement() {
     }
   });
 
+  // Watch registration number for live uppercase conversion
+  const regNumber = watch('registration_number');
+
+  // Auto-convert registration number to uppercase
+  useEffect(() => {
+    if (regNumber !== undefined) {
+      const upper = regNumber.toUpperCase();
+      if (regNumber !== upper) {
+        setValue('registration_number', upper, { shouldValidate: true });
+      }
+    }
+  }, [regNumber, setValue]);
+
   // -----------------------------------------------------------------
-  // FETCH BUSES (only owner's buses)
+  // FETCH BUSES
   // -----------------------------------------------------------------
   const fetchBuses = useCallback(async () => {
     setApiLoading(true);
@@ -198,7 +162,7 @@ export default function BusManagement() {
 
   const handleEdit = (bus) => {
     setSelectedBus(bus);
-    setValue('registration_number', bus.registration_number || '');
+    setValue('registration_number', (bus.registration_number || '').toUpperCase());
     setValue('bus_name', bus.bus_name || '');
     setValue('route', bus.route || '');
     setValue('bus_type', bus.bus_type || '');
@@ -224,7 +188,7 @@ export default function BusManagement() {
     setLoading(true);
     try {
       const payload = {
-        registration_number: data.registration_number.trim(),
+        registration_number: data.registration_number.trim().toUpperCase(),
         bus_name: data.bus_name.trim(),
         route: data.route.trim(),
         is_operational: data.is_operational,
@@ -240,8 +204,6 @@ export default function BusManagement() {
         ...(data.insurance_number?.trim() && { insurance_number: data.insurance_number.trim() }),
         ...(data.insurance_expiry && { insurance_expiry: data.insurance_expiry }),
         ...(data.fitness_certificate_expiry && { fitness_certificate_expiry: data.fitness_certificate_expiry }),
-
-        // Only on CREATE
         ...(!selectedBus && { owner: currentOwnerId }),
       };
 
@@ -265,7 +227,7 @@ export default function BusManagement() {
   };
 
   // -----------------------------------------------------------------
-  // DELETE
+  // DELETE & TOGGLE (unchanged)
   // -----------------------------------------------------------------
   const openDelete = (bus) => {
     setSelectedBus(bus);
@@ -286,9 +248,6 @@ export default function BusManagement() {
     }
   };
 
-  // -----------------------------------------------------------------
-  // TOGGLE OPERATIONAL
-  // -----------------------------------------------------------------
   const openToggleConfirm = (bus) => {
     setToggleTarget(bus);
     setIsToggleOpOpen(true);
@@ -311,10 +270,70 @@ export default function BusManagement() {
   };
 
   // -----------------------------------------------------------------
-  // TABLE COLUMNS
+  // FORM SECTIONS (with uppercase hint)
+  // -----------------------------------------------------------------
+  const busSections = () => [
+    {
+      title: 'Basic Info',
+      fields: [
+        { 
+          label: 'Registration Number', 
+          name: 'registration_number', 
+          required: true,
+          placeholder: 'e.g. MH14AB1234',
+          hint: 'Automatically converted to uppercase'
+        },
+        { label: 'Bus Name', name: 'bus_name', required: true },
+        { label: 'Primary Route', name: 'route', required: true, colSpan: 'col-span-1 sm:col-span-2' },
+        { label: 'Seating Capacity', name: 'seating_capacity', type: 'number', required: true },
+        {
+          label: 'Bus Type',
+          name: 'bus_type',
+          type: 'select',
+          required: true,
+          options: [
+            { value: '', label: '— Select Type —' },
+            { value: 'ORDINARY', label: 'Ordinary' },
+            { value: 'AC_SLEEPER', label: 'AC Sleeper' },
+            { value: 'NON_AC_SLEEPER', label: 'Non-AC Sleeper' },
+            { value: 'AC_SEATER', label: 'AC Seater' },
+            { value: 'NON_AC_SEATER', label: 'Non-AC Seater' },
+            { value: 'SEMI_SLEEPER', label: 'Semi Sleeper' },
+            { value: 'VOLVO', label: 'Volvo' },
+          ]
+        },
+      ],
+    },
+    {
+      title: 'Optional Specifications',
+      fields: [
+        { label: 'Manufacturer', name: 'manufacturer' },
+        { label: 'Model', name: 'model' },
+        { label: 'Year of Manufacture', name: 'year_of_manufacture', type: 'number' },
+        { label: 'Chassis Number', name: 'chassis_number' },
+        { label: 'Engine Number', name: 'engine_number' },
+      ],
+    },
+    {
+      title: 'Optional Documents & Permits',
+      fields: [
+        { label: 'Permit Number', name: 'permit_number' },
+        { label: 'Permit Expiry', name: 'permit_expiry', type: 'date' },
+        { label: 'Insurance Number', name: 'insurance_number' },
+        { label: 'Insurance Expiry', name: 'insurance_expiry', type: 'date' },
+        { label: 'Fitness Certificate Expiry', name: 'fitness_certificate_expiry', type: 'date' },
+      ],
+    },
+  ];
+
+  // -----------------------------------------------------------------
+  // TABLE COLUMNS (registration shown in uppercase)
   // -----------------------------------------------------------------
   const columns = useMemo(() => [
-    { header: 'Reg. No.', accessor: 'registration_number' },
+    { 
+      header: 'Reg. No.', 
+      cell: row => <span className="font-mono text-sm font-semibold">{row.registration_number?.toUpperCase() || '—'}</span>
+    },
     { header: 'Name', accessor: 'bus_name' },
     { header: 'Route', accessor: 'route', cell: row => <span className="text-sm">{row.route || '—'}</span> },
     {
@@ -349,18 +368,10 @@ export default function BusManagement() {
       header: 'Actions',
       cell: row => (
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => handleEdit(row)}
-            className="text-blue-600 hover:text-blue-800 transition-colors"
-            title="Edit"
-          >
+          <button onClick={() => handleEdit(row)} className="text-blue-600 hover:text-blue-800" title="Edit">
             <Edit size={16} />
           </button>
-          <button
-            onClick={() => openDelete(row)}
-            className="text-red-600 hover:text-red-800 transition-colors"
-            title="Delete"
-          >
+          <button onClick={() => openDelete(row)} className="text-red-600 hover:text-red-800" title="Delete">
             <Trash2 size={16} />
           </button>
         </div>
@@ -368,9 +379,6 @@ export default function BusManagement() {
     },
   ], []);
 
-  // -----------------------------------------------------------------
-  // RENDER
-  // -----------------------------------------------------------------
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-gray-50 p-4 sm:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto">
@@ -378,12 +386,9 @@ export default function BusManagement() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6 sm:mb-8">
           <div className="flex items-center gap-3 flex-1 min-w-0">
-            {/* Icon - scales down on mobile */}
             <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
               <Bus className="text-white w-5 h-5 sm:w-6 sm:h-6" />
             </div>
-
-            {/* Text Content */}
             <div className="min-w-0 flex-1">
               <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 truncate">
                 Bus Management
@@ -395,21 +400,18 @@ export default function BusManagement() {
           </div>
         </div>
 
-        {/* API Error */}
         {apiError && (
           <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-lg mb-4 text-sm">
             {apiError}
           </div>
         )}
 
-        {/* Stats */}
         <StatsCards
           total={buses.length}
           operational={buses.filter(b => b.is_operational).length}
           label="Buses"
         />
 
-        {/* Action Bar */}
         <ActionBar
           search={searchQuery}
           onSearch={setSearchQuery}
@@ -418,7 +420,6 @@ export default function BusManagement() {
           searchPlaceholder="Search by reg. no., name, route..."
         />
 
-        {/* Table */}
         <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
           <GenericTable
             rows={filteredBuses}
@@ -428,7 +429,7 @@ export default function BusManagement() {
           />
         </div>
 
-        {/* Form Modal */}
+        {/* Modals */}
         <FormModal
           isOpen={isModalOpen}
           onClose={() => { setIsModalOpen(false); resetForm(); }}
@@ -442,7 +443,6 @@ export default function BusManagement() {
           submitLabel={selectedBus ? 'Update' : 'Create Bus'}
         />
 
-        {/* Delete Confirm */}
         <ConfirmModal
           isOpen={isDeleteOpen}
           onClose={() => { setIsDeleteOpen(false); setSelectedBus(null); }}
@@ -456,7 +456,6 @@ export default function BusManagement() {
           icon={Trash2}
         />
 
-        {/* Toggle Operational */}
         <ConfirmModal
           isOpen={isToggleOpOpen}
           onClose={() => { setIsToggleOpOpen(false); setToggleTarget(null); }}
