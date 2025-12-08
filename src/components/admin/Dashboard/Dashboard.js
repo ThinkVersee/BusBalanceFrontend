@@ -187,29 +187,23 @@ export default function SuperadminDashboard() {
           </div>
 
           {/* Revenue */}
-   <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl sm:rounded-2xl shadow-md 
-    p-4 sm:p-5 lg:p-6 text-white min-h-[140px] flex flex-col">
-
-  <div className="flex items-start justify-between mb-3 sm:mb-4">
-    <div className="w-10 h-10 bg-white/20 rounded-lg sm:rounded-xl flex items-center justify-center backdrop-blur-sm">
-      <IndianRupee className="text-white" size={20} />
-    </div>
-    <div className="bg-white/20 px-2 py-1 rounded-full backdrop-blur-sm">
-      <TrendingUp size={12} />
-    </div>
-  </div>
-
-  <h3 className="font-bold mb-1 whitespace-nowrap overflow-hidden text-ellipsis 
-      text-[clamp(16px,4vw,26px)] leading-tight">
-    ₹00.000.000.00
-  </h3>
-
-  <p className="text-blue-100 text-xs sm:text-sm mb-1 line-clamp-1">Total Revenue</p>
-  <p className="text-xs text-blue-200 mt-auto">
-    From {stats.subscribers.active} active subs
-  </p>
-</div>
-
+          <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl sm:rounded-2xl shadow-md p-5 sm:p-6 lg:p-8 text-white min-h-[160px] flex flex-col">
+            <div className="flex items-start justify-between mb-3 sm:mb-4">
+              <div className="w-12 h-12 bg-white/20 rounded-lg sm:rounded-xl flex items-center justify-center backdrop-blur-sm">
+                <IndianRupee className="text-white" size={22} />
+              </div>
+              <div className="bg-white/20 px-2.5 py-1 rounded-full backdrop-blur-sm">
+                <TrendingUp size={14} />
+              </div>
+            </div>
+            <h3 className="font-bold mb-1 whitespace-nowrap overflow-hidden text-ellipsis 
+      text-[clamp(16px,4vw,26px)] leading-tight">₹{stats.revenue.total.toLocaleString()}</h3>
+        
+            <p className="text-blue-100 text-xs sm:text-sm mb-1 line-clamp-1">Total Revenue</p>
+            <p className="text-xs text-blue-200 mt-auto">
+              From {stats.subscribers.active} active subs
+            </p>
+          </div>
         </div>
 
         {/* KEY INSIGHTS */}
