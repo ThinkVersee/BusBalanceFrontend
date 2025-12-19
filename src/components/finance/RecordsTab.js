@@ -112,8 +112,8 @@ export default function RecordsTab({
     isOwner,
     modalOpen,
     setModalOpen,
-    modalTitle,        // ← This is the state value
-    setModalTitle,     // ← This is the setter function (was missing!)
+    modalTitle,
+    setModalTitle,
     modalAttachments,
     setModalAttachments,
     expenseCategories = [],
@@ -137,11 +137,6 @@ export default function RecordsTab({
     const filteredDates = Object.keys(recordsByDate)
         .filter((d) => !filterDate || d === filterDate)
         .sort((a, b) => new Date(b) - new Date(a));
-
-    // Helper to get category ID safely
-    const getCategoryId = (record) => {
-        return Number(record.owner_category?.id || record.category_id || 0);
-    };
 
     return (
         <>
@@ -205,7 +200,7 @@ export default function RecordsTab({
                     </div>
 
                     <div className="bg-red-50 rounded-xl p-3 sm:p-4 border border-red-100 text-center">
-                        <div className="text-xs sm:text-sm font-medium text-red-700">Total Expense + Maintenance</div>
+                        <div className="text-xs sm:text-sm font-medium text-red-700">Total Expense (incl. Maintenance)</div>
                         <div className="text-xl sm:text-2xl font-bold text-red-700 mt-1">
                             ₹{grandExpense.toFixed(0)}
                         </div>
@@ -241,16 +236,14 @@ export default function RecordsTab({
                         const allAttachments = dayRecords.flatMap((r) => r.attachments || []);
                         const isOpen = openDates[date];
 
-                                           const incomes = dayRecords.filter(r => r.transaction_type === "INCOME");
+                        const incomes = dayRecords.filter(r => r.transaction_type === "INCOME");
                         const expenses = dayRecords.filter(r => r.transaction_type === "EXPENSE");
                         const maintenances = dayRecords.filter(r => r.transaction_type === "MAINTENANCE");
 
-                        // AUTOMATIC: Oldest created category appears at TOP, newest at BOTTOM
-                        // Based on actual creation time from database (most reliable)
                         const sortByCreationTime = (a, b) => {
                             const dateA = new Date(a.owner_category?.created || a.created_at || 0);
                             const dateB = new Date(b.owner_category?.created || b.created_at || 0);
-                            return dateA - dateB; // oldest first → newest last
+                            return dateA - dateB;
                         };
 
                         const sortedIncomes       = [...incomes].sort(sortByCreationTime);
@@ -260,7 +253,7 @@ export default function RecordsTab({
                         const dayIncome = incomes.reduce((s, r) => s + parseFloat(r.amount || 0), 0);
                         const dayRegularExpense = expenses.reduce((s, r) => s + parseFloat(r.amount || 0), 0);
                         const dayMaintenance = maintenances.reduce((s, r) => s + parseFloat(r.amount || 0), 0);
-                        const dayTotalExpense = dayRegularExpense + dayMaintenance;
+                        const dayTotalExpense = dayRegularExpense + dayMaintenance; // Includes maintenance
                         const dayBalance = dayIncome - dayTotalExpense;
 
                         return (
@@ -298,12 +291,33 @@ export default function RecordsTab({
                                             )}
                                         </div>
                                     </div>
-                                    <div className="text-right">
+
+                                    <div className="text-right space-y-1">
                                         <div className="text-[10px] sm:text-xs text-gray-500">Net Balance</div>
                                         <div className={`font-bold ${dayBalance >= 0 ? "text-green-600" : "text-red-600"} text-lg sm:text-xl`}>
                                             {dayBalance >= 0 ? "₹" : "-₹"}
                                             {Math.abs(dayBalance).toFixed(0)}
                                         </div>
+
+                                        {isOpen && (
+                                            <div className="text-xs space-y-0.5 mt-2 border-t border-gray-300 pt-1">
+                                                {dayIncome > 0 && (
+                                                    <div className="text-green-600">
+                                                        Income: ₹{dayIncome.toFixed(0)}
+                                                    </div>
+                                                )}
+                                                {dayTotalExpense > 0 && (
+                                                    <div className="text-red-600">
+                                                        Total Expense: ₹{dayTotalExpense.toFixed(0)}
+                                                    </div>
+                                                )}
+                                                {dayMaintenance > 0 && (
+                                                    <div className="text-orange-600">
+                                                        ↳ Maintenance: ₹{dayMaintenance.toFixed(0)}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
 
@@ -316,6 +330,9 @@ export default function RecordsTab({
                                                 <div className="flex items-center gap-2 text-green-600 font-semibold text-sm mb-3">
                                                     <TrendingUp size={18} />
                                                     <span>Income</span>
+                                                    <span className="ml-auto font-bold text-green-600">
+                                                        ₹{dayIncome.toFixed(0)}
+                                                    </span>
                                                 </div>
                                                 <div className="space-y-3">
                                                     {sortedIncomes.map((r) => (
@@ -325,36 +342,46 @@ export default function RecordsTab({
                                             </div>
                                         )}
 
-                                        {/* EXPENSES */}
-                                        {sortedExpenses.length > 0 && (
+                                        {/* EXPENSES (Regular + Maintenance grouped under Total Expense) */}
+                                        {(sortedExpenses.length > 0 || sortedMaintenances.length > 0) && (
                                             <div>
-                                                <div className="flex items-center gap-2 text-red-600 font-semibold text-sm mb-3">
-                                                    <TrendingDown size={18} />
-                                                    <span>Expenses</span>
-                                                </div>
-                                                <div className="space-y-3">
-                                                    {sortedExpenses.map((r) => (
-                                                        <TransactionItem key={r.id} r={r} isOwner={isOwner} deleteRecord={deleteRecord} />
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {/* MAINTENANCE */}
-                                        {sortedMaintenances.length > 0 && (
-                                            <div className="mt-6 pt-4 border-t-2 border-dashed border-orange-400">
-                                                <div className="flex items-center gap-2 text-orange-700 font-bold text-sm mb-3">
-                                                    <Wrench size={18} />
-                                                    <span>Maintenance</span>
-                                                    <span className="ml-auto font-bold text-orange-600">
-                                                        ₹{dayMaintenance.toFixed(0)}
+                                                <div className="flex items-center gap-2 text-red-600 font-bold text-base mb-4">
+                                                    <TrendingDown size={20} />
+                                                    <span>Total Expense (incl. Maintenance)</span>
+                                                    <span className="ml-auto font-extrabold text-red-600">
+                                                        ₹{dayTotalExpense.toFixed(0)}
                                                     </span>
                                                 </div>
-                                                <div className="space-y-3 pl-6 border-l-4 border-orange-400">
-                                                    {sortedMaintenances.map((r) => (
-                                                        <TransactionItem key={r.id} r={r} isOwner={isOwner} deleteRecord={deleteRecord} />
-                                                    ))}
-                                                </div>
+
+                                                {/* Regular Expenses */}
+                                                {sortedExpenses.length > 0 && (
+                                                    <div className="mb-5">
+                                                        <div className="text-sm font-medium text-gray-700 mb-2">Regular Expenses</div>
+                                                        <div className="space-y-3">
+                                                            {sortedExpenses.map((r) => (
+                                                                <TransactionItem key={r.id} r={r} isOwner={isOwner} deleteRecord={deleteRecord} />
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* Maintenance */}
+                                                {sortedMaintenances.length > 0 && (
+                                                    <div className="pt-4 border-t-2 border-dashed border-orange-400">
+                                                        <div className="flex items-center gap-2 text-orange-700 font-bold text-sm mb-3">
+                                                            <Wrench size={18} />
+                                                            <span>Maintenance</span>
+                                                            <span className="ml-auto font-bold text-orange-600">
+                                                                ₹{dayMaintenance.toFixed(0)}
+                                                            </span>
+                                                        </div>
+                                                        <div className="space-y-3 pl-6 border-l-4 border-orange-400">
+                                                            {sortedMaintenances.map((r) => (
+                                                                <TransactionItem key={r.id} r={r} isOwner={isOwner} deleteRecord={deleteRecord} />
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
                                             </div>
                                         )}
                                     </div>

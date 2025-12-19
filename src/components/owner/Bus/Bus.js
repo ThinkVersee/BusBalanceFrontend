@@ -276,9 +276,9 @@ export default function BusManagement() {
     {
       title: 'Basic Info',
       fields: [
-        { 
-          label: 'Registration Number', 
-          name: 'registration_number', 
+        {
+          label: 'Registration Number',
+          name: 'registration_number',
           required: true,
           placeholder: 'e.g. MH14AB1234',
           hint: 'Automatically converted to uppercase'
@@ -330,8 +330,8 @@ export default function BusManagement() {
   // TABLE COLUMNS (registration shown in uppercase)
   // -----------------------------------------------------------------
   const columns = useMemo(() => [
-    { 
-      header: 'Reg. No.', 
+    {
+      header: 'Reg. No.',
       cell: row => <span className="font-mono text-sm font-semibold">{row.registration_number?.toUpperCase() || '—'}</span>
     },
     { header: 'Name', accessor: 'bus_name' },
