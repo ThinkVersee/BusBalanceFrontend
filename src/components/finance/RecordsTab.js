@@ -16,35 +16,42 @@ import {
     TrendingUp,
     TrendingDown,
     Wrench,
+    ArrowDownCircle,
 } from "lucide-react";
 
 const TransactionItem = ({ r, isOwner, deleteRecord }) => (
     <div className="bg-gray-50 rounded-xl p-4 flex items-center justify-between gap-4">
         <div className="flex items-center gap-3 min-w-0 flex-1">
             <span
-                className={`px-3 py-1.5 rounded-full text-xs font-bold flex-shrink-0 ${r.transaction_type === "INCOME"
-                    ? "bg-green-100 text-green-700"
-                    : r.transaction_type === "MAINTENANCE"
+                className={`px-3 py-1.5 rounded-full text-xs font-bold flex-shrink-0 ${
+                    r.transaction_type === "INCOME"
+                        ? "bg-green-100 text-green-700"
+                        : r.transaction_type === "MAINTENANCE"
                         ? "bg-orange-100 text-orange-700"
+                        : r.transaction_type === "WITHDRAWAL"
+                        ? "bg-purple-100 text-purple-700"
                         : "bg-red-100 text-red-700"
-                    }`}
+                }`}
             >
-                {r.transaction_type === "INCOME" ? "IN" : r.transaction_type === "MAINTENANCE" ? "MNT" : "EXP"}
+                {r.transaction_type === "INCOME" ? "IN" :
+                 r.transaction_type === "MAINTENANCE" ? "MNT" :
+                 r.transaction_type === "WITHDRAWAL" ? "WD" : "EXP"}
             </span>
             <div className="min-w-0 flex-1">
                 <div className="font-semibold text-gray-900 text-sm truncate">
                     {r.category_name}
                 </div>
                 <div className="text-xs text-gray-500 truncate">
-                    {r.bus_name || "No bus"}
+                    {r.bus_name || (r.transaction_type === "WITHDRAWAL" ? "Owner Withdrawal" : "No bus")}
                 </div>
             </div>
         </div>
 
         <div className="flex items-center gap-3">
             <span
-                className={`font-bold text-lg whitespace-nowrap ${r.transaction_type === "INCOME" ? "text-green-600" : "text-red-600"
-                    }`}
+                className={`font-bold text-lg whitespace-nowrap ${
+                    r.transaction_type === "INCOME" ? "text-green-600" : "text-red-600"
+                }`}
             >
                 ₹{parseFloat(r.amount).toFixed(0)}
             </span>
@@ -116,23 +123,22 @@ export default function RecordsTab({
     setModalTitle,
     modalAttachments,
     setModalAttachments,
-    expenseCategories = [],
-    incomeCategories = [],
 }) {
-    // Filter by bus first
+    // Filter records: if bus selected, exclude withdrawals
     const filteredRecords = filterBus
-        ? records.filter(r => String(r.bus?.id || r.bus_id || "") === String(filterBus))
+        ? records.filter(r => 
+            String(r.bus?.id || r.bus_id || "") === String(filterBus) &&
+            r.transaction_type !== "WITHDRAWAL"
+          )
         : records;
 
     // Group by date
-    const recordsByDate = Array.isArray(filteredRecords)
-        ? filteredRecords.reduce((acc, r) => {
-            const dateKey = r.date || "unknown";
-            if (!acc[dateKey]) acc[dateKey] = [];
-            acc[dateKey].push(r);
-            return acc;
-        }, {})
-        : {};
+    const recordsByDate = filteredRecords.reduce((acc, r) => {
+        const dateKey = r.date || "unknown";
+        if (!acc[dateKey]) acc[dateKey] = [];
+        acc[dateKey].push(r);
+        return acc;
+    }, {});
 
     const filteredDates = Object.keys(recordsByDate)
         .filter((d) => !filterDate || d === filterDate)
@@ -191,26 +197,26 @@ export default function RecordsTab({
                     <h3 className="font-bold text-lg text-gray-900">Summary</h3>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-                    <div className="bg-green-50 rounded-xl p-3 sm:p-4 border border-green-100 text-center">
-                        <div className="text-xs sm:text-sm font-medium text-green-700">Total Income</div>
-                        <div className="text-xl sm:text-2xl font-bold text-green-700 mt-1">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="bg-green-50 rounded-xl p-4 border border-green-100 text-center">
+                        <div className="text-sm font-medium text-green-700">Total Income</div>
+                        <div className="text-2xl font-bold text-green-700 mt-1">
                             ₹{grandIncome.toFixed(0)}
                         </div>
                     </div>
 
-                    <div className="bg-red-50 rounded-xl p-3 sm:p-4 border border-red-100 text-center">
-                        <div className="text-xs sm:text-sm font-medium text-red-700">Total Expense (incl. Maintenance)</div>
-                        <div className="text-xl sm:text-2xl font-bold text-red-700 mt-1">
+                    <div className="bg-red-50 rounded-xl p-4 border border-red-100 text-center">
+                        <div className="text-sm font-medium text-red-700">Total Expense + Maintenance</div>
+                        <div className="text-2xl font-bold text-red-700 mt-1">
                             ₹{grandExpense.toFixed(0)}
                         </div>
                     </div>
 
-                    <div className={`rounded-xl p-3 sm:p-4 border text-center ${grandBalance >= 0 ? "bg-green-50 border-green-100" : "bg-red-50 border-red-100"}`}>
-                        <div className={`text-xs sm:text-sm font-medium ${grandBalance >= 0 ? "text-green-700" : "text-red-700"}`}>
-                            Net Balance
+                    <div className={`rounded-xl p-4 border text-center ${grandBalance >= 0 ? "bg-green-50 border-green-100" : "bg-red-50 border-red-100"}`}>
+                        <div className={`text-sm font-medium ${grandBalance >= 0 ? "text-green-700" : "text-red-700"}`}>
+                            Net Balance (after Withdrawal)
                         </div>
-                        <div className={`text-2xl sm:text-3xl font-extrabold mt-1 ${grandBalance >= 0 ? "text-green-700" : "text-red-700"}`}>
+                        <div className={`text-3xl font-extrabold mt-1 ${grandBalance >= 0 ? "text-green-700" : "text-red-700"}`}>
                             {grandBalance >= 0 ? "₹" : "-₹"}
                             {Math.abs(grandBalance).toFixed(0)}
                         </div>
@@ -227,163 +233,145 @@ export default function RecordsTab({
                 <div className="text-center py-20">
                     <FileText className="mx-auto text-gray-300 mb-4" size={64} />
                     <p className="text-gray-500 font-medium text-lg">No records found</p>
-                    <p className="text-gray-400 text-sm mt-2">Try adjusting filters or add new entries</p>
                 </div>
             ) : (
-                <div className="space-y-4">
+                <div className="space-y-6">
                     {filteredDates.map((date) => {
                         const dayRecords = recordsByDate[date] || [];
                         const allAttachments = dayRecords.flatMap((r) => r.attachments || []);
                         const isOpen = openDates[date];
 
+                        // Separate by type
                         const incomes = dayRecords.filter(r => r.transaction_type === "INCOME");
                         const expenses = dayRecords.filter(r => r.transaction_type === "EXPENSE");
                         const maintenances = dayRecords.filter(r => r.transaction_type === "MAINTENANCE");
+                        const withdrawals = dayRecords.filter(r => r.transaction_type === "WITHDRAWAL");
 
-                        const sortByCreationTime = (a, b) => {
-                            const dateA = new Date(a.owner_category?.created || a.created_at || 0);
-                            const dateB = new Date(b.owner_category?.created || b.created_at || 0);
-                            return dateA - dateB;
-                        };
-
-                        const sortedIncomes       = [...incomes].sort(sortByCreationTime);
-                        const sortedExpenses      = [...expenses].sort(sortByCreationTime);
-                        const sortedMaintenances  = [...maintenances].sort(sortByCreationTime);
+                        const sortByCreation = (a, b) => new Date(a.created_at || 0) - new Date(b.created_at || 0);
 
                         const dayIncome = incomes.reduce((s, r) => s + parseFloat(r.amount || 0), 0);
                         const dayRegularExpense = expenses.reduce((s, r) => s + parseFloat(r.amount || 0), 0);
                         const dayMaintenance = maintenances.reduce((s, r) => s + parseFloat(r.amount || 0), 0);
-                        const dayTotalExpense = dayRegularExpense + dayMaintenance; // Includes maintenance
-                        const dayBalance = dayIncome - dayTotalExpense;
+                        const dayWithdrawal = withdrawals.reduce((s, r) => s + parseFloat(r.amount || 0), 0);
+                        const dayTotalExpense = dayRegularExpense + dayMaintenance;
+                        const dayBalance = dayIncome - dayTotalExpense - dayWithdrawal;
 
                         return (
-                            <div key={date} className="bg-white rounded-2xl shadow-sm overflow-hidden">
-                                {/* DATE HEADER */}
-                                <div
-                                    className="px-3 py-3 sm:px-4 sm:py-4 bg-gray-50 flex items-center justify-between cursor-pointer hover:bg-gray-100 transition-colors select-none"
-                                    onClick={() => toggleDate(date)}
-                                >
-                                    <div className="flex items-center gap-2 sm:gap-3">
-                                        {isOpen ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
-                                        <Calendar className="text-blue-600 flex-shrink-0" size={18} />
-                                        <div>
-                                            <div className="font-bold text-gray-900 text-sm sm:text-base">
-                                                {new Date(date).toLocaleDateString("en-IN", {
-                                                    weekday: "short",
-                                                    day: "numeric",
-                                                    month: "short",
-                                                    year: "numeric",
-                                                })}
+                            <div key={date} className="space-y-4">
+                                {/* MAIN CARD: Income + Expense + Maintenance */}
+                                <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+                                    <div
+                                        className="px-4 py-4 bg-gray-50 flex items-center justify-between cursor-pointer hover:bg-gray-100 transition-colors select-none"
+                                        onClick={() => toggleDate(date)}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            {isOpen ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
+                                            <Calendar className="text-blue-600" size={18} />
+                                            <div>
+                                                <div className="font-bold text-gray-900">
+                                                    {new Date(date).toLocaleDateString("en-IN", {
+                                                        weekday: "short",
+                                                        day: "numeric",
+                                                        month: "short",
+                                                        year: "numeric",
+                                                    })}
+                                                </div>
+                                                {allAttachments.length > 0 && (
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setModalTitle(`Attachments – ${new Date(date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}`);
+                                                            setModalAttachments(allAttachments);
+                                                            setModalOpen(true);
+                                                        }}
+                                                        className="flex items-center gap-1 text-xs text-blue-600 mt-1 hover:underline"
+                                                    >
+                                                        <FolderOpen size={14} />
+                                                        {allAttachments.length} file{allAttachments.length > 1 ? "s" : ""}
+                                                    </button>
+                                                )}
                                             </div>
-                                            {allAttachments.length > 0 && (
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        setModalTitle(`Attachments – ${new Date(date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}`);
-                                                        setModalAttachments(allAttachments);
-                                                        setModalOpen(true);
-                                                    }}
-                                                    className="flex items-center gap-1 text-[10px] sm:text-xs text-blue-600 mt-1 hover:underline"
-                                                >
-                                                    <FolderOpen size={12} className="sm:size-[14px]" />
-                                                    {allAttachments.length} file{allAttachments.length > 1 ? "s" : ""}
-                                                </button>
+                                        </div>
+
+                                        <div className="text-right">
+                                            <div className="text-xs text-gray-500">Net Balance</div>
+                                            <div className={`font-bold text-xl ${dayBalance >= 0 ? "text-green-600" : "text-red-600"}`}>
+                                                {dayBalance >= 0 ? "₹" : "-₹"}{Math.abs(dayBalance).toFixed(0)}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {isOpen && (
+                                        <div className="p-4 space-y-6 border-t border-gray-100">
+                                            {incomes.length > 0 && (
+                                                <div>
+                                                    <div className="flex items-center gap-2 text-green-600 font-semibold mb-3">
+                                                        <TrendingUp size={18} />
+                                                        <span>Income</span>
+                                                        <span className="ml-auto font-bold">₹{dayIncome.toFixed(0)}</span>
+                                                    </div>
+                                                    <div className="space-y-3">
+                                                        {incomes.sort(sortByCreation).map(r => (
+                                                            <TransactionItem key={r.id} r={r} isOwner={isOwner} deleteRecord={deleteRecord} />
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {(expenses.length > 0 || maintenances.length > 0) && (
+                                                <div>
+                                                    <div className="flex items-center gap-2 text-red-600 font-bold text-base mb-4">
+                                                        <TrendingDown size={20} />
+                                                        <span>Total Expense (incl. Maintenance)</span>
+                                                        <span className="ml-auto font-extrabold">₹{dayTotalExpense.toFixed(0)}</span>
+                                                    </div>
+
+                                                    {expenses.length > 0 && (
+                                                        <div className="mb-5">
+                                                            <div className="text-sm font-medium text-gray-700 mb-2">Regular Expenses</div>
+                                                            <div className="space-y-3">
+                                                                {expenses.sort(sortByCreation).map(r => (
+                                                                    <TransactionItem key={r.id} r={r} isOwner={isOwner} deleteRecord={deleteRecord} />
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    {maintenances.length > 0 && (
+                                                        <div className="pt-4 border-t-2 border-dashed border-orange-400">
+                                                            <div className="flex items-center gap-2 text-orange-700 font-bold mb-3">
+                                                                <Wrench size={18} />
+                                                                <span>Maintenance</span>
+                                                                <span className="ml-auto font-bold text-orange-600">₹{dayMaintenance.toFixed(0)}</span>
+                                                            </div>
+                                                            <div className="space-y-3 pl-6 border-l-4 border-orange-400">
+                                                                {maintenances.sort(sortByCreation).map(r => (
+                                                                    <TransactionItem key={r.id} r={r} isOwner={isOwner} deleteRecord={deleteRecord} />
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             )}
                                         </div>
-                                    </div>
-
-                                    <div className="text-right space-y-1">
-                                        <div className="text-[10px] sm:text-xs text-gray-500">Net Balance</div>
-                                        <div className={`font-bold ${dayBalance >= 0 ? "text-green-600" : "text-red-600"} text-lg sm:text-xl`}>
-                                            {dayBalance >= 0 ? "₹" : "-₹"}
-                                            {Math.abs(dayBalance).toFixed(0)}
-                                        </div>
-
-                                        {isOpen && (
-                                            <div className="text-xs space-y-0.5 mt-2 border-t border-gray-300 pt-1">
-                                                {dayIncome > 0 && (
-                                                    <div className="text-green-600">
-                                                        Income: ₹{dayIncome.toFixed(0)}
-                                                    </div>
-                                                )}
-                                                {dayTotalExpense > 0 && (
-                                                    <div className="text-red-600">
-                                                        Total Expense: ₹{dayTotalExpense.toFixed(0)}
-                                                    </div>
-                                                )}
-                                                {dayMaintenance > 0 && (
-                                                    <div className="text-orange-600">
-                                                        ↳ Maintenance: ₹{dayMaintenance.toFixed(0)}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        )}
-                                    </div>
+                                    )}
                                 </div>
 
-                                {/* TRANSACTIONS */}
-                                {isOpen && (
-                                    <div className="p-4 space-y-6 border-t border-gray-100">
-                                        {/* INCOME */}
-                                        {sortedIncomes.length > 0 && (
-                                            <div>
-                                                <div className="flex items-center gap-2 text-green-600 font-semibold text-sm mb-3">
-                                                    <TrendingUp size={18} />
-                                                    <span>Income</span>
-                                                    <span className="ml-auto font-bold text-green-600">
-                                                        ₹{dayIncome.toFixed(0)}
-                                                    </span>
-                                                </div>
-                                                <div className="space-y-3">
-                                                    {sortedIncomes.map((r) => (
-                                                        <TransactionItem key={r.id} r={r} isOwner={isOwner} deleteRecord={deleteRecord} />
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {/* EXPENSES (Regular + Maintenance grouped under Total Expense) */}
-                                        {(sortedExpenses.length > 0 || sortedMaintenances.length > 0) && (
-                                            <div>
-                                                <div className="flex items-center gap-2 text-red-600 font-bold text-base mb-4">
-                                                    <TrendingDown size={20} />
-                                                    <span>Total Expense (incl. Maintenance)</span>
-                                                    <span className="ml-auto font-extrabold text-red-600">
-                                                        ₹{dayTotalExpense.toFixed(0)}
-                                                    </span>
-                                                </div>
-
-                                                {/* Regular Expenses */}
-                                                {sortedExpenses.length > 0 && (
-                                                    <div className="mb-5">
-                                                        <div className="text-sm font-medium text-gray-700 mb-2">Regular Expenses</div>
-                                                        <div className="space-y-3">
-                                                            {sortedExpenses.map((r) => (
-                                                                <TransactionItem key={r.id} r={r} isOwner={isOwner} deleteRecord={deleteRecord} />
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                )}
-
-                                                {/* Maintenance */}
-                                                {sortedMaintenances.length > 0 && (
-                                                    <div className="pt-4 border-t-2 border-dashed border-orange-400">
-                                                        <div className="flex items-center gap-2 text-orange-700 font-bold text-sm mb-3">
-                                                            <Wrench size={18} />
-                                                            <span>Maintenance</span>
-                                                            <span className="ml-auto font-bold text-orange-600">
-                                                                ₹{dayMaintenance.toFixed(0)}
-                                                            </span>
-                                                        </div>
-                                                        <div className="space-y-3 pl-6 border-l-4 border-orange-400">
-                                                            {sortedMaintenances.map((r) => (
-                                                                <TransactionItem key={r.id} r={r} isOwner={isOwner} deleteRecord={deleteRecord} />
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        )}
+                                {/* SEPARATE WITHDRAWAL CARD */}
+                                {withdrawals.length > 0 && (
+                                    <div className="bg-purple-50 border-2 border-purple-200 rounded-2xl p-4 shadow-sm">
+                                        <div className="flex items-center gap-3 text-purple-700 font-bold text-lg mb-3">
+                                            <ArrowDownCircle size={24} />
+                                            <span>Owner Withdrawal</span>
+                                            <span className="ml-auto text-2xl font-extrabold text-purple-800">
+                                                -₹{dayWithdrawal.toFixed(0)}
+                                            </span>
+                                        </div>
+                                        <div className="space-y-3">
+                                            {withdrawals.sort(sortByCreation).map(r => (
+                                                <TransactionItem key={r.id} r={r} isOwner={isOwner} deleteRecord={deleteRecord} />
+                                            ))}
+                                        </div>
                                     </div>
                                 )}
                             </div>
@@ -406,7 +394,7 @@ export default function RecordsTab({
                             </div>
                             <div className="flex-1 overflow-y-auto p-5 space-y-2">
                                 {modalAttachments.length === 0 ? (
-                                    <p className="text-center text-gray-500 py-12 text-base">No attachments found</p>
+                                    <p className="text-center text-gray-500 py-12 text-base">No attachments</p>
                                 ) : (
                                     modalAttachments.map((att, i) => (
                                         <AttachmentItemGoogle key={att.id || i} attachment={att} />
