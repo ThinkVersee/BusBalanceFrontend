@@ -1,3 +1,4 @@
+// components/finance/BillBookPage.js or pages/finance/billbook.js
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -7,7 +8,6 @@ import {
   Loader2,
   IndianRupee,
 } from "lucide-react";
-
 import axiosInstance from "@/config/axiosInstance";
 import NewEntryForm from "@/components/finance/NewEntryForm";
 import RecordsTab from "@/components/finance/RecordsTab";
@@ -15,7 +15,6 @@ import RecordsTab from "@/components/finance/RecordsTab";
 export default function BillBookPage() {
   const [activeTab, setActiveTab] = useState("new");
   const [currentUser, setCurrentUser] = useState(null);
-
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split("T")[0],
     bus: "",
@@ -23,31 +22,42 @@ export default function BillBookPage() {
 
   const [ownedBuses, setOwnedBuses] = useState([]);
   const [incomeCategories, setIncomeCategories] = useState([]);
-  const [expenseCategories, setExpenseCategories] = useState([]);        // Only EXPENSE
-  const [maintenanceCategories, setMaintenanceCategories] = useState([]); // Only MAINTENANCE
+  const [expenseCategories, setExpenseCategories] = useState([]); // EXPENSE only
+  const [maintenanceCategories, setMaintenanceCategories] = useState([]); // MAINTENANCE only
+
   const [showAddIncome, setShowAddIncome] = useState(false);
   const [showAddExpense, setShowAddExpense] = useState(false);
   const [showAddMaintenance, setShowAddMaintenance] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
+
   const [expenseFiles, setExpenseFiles] = useState([]);
+
   const [records, setRecords] = useState([]);
+  const [summary, setSummary] = useState({}); // New: backend summary
   const [loadingRecords, setLoadingRecords] = useState(false);
+
   const [filterDate, setFilterDate] = useState("");
   const [filterBus, setFilterBus] = useState("");
+
   const [openDates, setOpenDates] = useState({});
+
   const [modalOpen, setModalOpen] = useState(false);
   const [modalOrder, setModalOrder] = useState("");
   const [modalAttachments, setModalAttachments] = useState([]);
+  const [modalTitle, setModalTitle] = useState("");
+
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
+
   const [duplicateWarnings, setDuplicateWarnings] = useState({});
-  const [modalTitle, setModalTitle] = useState("");
+
   const isOwner = currentUser?.is_owner === true;
 
   const toggleDate = (date) => {
     setOpenDates((prev) => ({ ...prev, [date]: !prev[date] }));
   };
 
+  // Load user from localStorage
   useEffect(() => {
     const userData = localStorage.getItem("user");
     if (userData) {
@@ -59,14 +69,16 @@ export default function BillBookPage() {
     }
   }, []);
 
+  // Handle URL tab parameter
   useEffect(() => {
-  const params = new URLSearchParams(window.location.search);
-  const tab = params.get("tab");
-  if (tab === "new" || tab === "records") {
-    setActiveTab(tab);
-  }
-}, []);
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get("tab");
+    if (tab === "new" || tab === "records") {
+      setActiveTab(tab);
+    }
+  }, []);
 
+  // Fetch buses and categories
   useEffect(() => {
     if (!currentUser) return;
 
@@ -87,19 +99,16 @@ export default function BillBookPage() {
             .filter((c) => c.transaction_type === "INCOME")
             .map((c) => ({ ...c, amount: "" }))
         );
-
         setExpenseCategories(
           sorted
             .filter((c) => c.transaction_type === "EXPENSE")
             .map((c) => ({ ...c, amount: "" }))
         );
-
         setMaintenanceCategories(
           sorted
             .filter((c) => c.transaction_type === "MAINTENANCE")
             .map((c) => ({ ...c, amount: "" }))
         );
-
       } catch (err) {
         console.error(err);
       } finally {
@@ -110,6 +119,7 @@ export default function BillBookPage() {
     fetchData();
   }, [currentUser]);
 
+  // Fetch records and summary when on Records tab
   useEffect(() => {
     if (activeTab !== "records" || !currentUser) return;
 
@@ -119,15 +129,20 @@ export default function BillBookPage() {
         const params = {};
         if (filterDate) params.date = filterDate;
         if (filterBus) params.bus = filterBus;
+
+        // Non-owners default to today's date if no filter
         if (!isOwner && !filterDate) {
           params.date = new Date().toISOString().split("T")[0];
         }
 
         const res = await axiosInstance.get("/finance/transactions/report/", { params });
+
         setRecords(res.data.transactions || []);
+        setSummary(res.data.summary || {}); // Important: pass summary
       } catch (err) {
         console.error(err);
         setRecords([]);
+        setSummary({});
       } finally {
         setLoadingRecords(false);
       }
@@ -137,6 +152,7 @@ export default function BillBookPage() {
     setOpenDates({});
   }, [activeTab, filterDate, filterBus, currentUser, isOwner]);
 
+  // Duplicate check logic
   const checkForDuplicate = (categoryId, date, busId) => {
     if (!date || !busId || !records.length) return false;
     return records.some((r) => {
@@ -159,6 +175,7 @@ export default function BillBookPage() {
         return updated;
       });
     }
+
     setIncomeCategories((prev) =>
       prev.map((cat) => (cat.id === id ? { ...cat, amount: value } : cat))
     );
@@ -175,6 +192,7 @@ export default function BillBookPage() {
         return updated;
       });
     }
+
     setExpenseCategories((prev) =>
       prev.map((cat) => (cat.id === id ? { ...cat, amount: value } : cat))
     );
@@ -191,21 +209,20 @@ export default function BillBookPage() {
         return updated;
       });
     }
+
     setMaintenanceCategories((prev) =>
       prev.map((cat) => (cat.id === id ? { ...cat, amount: value } : cat))
     );
   };
 
+  // Live totals in New Entry form
   const totalIncome = incomeCategories.reduce((sum, c) => sum + (parseFloat(c.amount || 0) || 0), 0);
   const totalRegularExpense = expenseCategories.reduce((sum, c) => sum + (parseFloat(c.amount || 0) || 0), 0);
   const totalMaintenance = maintenanceCategories.reduce((sum, c) => sum + (parseFloat(c.amount || 0) || 0), 0);
   const totalExpense = totalRegularExpense + totalMaintenance;
   const balance = totalIncome - totalExpense;
 
-  const grandIncome = records.filter(r => r.transaction_type === "INCOME").reduce((s, r) => s + (parseFloat(r.amount) || 0), 0);
-  const grandExpense = records.filter(r => r.transaction_type === "EXPENSE" || r.transaction_type === "MAINTENANCE").reduce((s, r) => s + (parseFloat(r.amount) || 0), 0);
-  const grandBalance = grandIncome - grandExpense;
-
+  // Add new category
   const addNewCategory = async (type) => {
     if (!newCategoryName.trim()) return alert("Category name required");
 
@@ -218,15 +235,16 @@ export default function BillBookPage() {
       const newCat = { ...res.data, amount: "" };
 
       if (type === "INCOME") {
-        setIncomeCategories(prev => [...prev, newCat]);
+        setIncomeCategories((prev) => [...prev, newCat]);
         setShowAddIncome(false);
       } else if (type === "EXPENSE") {
-        setExpenseCategories(prev => [...prev, newCat]);
+        setExpenseCategories((prev) => [...prev, newCat]);
         setShowAddExpense(false);
       } else if (type === "MAINTENANCE") {
-        setMaintenanceCategories(prev => [...prev, newCat]);
+        setMaintenanceCategories((prev) => [...prev, newCat]);
         setShowAddMaintenance(false);
       }
+
       setNewCategoryName("");
       alert("Category added!");
     } catch (err) {
@@ -234,40 +252,44 @@ export default function BillBookPage() {
     }
   };
 
+  // Delete category (owner only)
   const deleteCategory = async (id) => {
     if (!isOwner) return alert("Only owners can delete categories.");
-    if (!confirm("Delete permanently?")) return;
+    if (!confirm("Delete this category permanently?")) return;
 
     try {
       await axiosInstance.delete(`/finance/categories/${id}/`);
-      setIncomeCategories(prev => prev.filter(c => c.id !== id));
-      setExpenseCategories(prev => prev.filter(c => c.id !== id));
-      setMaintenanceCategories(prev => prev.filter(c => c.id !== id));
+      setIncomeCategories((prev) => prev.filter((c) => c.id !== id));
+      setExpenseCategories((prev) => prev.filter((c) => c.id !== id));
+      setMaintenanceCategories((prev) => prev.filter((c) => c.id !== id));
     } catch (err) {
-      alert("Failed to delete");
+      alert("Failed to delete category");
     }
   };
 
+  // Delete record (owner only)
   const deleteRecord = async (id) => {
     if (!isOwner) return alert("Only owners can delete records.");
-    if (!confirm("Delete this transaction?")) return;
+    if (!confirm("Delete this transaction permanently?")) return;
+
     try {
       await axiosInstance.delete(`/finance/transactions/${id}/`);
-      setRecords(prev => prev.filter(r => r.id !== id));
+      setRecords((prev) => prev.filter((r) => r.id !== id));
     } catch (err) {
-      alert("Failed to delete");
+      alert("Failed to delete record");
     }
   };
 
+  // Save all entries
   const handleSave = async () => {
     if (!formData.date || !formData.bus) return alert("Please select date and bus");
+
     const busId = Number(formData.bus);
-    if (isNaN(busId)) return alert("Invalid bus");
+    if (isNaN(busId)) return alert("Invalid bus selected");
 
     const transactions = [];
-    let hasExpense = false;
 
-    incomeCategories.forEach(cat => {
+    incomeCategories.forEach((cat) => {
       const amount = Number(cat.amount || 0);
       if (amount > 0) {
         transactions.push({
@@ -280,7 +302,7 @@ export default function BillBookPage() {
       }
     });
 
-    expenseCategories.forEach(cat => {
+    expenseCategories.forEach((cat) => {
       const amount = Number(cat.amount || 0);
       if (amount > 0) {
         transactions.push({
@@ -290,11 +312,10 @@ export default function BillBookPage() {
           bus_id: busId,
           transaction_type: "EXPENSE",
         });
-        hasExpense = true;
       }
     });
 
-    maintenanceCategories.forEach(cat => {
+    maintenanceCategories.forEach((cat) => {
       const amount = Number(cat.amount || 0);
       if (amount > 0) {
         transactions.push({
@@ -304,16 +325,16 @@ export default function BillBookPage() {
           bus_id: busId,
           transaction_type: "MAINTENANCE",
         });
-        hasExpense = true;
       }
     });
 
     if (transactions.length === 0) return alert("Please enter at least one amount");
 
     try {
+      // Optional duplicate check endpoint
       const checkRes = await axiosInstance.post("/finance/transactions/bulk/?check_only=1", { transactions });
       if (checkRes.data.warning && !confirm(checkRes.data.warning)) {
-        return alert("Cancelled");
+        return;
       }
 
       const form = new FormData();
@@ -322,13 +343,15 @@ export default function BillBookPage() {
 
       setSaving(true);
       await axiosInstance.post("/finance/transactions/bulk/", form, {
-        headers: { "Content-Type": "multipart/form-data" }
+        headers: { "Content-Type": "multipart/form-data" },
       });
 
       alert("Saved successfully!");
-      setIncomeCategories(prev => prev.map(c => ({ ...c, amount: "" })));
-      setExpenseCategories(prev => prev.map(c => ({ ...c, amount: "" })));
-      setMaintenanceCategories(prev => prev.map(c => ({ ...c, amount: "" })));
+
+      // Reset form
+      setIncomeCategories((prev) => prev.map((c) => ({ ...c, amount: "" })));
+      setExpenseCategories((prev) => prev.map((c) => ({ ...c, amount: "" })));
+      setMaintenanceCategories((prev) => prev.map((c) => ({ ...c, amount: "" })));
       setExpenseFiles([]);
       setDuplicateWarnings({});
     } catch (err) {
@@ -351,7 +374,8 @@ export default function BillBookPage() {
 
   return (
     <>
-      <div className="min-h-screen  pb-24 sm:pb-8">
+      <div className="min-h-screen pb-24 sm:pb-8">
+        {/* Header */}
         <header className="z-50 backdrop-blur-2xl bg-white/70 border-b border-white/30">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between h-20">
@@ -368,14 +392,23 @@ export default function BillBookPage() {
           </div>
         </header>
 
+        {/* Bottom Tab Navigation (Mobile) / Top Sticky (Desktop) */}
         <div className="fixed bottom-0 left-0 right-0 z-40 sm:sticky sm:top-20 bg-white/90 backdrop-blur border-t sm:border-b border-gray-200">
           <div className="max-w-7xl mx-auto flex">
-            {[{ key: "new", icon: FileText, label: "New Entry" }, { key: "records", icon: Eye, label: "View Records" }].map(tab => {
+            {[
+              { key: "new", icon: FileText, label: "New Entry" },
+              { key: "records", icon: Eye, label: "View Records" },
+            ].map((tab) => {
               const Icon = tab.icon;
               const active = activeTab === tab.key;
               return (
-                <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-                  className={`flex-1 flex flex-col items-center gap-1 py-4 sm:flex-row sm:justify-center sm:gap-3 transition-colors ${active ? "text-blue-600 border-b-2 border-blue-600" : "text-gray-700"}`}>
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  className={`flex-1 flex flex-col items-center gap-1 py-4 sm:flex-row sm:justify-center sm:gap-3 transition-colors ${
+                    active ? "text-blue-600 border-b-2 border-blue-600" : "text-gray-700"
+                  }`}
+                >
                   <Icon size={24} />
                   <span className="text-xs font-medium sm:text-sm">{tab.label}</span>
                 </button>
@@ -384,6 +417,7 @@ export default function BillBookPage() {
           </div>
         </div>
 
+        {/* Main Content */}
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {activeTab === "new" && (
             <NewEntryForm
@@ -409,8 +443,9 @@ export default function BillBookPage() {
               expenseFiles={expenseFiles}
               setExpenseFiles={setExpenseFiles}
               totalIncome={totalIncome}
-              totalExpense={totalExpense}
+              totalRegularExpense={totalRegularExpense}
               totalMaintenance={totalMaintenance}
+              totalExpense={totalExpense}
               balance={balance}
               handleSave={handleSave}
               saving={saving}
@@ -423,28 +458,23 @@ export default function BillBookPage() {
             <RecordsTab
               ownedBuses={ownedBuses}
               records={records}
+              summary={summary} // ← Critical: pass backend summary
               loadingRecords={loadingRecords}
               filterDate={filterDate}
               setFilterDate={setFilterDate}
               filterBus={filterBus}
               setFilterBus={setFilterBus}
-              grandIncome={grandIncome}
-              grandExpense={grandExpense}
-              grandBalance={grandBalance}
               openDates={openDates}
               toggleDate={toggleDate}
               deleteRecord={deleteRecord}
               isOwner={isOwner}
               modalOpen={modalOpen}
               setModalOpen={setModalOpen}
-              modalOrder={modalOrder}
-              setModalOrder={setModalOrder}
-              modalAttachments={modalAttachments}
-              setModalAttachments={setModalAttachments}
               modalTitle={modalTitle}
               setModalTitle={setModalTitle}
+              modalAttachments={modalAttachments}
+              setModalAttachments={setModalAttachments}
             />
-
           )}
         </main>
       </div>
