@@ -3,79 +3,99 @@
 
 import React from "react";
 import {
-  Filter,
   Calendar,
   ChevronDown,
   ChevronRight,
-  FolderOpen,
-  IndianRupee,
   Trash2,
   Loader2,
   FileText,
   X,
-  TrendingUp,
-  TrendingDown,
-  Wrench,
   ArrowDownCircle,
 } from "lucide-react";
 
-const TransactionItem = ({ r, isOwner, deleteRecord }) => (
-  <div className="bg-gray-50 rounded-xl p-4 flex items-center justify-between gap-4">
-    <div className="flex items-center gap-3 min-w-0 flex-1">
-      <span
-        className={`px-3 py-1.5 rounded-full text-xs font-bold flex-shrink-0 ${
-          r.transaction_type === "INCOME"
-            ? "bg-green-100 text-green-700"
-            : r.transaction_type === "MAINTENANCE"
-            ? "bg-orange-100 text-orange-700"
-            : r.transaction_type === "WITHDRAWAL"
-            ? "bg-purple-100 text-purple-700"
-            : "bg-red-100 text-red-700"
-        }`}
-      >
-        {r.transaction_type === "INCOME"
-          ? "IN"
-          : r.transaction_type === "MAINTENANCE"
-          ? "MNT"
-          : r.transaction_type === "WITHDRAWAL"
-          ? "WD"
-          : "EXP"}
-      </span>
-      <div className="min-w-0 flex-1">
-        <div className="font-semibold text-gray-900 text-sm truncate">
-          {r.category_name}
-        </div>
-        <div className="text-xs text-gray-500 truncate">
-          {r.bus_name || (r.transaction_type === "WITHDRAWAL" ? "Owner Withdrawal" : "No bus")}
+/* -------------------------------------------------------------------------- */
+/*                          TRANSACTION TYPE CONFIG                           */
+/* -------------------------------------------------------------------------- */
+const TRANSACTION_CONFIG = {
+  INCOME: {
+    label: "IN",
+    bgColor: "bg-green-100",
+    textColor: "text-green-700",
+    amountColor: "text-green-600",
+  },
+  MAINTENANCE: {
+    label: "MNT",
+    bgColor: "bg-orange-100",
+    textColor: "text-orange-700",
+    amountColor: "text-red-600",
+  },
+  WITHDRAWAL: {
+    label: "WD",
+    bgColor: "bg-purple-100",
+    textColor: "text-purple-700",
+    amountColor: "text-red-600",
+  },
+  EXPENSE: {
+    label: "EXP",
+    bgColor: "bg-red-100",
+    textColor: "text-red-700",
+    amountColor: "text-red-600",
+  },
+};
+
+/* -------------------------------------------------------------------------- */
+/*                               TRANSACTION ITEM                             */
+/* -------------------------------------------------------------------------- */
+const TransactionItem = ({ record, isOwner, onDelete }) => {
+  const config = TRANSACTION_CONFIG[record.transaction_type] || TRANSACTION_CONFIG.EXPENSE;
+  const displayName = record.bus_name || 
+    (record.transaction_type === "WITHDRAWAL" ? "Owner Wallet" : "No bus");
+
+  return (
+    <div className="bg-gray-50 rounded-xl p-4 flex items-center justify-between gap-4">
+      <div className="flex items-center gap-3 min-w-0 flex-1">
+        <span
+          className={`px-3 py-1.5 rounded-full text-xs font-bold flex-shrink-0 ${config.bgColor} ${config.textColor}`}
+        >
+          {config.label}
+        </span>
+
+        <div className="min-w-0 flex-1">
+          <div className="font-semibold text-gray-900 text-sm truncate">
+            {record.category_name}
+          </div>
+          <div className="text-xs text-gray-500 truncate">
+            {displayName}
+          </div>
         </div>
       </div>
+
+      <div className="flex items-center gap-3">
+        <span className={`font-bold text-lg whitespace-nowrap ${config.amountColor}`}>
+          ₹{Number(record.amount).toFixed(0)}
+        </span>
+
+        {isOwner && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(record.id);
+            }}
+            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+            aria-label="Delete transaction"
+          >
+            <Trash2 size={18} />
+          </button>
+        )}
+      </div>
     </div>
+  );
+};
 
-    <div className="flex items-center gap-3">
-      <span
-        className={`font-bold text-lg whitespace-nowrap ${
-          r.transaction_type === "INCOME" ? "text-green-600" : "text-red-600"
-        }`}
-      >
-        ₹{parseFloat(r.amount).toFixed(0)}
-      </span>
-
-      {isOwner && (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            deleteRecord(r.id);
-          }}
-          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-        >
-          <Trash2 size={18} />
-        </button>
-      )}
-    </div>
-  </div>
-);
-
-const AttachmentItemGoogle = ({ attachment }) => {
+/* -------------------------------------------------------------------------- */
+/*                            ATTACHMENT ITEM                                 */
+/* -------------------------------------------------------------------------- */
+const AttachmentItem = ({ attachment }) => {
   const isImage = /\.(jpe?g|png|gif|webp)$/i.test(attachment.file_name);
 
   return (
@@ -92,29 +112,157 @@ const AttachmentItemGoogle = ({ attachment }) => {
           className="w-10 h-10 rounded object-cover border border-gray-200"
         />
       ) : (
-        <div className="w-10 h-10 rounded bg-red-50 border border-red-200 flex items-center justify-center flex-shrink-0">
+        <div className="w-10 h-10 rounded bg-red-50 border border-red-200 flex items-center justify-center">
           <span className="text-xs font-bold text-red-600">PDF</span>
         </div>
       )}
       <span className="flex-1 text-sm font-medium truncate">
         {attachment.file_name}
       </span>
-      <svg className="w-5 h-5 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-      </svg>
     </a>
   );
 };
 
+/* -------------------------------------------------------------------------- */
+/*                              SUMMARY CARD                                  */
+/* -------------------------------------------------------------------------- */
+const SummaryCard = ({ label, amount, bgColor, textColor }) => (
+  <div className={`${bgColor} rounded-xl p-4 text-center`}>
+    <div className={`text-sm font-medium ${textColor}`}>{label}</div>
+    <div className={`text-2xl font-bold ${textColor}`}>
+      ₹{Number(amount).toFixed(0)}
+    </div>
+  </div>
+);
+
+/* -------------------------------------------------------------------------- */
+/*                             WALLET BALANCE                                 */
+/* -------------------------------------------------------------------------- */
+const WalletBalance = ({ balance }) => {
+  const isPositive = balance >= 0;
+  const displayAmount = Math.abs(balance).toFixed(0);
+
+  return (
+    <div
+      className={`mt-5 rounded-xl p-5 border-2 text-center ${
+        isPositive
+          ? "bg-gradient-to-br from-green-50 to-green-100 border-green-300"
+          : "bg-gradient-to-br from-red-50 to-red-100 border-red-300"
+      }`}
+    >
+      <div className={`text-lg font-semibold ${isPositive ? "text-green-800" : "text-red-800"}`}>
+        Wallet Balance
+      </div>
+      <div className={`text-4xl font-extrabold mt-2 ${isPositive ? "text-green-700" : "text-red-700"}`}>
+        ₹{displayAmount}
+      </div>
+      <div className={`text-xs mt-1 ${isPositive ? "text-green-600" : "text-red-600"}`}>
+        {isPositive ? "Available funds" : "Outstanding amount"}
+      </div>
+    </div>
+  );
+};
+
+/* -------------------------------------------------------------------------- */
+/*                           DAILY SUMMARY HEADER                             */
+/* -------------------------------------------------------------------------- */
+const DailySummaryHeader = ({ date, netCollection, isOpen, onToggle }) => (
+  <div
+    className="px-4 py-4 bg-gradient-to-r from-gray-50 to-gray-100 flex items-center justify-between cursor-pointer hover:from-gray-100 hover:to-gray-200 transition-colors"
+    onClick={onToggle}
+  >
+    <div className="flex items-center gap-3">
+      {isOpen ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
+      <Calendar size={18} className="text-blue-600" />
+      <div className="font-bold text-gray-900">
+        {new Date(date).toLocaleDateString("en-IN", {
+          weekday: "short",
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+        })}
+      </div>
+    </div>
+
+    <div className="text-right">
+      <div className="text-xs text-gray-500 font-medium">Daily Net Collection</div>
+      <div className={`font-bold text-xl ${netCollection >= 0 ? "text-green-600" : "text-red-600"}`}>
+        ₹{netCollection.toFixed(0)}
+      </div>
+    </div>
+  </div>
+);
+
+/* -------------------------------------------------------------------------- */
+/*                           WITHDRAWAL SECTION                               */
+/* -------------------------------------------------------------------------- */
+const WithdrawalSection = ({ withdrawals, totalAmount, isOwner, onDelete }) => (
+  <div className="bg-gradient-to-br from-purple-50 to-purple-100 border-2 border-purple-300 rounded-2xl p-4 shadow-sm">
+    <div className="flex items-center gap-3 font-bold text-purple-800 mb-3">
+      <ArrowDownCircle size={22} />
+      <span>Owner Withdrawal</span>
+      <span className="ml-auto text-xl">-₹{totalAmount.toFixed(0)}</span>
+    </div>
+
+    <div className="space-y-3">
+      {withdrawals.map((record) => (
+        <TransactionItem
+          key={record.id}
+          record={record}
+          isOwner={isOwner}
+          onDelete={onDelete}
+        />
+      ))}
+    </div>
+  </div>
+);
+
+/* -------------------------------------------------------------------------- */
+/*                           ATTACHMENTS MODAL                                */
+/* -------------------------------------------------------------------------- */
+const AttachmentsModal = ({ isOpen, title, attachments, onClose }) => {
+  if (!isOpen) return null;
+
+  return (
+    <>
+      <div
+        className="fixed inset-0 bg-black/60 z-50 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl max-w-sm w-full shadow-2xl">
+          <div className="flex justify-between items-center p-4 border-b">
+            <h3 className="font-semibold text-gray-900">{title}</h3>
+            <button
+              onClick={onClose}
+              className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
+              aria-label="Close modal"
+            >
+              <X size={20} />
+            </button>
+          </div>
+
+          <div className="p-4 space-y-2 max-h-96 overflow-y-auto">
+            {attachments.map((attachment, index) => (
+              <AttachmentItem
+                key={attachment.id || index}
+                attachment={attachment}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+    </>
+  );
+};
+
+/* -------------------------------------------------------------------------- */
+/*                                MAIN COMPONENT                              */
+/* -------------------------------------------------------------------------- */
 export default function RecordsTab({
-  ownedBuses,
   records,
   loadingRecords,
-  filterDate,
-  setFilterDate,
   filterBus,
-  setFilterBus,
-  // New props from backend summary
   summary = {},
   openDates,
   toggleDate,
@@ -123,294 +271,179 @@ export default function RecordsTab({
   modalOpen,
   setModalOpen,
   modalTitle,
-  setModalTitle,
   modalAttachments,
-  setModalAttachments,
 }) {
   const {
     total_income = 0,
     total_expense = 0,
     total_maintenance = 0,
     total_withdrawal = 0,
-    total_expense_incl_maintenance = 0,
     balance = 0,
   } = summary;
 
-  // Filter records: if a specific bus is selected, hide withdrawals
+  /* ------------------------------ FILTER LOGIC ----------------------------- */
   const filteredRecords = filterBus
     ? records.filter(
-        (r) =>
-          String(r.bus?.id || r.bus_id || "") === String(filterBus) &&
-          r.transaction_type !== "WITHDRAWAL"
+        (record) =>
+          String(record.bus?.id || record.bus_id || "") === String(filterBus) &&
+          record.transaction_type !== "WITHDRAWAL"
       )
     : records;
 
-  // Group by date
-  const recordsByDate = filteredRecords.reduce((acc, r) => {
-    const dateKey = r.date || "unknown";
-    if (!acc[dateKey]) acc[dateKey] = [];
-    acc[dateKey].push(r);
-    return acc;
+  /* ------------------------- GROUP BY DATE LOGIC -------------------------- */
+  const recordsByDate = filteredRecords.reduce((grouped, record) => {
+    const dateKey = record.date || "unknown";
+    if (!grouped[dateKey]) {
+      grouped[dateKey] = [];
+    }
+    grouped[dateKey].push(record);
+    return grouped;
   }, {});
 
-  const filteredDates = Object.keys(recordsByDate)
-    .filter((d) => !filterDate || d === filterDate)
-    .sort((a, b) => new Date(b) - new Date(a));
+  const sortedDates = Object.keys(recordsByDate).sort(
+    (dateA, dateB) => new Date(dateB) - new Date(dateA)
+  );
 
+  /* ------------------------- CALCULATE DAILY TOTALS ----------------------- */
+  const calculateDailyTotals = (dayRecords) => {
+    const totals = {
+      incomes: [],
+      expenses: [],
+      maintenances: [],
+      withdrawals: [],
+      totalIncome: 0,
+      totalExpense: 0,
+      totalMaintenance: 0,
+      totalWithdrawal: 0,
+    };
+
+    dayRecords.forEach((record) => {
+      const amount = Number(record.amount || 0);
+      
+      switch (record.transaction_type) {
+        case "INCOME":
+          totals.incomes.push(record);
+          totals.totalIncome += amount;
+          break;
+        case "EXPENSE":
+          totals.expenses.push(record);
+          totals.totalExpense += amount;
+          break;
+        case "MAINTENANCE":
+          totals.maintenances.push(record);
+          totals.totalMaintenance += amount;
+          break;
+        case "WITHDRAWAL":
+          totals.withdrawals.push(record);
+          totals.totalWithdrawal += amount;
+          break;
+      }
+    });
+
+    totals.netCollection = totals.totalIncome - (totals.totalExpense + totals.totalMaintenance);
+    return totals;
+  };
+
+  /* -------------------------------------------------------------------------- */
+  /*                                   RENDER                                   */
+  /* -------------------------------------------------------------------------- */
   return (
     <>
-      {/* FILTERS */}
-      <div className="bg-white rounded-xl shadow-sm p-4 mb-5">
-        <div className="flex items-center gap-2 mb-4">
-          <Filter size={18} className="text-gray-600" />
-          <h2 className="font-semibold text-gray-800">Filters</h2>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div className="relative">
-            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-            <input
-              type="date"
-              value={filterDate}
-              onChange={(e) => setFilterDate(e.target.value)}
-              className="w-full pl-10 pr-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-            />
-          </div>
-          <select
-            value={filterBus}
-            onChange={(e) => setFilterBus(e.target.value)}
-            className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-          >
-            <option value="">All Buses</option>
-            {ownedBuses.map((b) => (
-              <option key={b.id} value={b.id}>
-                {b.bus_name}
-              </option>
-            ))}
-          </select>
-        </div>
-        {(filterDate || filterBus) && (
-          <button
-            onClick={() => {
-              setFilterDate("");
-              setFilterBus("");
-            }}
-            className="mt-3 w-full py-2.5 text-sm font-medium bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-          >
-            Clear Filters
-          </button>
-        )}
-      </div>
-
-      {/* SUMMARY – Now using backend values */}
+      {/* SUMMARY SECTION */}
       <div className="bg-white rounded-2xl shadow-sm p-5 mb-6">
-        <div className="flex items-center gap-2 mb-5">
-          <div className="p-2 rounded-xl bg-blue-100 text-blue-600">
-            <IndianRupee size={20} />
-          </div>
-          <h3 className="font-bold text-lg text-gray-900">Summary</h3>
-        </div>
-
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Total Income */}
-          <div className="bg-green-50 rounded-xl p-4 border border-green-100 text-center">
-            <div className="text-sm font-medium text-green-700">Total Income</div>
-            <div className="text-2xl font-bold text-green-700 mt-1">
-              ₹{Number(total_income).toFixed(0)}
-            </div>
-          </div>
-
-          {/* Regular Expense */}
-          <div className="bg-red-50 rounded-xl p-4 border border-red-100 text-center">
-            <div className="text-sm font-medium text-red-700">Regular Expense</div>
-            <div className="text-2xl font-bold text-red-700 mt-1">
-              ₹{Number(total_expense).toFixed(0)}
-            </div>
-          </div>
-
-          {/* Maintenance */}
-          <div className="bg-orange-50 rounded-xl p-4 border border-orange-100 text-center">
-            <div className="text-sm font-medium text-orange-700">Maintenance</div>
-            <div className="text-2xl font-bold text-orange-700 mt-1">
-              ₹{Number(total_maintenance).toFixed(0)}
-            </div>
-          </div>
-
-          {/* Owner Withdrawal */}
-          <div className="bg-purple-50 rounded-xl p-4 border border-purple-100 text-center">
-            <div className="text-sm font-medium text-purple-700">Owner Withdrawal</div>
-            <div className="text-2xl font-bold text-purple-700 mt-1">
-              ₹{Number(total_withdrawal).toFixed(0)}
-            </div>
-          </div>
+          <SummaryCard
+            label="Total Income"
+            amount={total_income}
+            bgColor="bg-gradient-to-br from-green-50 to-green-100"
+            textColor="text-green-700"
+          />
+          <SummaryCard
+            label="Regular Expense"
+            amount={total_expense}
+            bgColor="bg-gradient-to-br from-red-50 to-red-100"
+            textColor="text-red-700"
+          />
+          <SummaryCard
+            label="Maintenance"
+            amount={total_maintenance}
+            bgColor="bg-gradient-to-br from-orange-50 to-orange-100"
+            textColor="text-orange-700"
+          />
+          <SummaryCard
+            label="Owner Withdrawal"
+            amount={total_withdrawal}
+            bgColor="bg-gradient-to-br from-purple-50 to-purple-100"
+            textColor="text-purple-700"
+          />
         </div>
 
-        {/* Net Balance Card – Full Width */}
-        <div className={`mt-5 rounded-xl p-5 border text-center ${balance >= 0 ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"}`}>
-          <div className={`text-lg font-semibold ${balance >= 0 ? "text-green-700" : "text-red-700"}`}>
-            Net Balance (after Withdrawal)
-          </div>
-          <div className={`text-4xl font-extrabold mt-2 ${balance >= 0 ? "text-green-700" : "text-red-700"}`}>
-            {balance >= 0 ? "₹" : "-₹"}
-            {Math.abs(balance).toFixed(0)}
-          </div>
-        </div>
+        <WalletBalance balance={balance} />
       </div>
 
-      {/* RECORDS LIST */}
+      {/* RECORDS SECTION */}
       {loadingRecords ? (
         <div className="flex justify-center py-20">
           <Loader2 className="animate-spin text-blue-600" size={48} />
         </div>
-      ) : filteredDates.length === 0 ? (
+      ) : sortedDates.length === 0 ? (
         <div className="text-center py-20">
           <FileText className="mx-auto text-gray-300 mb-4" size={64} />
           <p className="text-gray-500 font-medium text-lg">No records found</p>
+          <p className="text-gray-400 text-sm mt-2">
+            Start by adding your first transaction
+          </p>
         </div>
       ) : (
         <div className="space-y-6">
-          {filteredDates.map((date) => {
-            const dayRecords = recordsByDate[date] || [];
-            const allAttachments = dayRecords.flatMap((r) => r.attachments || []);
-            const isOpen = openDates[date];
-
-            const incomes = dayRecords.filter((r) => r.transaction_type === "INCOME");
-            const expenses = dayRecords.filter((r) => r.transaction_type === "EXPENSE");
-            const maintenances = dayRecords.filter((r) => r.transaction_type === "MAINTENANCE");
-            const withdrawals = dayRecords.filter((r) => r.transaction_type === "WITHDRAWAL");
-
-            const sortByCreation = (a, b) => new Date(a.created_at || 0) - new Date(b.created_at || 0);
-
-            const dayIncome = incomes.reduce((s, r) => s + parseFloat(r.amount || 0), 0);
-            const dayRegularExpense = expenses.reduce((s, r) => s + parseFloat(r.amount || 0), 0);
-            const dayMaintenance = maintenances.reduce((s, r) => s + parseFloat(r.amount || 0), 0);
-            const dayWithdrawal = withdrawals.reduce((s, r) => s + parseFloat(r.amount || 0), 0);
-            const dayTotalExpense = dayRegularExpense + dayMaintenance;
-            const dayBalance = dayIncome - dayTotalExpense - dayWithdrawal;
+          {sortedDates.map((date) => {
+            const dailyTotals = calculateDailyTotals(recordsByDate[date]);
+            const isDateOpen = openDates[date];
 
             return (
               <div key={date} className="space-y-4">
-                {/* MAIN CARD: Income + Expense + Maintenance */}
+                {/* DAILY TRANSACTIONS CARD */}
                 <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-                  <div
-                    className="px-4 py-4 bg-gray-50 flex items-center justify-between cursor-pointer hover:bg-gray-100 transition-colors select-none"
-                    onClick={() => toggleDate(date)}
-                  >
-                    <div className="flex items-center gap-3">
-                      {isOpen ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
-                      <Calendar className="text-blue-600" size={18} />
-                      <div>
-                        <div className="font-bold text-gray-900">
-                          {new Date(date).toLocaleDateString("en-IN", {
-                            weekday: "short",
-                            day: "numeric",
-                            month: "short",
-                            year: "numeric",
-                          })}
-                        </div>
-                        {allAttachments.length > 0 && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setModalTitle(
-                                `Attachments – ${new Date(date).toLocaleDateString("en-IN", {
-                                  day: "numeric",
-                                  month: "short",
-                                  year: "numeric",
-                                })}`
-                              );
-                              setModalAttachments(allAttachments);
-                              setModalOpen(true);
-                            }}
-                            className="flex items-center gap-1 text-xs text-blue-600 mt-1 hover:underline"
-                          >
-                            <FolderOpen size={14} />
-                            {allAttachments.length} file{allAttachments.length > 1 ? "s" : ""}
-                          </button>
-                        )}
-                      </div>
-                    </div>
+                  <DailySummaryHeader
+                    date={date}
+                    netCollection={dailyTotals.netCollection}
+                    isOpen={isDateOpen}
+                    onToggle={() => toggleDate(date)}
+                  />
 
-                    <div className="text-right">
-                      <div className="text-xs text-gray-500">Net Balance</div>
-                      <div className={`font-bold text-xl ${dayBalance >= 0 ? "text-green-600" : "text-red-600"}`}>
-                        {dayBalance >= 0 ? "₹" : "-₹"}
-                        {Math.abs(dayBalance).toFixed(0)}
-                      </div>
-                    </div>
-                  </div>
+                  {isDateOpen && (
+                    <div className="p-4 space-y-3">
+                      {/* Income Transactions */}
+                      {dailyTotals.incomes.map((record) => (
+                        <TransactionItem
+                          key={record.id}
+                          record={record}
+                          isOwner={isOwner}
+                          onDelete={deleteRecord}
+                        />
+                      ))}
 
-                  {isOpen && (
-                    <div className="p-4 space-y-6 border-t border-gray-100">
-                      {incomes.length > 0 && (
-                        <div>
-                          <div className="flex items-center gap-2 text-green-600 font-semibold mb-3">
-                            <TrendingUp size={18} />
-                            <span>Income</span>
-                            <span className="ml-auto font-bold">₹{dayIncome.toFixed(0)}</span>
-                          </div>
-                          <div className="space-y-3">
-                            {incomes.sort(sortByCreation).map((r) => (
-                              <TransactionItem key={r.id} r={r} isOwner={isOwner} deleteRecord={deleteRecord} />
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {(expenses.length > 0 || maintenances.length > 0) && (
-                        <div>
-                          <div className="flex items-center gap-2 text-red-600 font-bold text-base mb-4">
-                            <TrendingDown size={20} />
-                            <span>Total Expense (incl. Maintenance)</span>
-                            <span className="ml-auto font-extrabold">₹{dayTotalExpense.toFixed(0)}</span>
-                          </div>
-
-                          {expenses.length > 0 && (
-                            <div className="mb-5">
-                              <div className="text-sm font-medium text-gray-700 mb-2">Regular Expenses</div>
-                              <div className="space-y-3">
-                                {expenses.sort(sortByCreation).map((r) => (
-                                  <TransactionItem key={r.id} r={r} isOwner={isOwner} deleteRecord={deleteRecord} />
-                                ))}
-                              </div>
-                            </div>
-                          )}
-
-                          {maintenances.length > 0 && (
-                            <div className="pt-4 border-t-2 border-dashed border-orange-400">
-                              <div className="flex items-center gap-2 text-orange-700 font-bold mb-3">
-                                <Wrench size={18} />
-                                <span>Maintenance</span>
-                                <span className="ml-auto font-bold text-orange-600">₹{dayMaintenance.toFixed(0)}</span>
-                              </div>
-                              <div className="space-y-3 pl-6 border-l-4 border-orange-400">
-                                {maintenances.sort(sortByCreation).map((r) => (
-                                  <TransactionItem key={r.id} r={r} isOwner={isOwner} deleteRecord={deleteRecord} />
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      )}
+                      {/* Expense & Maintenance Transactions */}
+                      {[...dailyTotals.expenses, ...dailyTotals.maintenances].map((record) => (
+                        <TransactionItem
+                          key={record.id}
+                          record={record}
+                          isOwner={isOwner}
+                          onDelete={deleteRecord}
+                        />
+                      ))}
                     </div>
                   )}
                 </div>
 
-                {/* SEPARATE WITHDRAWAL CARD */}
-                {withdrawals.length > 0 && (
-                  <div className="bg-purple-50 border-2 border-purple-200 rounded-2xl p-4 shadow-sm">
-                    <div className="flex items-center gap-3 text-purple-700 font-bold text-lg mb-3">
-                      <ArrowDownCircle size={24} />
-                      <span>Owner Withdrawal</span>
-                      <span className="ml-auto text-2xl font-extrabold text-purple-800">
-                        -₹{dayWithdrawal.toFixed(0)}
-                      </span>
-                    </div>
-                    <div className="space-y-3">
-                      {withdrawals.sort(sortByCreation).map((r) => (
-                        <TransactionItem key={r.id} r={r} isOwner={isOwner} deleteRecord={deleteRecord} />
-                      ))}
-                    </div>
-                  </div>
+                {/* WITHDRAWAL SECTION */}
+                {dailyTotals.withdrawals.length > 0 && (
+                  <WithdrawalSection
+                    withdrawals={dailyTotals.withdrawals}
+                    totalAmount={dailyTotals.totalWithdrawal}
+                    isOwner={isOwner}
+                    onDelete={deleteRecord}
+                  />
                 )}
               </div>
             );
@@ -419,41 +452,12 @@ export default function RecordsTab({
       )}
 
       {/* ATTACHMENTS MODAL */}
-      {modalOpen && (
-        <>
-          <div className="fixed inset-0 bg-black/60 z-50" onClick={() => setModalOpen(false)} />
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
-            <div
-              className="bg-white rounded-2xl shadow-2xl max-w-sm w-full max-h-[85vh] flex flex-col"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="px-5 pt-4 pb-3 flex justify-between items-center border-b border-gray-200">
-                <h3 className="font-semibold text-gray-900 text-lg">{modalTitle}</h3>
-                <button
-                  onClick={() => setModalOpen(false)}
-                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                >
-                  <X size={22} />
-                </button>
-              </div>
-              <div className="flex-1 overflow-y-auto p-5 space-y-2">
-                {modalAttachments.length === 0 ? (
-                  <p className="text-center text-gray-500 py-12 text-base">No attachments</p>
-                ) : (
-                  modalAttachments.map((att, i) => (
-                    <AttachmentItemGoogle key={att.id || i} attachment={att} />
-                  ))
-                )}
-              </div>
-              {modalAttachments.length > 0 && (
-                <div className="px-5 py-3 border-t border-gray-200 text-center text-sm text-gray-600 font-medium">
-                  {modalAttachments.length} file{modalAttachments.length > 1 ? "s" : ""} total
-                </div>
-              )}
-            </div>
-          </div>
-        </>
-      )}
+      <AttachmentsModal
+        isOpen={modalOpen}
+        title={modalTitle}
+        attachments={modalAttachments}
+        onClose={() => setModalOpen(false)}
+      />
     </>
   );
 }
