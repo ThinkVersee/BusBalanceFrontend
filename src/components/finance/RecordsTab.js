@@ -154,7 +154,7 @@ const WalletBalance = ({ balance }) => {
         Wallet Balance
       </div>
       <div className={`text-4xl font-extrabold mt-2 ${isPositive ? "text-green-700" : "text-red-700"}`}>
-        ₹{displayAmount}
+        {isPositive ? "+" : "-"}₹{displayAmount}
       </div>
       <div className={`text-xs mt-1 ${isPositive ? "text-green-600" : "text-red-600"}`}>
         {isPositive ? "Available funds" : "Outstanding amount"}
@@ -300,7 +300,25 @@ export default function RecordsTab({
     return grouped;
   }, {});
 
-  const sortedDates = Object.keys(recordsByDate).sort(
+  // Group withdrawals separately
+  const withdrawalsByDate = records
+    .filter((record) => record.transaction_type === "WITHDRAWAL")
+    .reduce((grouped, record) => {
+      const dateKey = record.date || "unknown";
+      if (!grouped[dateKey]) {
+        grouped[dateKey] = [];
+      }
+      grouped[dateKey].push(record);
+      return grouped;
+    }, {});
+
+  // Get all unique dates from both regular records and withdrawals
+  const allDates = new Set([
+    ...Object.keys(recordsByDate),
+    ...Object.keys(withdrawalsByDate),
+  ]);
+
+  const sortedDates = Array.from(allDates).sort(
     (dateA, dateB) => new Date(dateB) - new Date(dateA)
   );
 
@@ -397,53 +415,82 @@ export default function RecordsTab({
       ) : (
         <div className="space-y-6">
           {sortedDates.map((date) => {
-            const dailyTotals = calculateDailyTotals(recordsByDate[date]);
+            const dailyRecords = recordsByDate[date] || [];
+            const dailyWithdrawals = withdrawalsByDate[date] || [];
+            
+            const dailyTotals = calculateDailyTotals(dailyRecords);
             const isDateOpen = openDates[date];
+            
+            const hasRegularTransactions = dailyRecords.length > 0;
+            const hasWithdrawals = dailyWithdrawals.length > 0;
 
             return (
               <div key={date} className="space-y-4">
-                {/* DAILY TRANSACTIONS CARD */}
-                <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-                  <DailySummaryHeader
-                    date={date}
-                    netCollection={dailyTotals.netCollection}
-                    isOpen={isDateOpen}
-                    onToggle={() => toggleDate(date)}
-                  />
+                {/* DAILY TRANSACTIONS CARD - Only show if there are regular transactions */}
+                {hasRegularTransactions && (
+                  <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+                    <DailySummaryHeader
+                      date={date}
+                      netCollection={dailyTotals.netCollection}
+                      isOpen={isDateOpen}
+                      onToggle={() => toggleDate(date)}
+                    />
 
-                  {isDateOpen && (
-                    <div className="p-4 space-y-3">
-                      {/* Income Transactions */}
-                      {dailyTotals.incomes.map((record) => (
-                        <TransactionItem
-                          key={record.id}
-                          record={record}
-                          isOwner={isOwner}
-                          onDelete={deleteRecord}
-                        />
-                      ))}
+                    {isDateOpen && (
+                      <div className="p-4 space-y-3">
+                        {/* Income Transactions */}
+                        {dailyTotals.incomes.map((record) => (
+                          <TransactionItem
+                            key={record.id}
+                            record={record}
+                            isOwner={isOwner}
+                            onDelete={deleteRecord}
+                          />
+                        ))}
 
-                      {/* Expense & Maintenance Transactions */}
-                      {[...dailyTotals.expenses, ...dailyTotals.maintenances].map((record) => (
-                        <TransactionItem
-                          key={record.id}
-                          record={record}
-                          isOwner={isOwner}
-                          onDelete={deleteRecord}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </div>
+                        {/* Expense & Maintenance Transactions */}
+                        {[...dailyTotals.expenses, ...dailyTotals.maintenances].map((record) => (
+                          <TransactionItem
+                            key={record.id}
+                            record={record}
+                            isOwner={isOwner}
+                            onDelete={deleteRecord}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
 
-                {/* WITHDRAWAL SECTION */}
-                {dailyTotals.withdrawals.length > 0 && (
-                  <WithdrawalSection
-                    withdrawals={dailyTotals.withdrawals}
-                    totalAmount={dailyTotals.totalWithdrawal}
-                    isOwner={isOwner}
-                    onDelete={deleteRecord}
-                  />
+                {/* WITHDRAWAL SECTION - Show independently with date header if no regular transactions */}
+                {hasWithdrawals && (
+                  <>
+                    {!hasRegularTransactions && (
+                      <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+                        <div className="px-4 py-4 bg-gradient-to-r from-purple-50 to-purple-100 flex items-center gap-3">
+                          <Calendar size={18} className="text-purple-600" />
+                          <div className="font-bold text-gray-900">
+                            {new Date(date).toLocaleDateString("en-IN", {
+                              weekday: "short",
+                              year: "numeric",
+                              month: "short",
+                              day: "numeric",
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    
+                    <WithdrawalSection
+                      withdrawals={dailyWithdrawals}
+                      totalAmount={dailyWithdrawals.reduce(
+                        (sum, record) => sum + Number(record.amount || 0),
+                        0
+                      )}
+                      isOwner={isOwner}
+                      onDelete={deleteRecord}
+                    />
+                  </>
                 )}
               </div>
             );
