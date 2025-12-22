@@ -1,7 +1,7 @@
 // components/finance/RecordsTab.js
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import {
   Calendar,
   ChevronDown,
@@ -11,6 +11,8 @@ import {
   FileText,
   X,
   ArrowDownCircle,
+  TrendingUp,
+  Wallet,
 } from "lucide-react";
 
 /* -------------------------------------------------------------------------- */
@@ -194,25 +196,31 @@ const DailySummaryHeader = ({ date, netCollection, isOpen, onToggle }) => (
 );
 
 /* -------------------------------------------------------------------------- */
-/*                           WITHDRAWAL SECTION                               */
+/*                      WITHDRAWAL DATE HEADER                                */
 /* -------------------------------------------------------------------------- */
-const WithdrawalSection = ({ withdrawals, totalAmount, isOwner, onDelete }) => (
-  <div className="bg-gradient-to-br from-purple-50 to-purple-100 border-2 border-purple-300 rounded-2xl p-4 shadow-sm">
-    <div className="flex items-center gap-3 font-bold text-purple-800 mb-3">
-      <ArrowDownCircle size={22} />
-      <span>Owner Withdrawal</span>
-      <span className="ml-auto text-xl">-₹{totalAmount.toFixed(0)}</span>
+const WithdrawalDateHeader = ({ date, totalAmount, isOpen, onToggle }) => (
+  <div
+    className="px-4 py-4 bg-gradient-to-r from-purple-50 to-purple-100 flex items-center justify-between cursor-pointer hover:from-purple-100 hover:to-purple-200 transition-colors"
+    onClick={onToggle}
+  >
+    <div className="flex items-center gap-3">
+      {isOpen ? <ChevronDown size={20} className="text-purple-700" /> : <ChevronRight size={20} className="text-purple-700" />}
+      <Calendar size={18} className="text-purple-600" />
+      <div className="font-bold text-gray-900">
+        {new Date(date).toLocaleDateString("en-IN", {
+          weekday: "short",
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+        })}
+      </div>
     </div>
 
-    <div className="space-y-3">
-      {withdrawals.map((record) => (
-        <TransactionItem
-          key={record.id}
-          record={record}
-          isOwner={isOwner}
-          onDelete={onDelete}
-        />
-      ))}
+    <div className="text-right">
+      <div className="text-xs text-purple-600 font-medium">Total Withdrawal</div>
+      <div className="font-bold text-xl text-purple-700">
+        -₹{totalAmount.toFixed(0)}
+      </div>
     </div>
   </div>
 );
@@ -273,6 +281,8 @@ export default function RecordsTab({
   modalTitle,
   modalAttachments,
 }) {
+  const [activeTab, setActiveTab] = useState("transactions"); // "transactions" or "withdrawals"
+
   const {
     total_income = 0,
     total_expense = 0,
@@ -281,17 +291,25 @@ export default function RecordsTab({
     balance = 0,
   } = summary;
 
-  /* ------------------------------ FILTER LOGIC ----------------------------- */
-  const filteredRecords = filterBus
-    ? records.filter(
-        (record) =>
-          String(record.bus?.id || record.bus_id || "") === String(filterBus) &&
-          record.transaction_type !== "WITHDRAWAL"
-      )
-    : records;
+  /* ------------------------------ FILTER & GROUP LOGIC ----------------------------- */
+  // Separate regular transactions from withdrawals
+  const regularTransactions = records.filter(
+    (record) => record.transaction_type !== "WITHDRAWAL"
+  );
+  
+  const withdrawalTransactions = records.filter(
+    (record) => record.transaction_type === "WITHDRAWAL"
+  );
 
-  /* ------------------------- GROUP BY DATE LOGIC -------------------------- */
-  const recordsByDate = filteredRecords.reduce((grouped, record) => {
+  // Apply bus filter only to regular transactions
+  const filteredRegularTransactions = filterBus
+    ? regularTransactions.filter(
+        (record) => String(record.bus?.id || record.bus_id || "") === String(filterBus)
+      )
+    : regularTransactions;
+
+  // Group regular transactions by date
+  const regularRecordsByDate = filteredRegularTransactions.reduce((grouped, record) => {
     const dateKey = record.date || "unknown";
     if (!grouped[dateKey]) {
       grouped[dateKey] = [];
@@ -300,25 +318,21 @@ export default function RecordsTab({
     return grouped;
   }, {});
 
-  // Group withdrawals separately
-  const withdrawalsByDate = records
-    .filter((record) => record.transaction_type === "WITHDRAWAL")
-    .reduce((grouped, record) => {
-      const dateKey = record.date || "unknown";
-      if (!grouped[dateKey]) {
-        grouped[dateKey] = [];
-      }
-      grouped[dateKey].push(record);
-      return grouped;
-    }, {});
+  // Group withdrawals by date
+  const withdrawalsByDate = withdrawalTransactions.reduce((grouped, record) => {
+    const dateKey = record.date || "unknown";
+    if (!grouped[dateKey]) {
+      grouped[dateKey] = [];
+    }
+    grouped[dateKey].push(record);
+    return grouped;
+  }, {});
 
-  // Get all unique dates from both regular records and withdrawals
-  const allDates = new Set([
-    ...Object.keys(recordsByDate),
-    ...Object.keys(withdrawalsByDate),
-  ]);
+  const regularDates = Object.keys(regularRecordsByDate).sort(
+    (dateA, dateB) => new Date(dateB) - new Date(dateA)
+  );
 
-  const sortedDates = Array.from(allDates).sort(
+  const withdrawalDates = Object.keys(withdrawalsByDate).sort(
     (dateA, dateB) => new Date(dateB) - new Date(dateA)
   );
 
@@ -328,11 +342,9 @@ export default function RecordsTab({
       incomes: [],
       expenses: [],
       maintenances: [],
-      withdrawals: [],
       totalIncome: 0,
       totalExpense: 0,
       totalMaintenance: 0,
-      totalWithdrawal: 0,
     };
 
     dayRecords.forEach((record) => {
@@ -350,10 +362,6 @@ export default function RecordsTab({
         case "MAINTENANCE":
           totals.maintenances.push(record);
           totals.totalMaintenance += amount;
-          break;
-        case "WITHDRAWAL":
-          totals.withdrawals.push(record);
-          totals.totalWithdrawal += amount;
           break;
       }
     });
@@ -399,103 +407,150 @@ export default function RecordsTab({
         <WalletBalance balance={balance} />
       </div>
 
-      {/* RECORDS SECTION */}
+      {/* TABS */}
+      <div className="bg-white rounded-2xl shadow-sm p-2 mb-6">
+        <div className="flex gap-2">
+          <button
+            onClick={() => setActiveTab("transactions")}
+            className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-semibold transition-all ${
+              activeTab === "transactions"
+                ? "bg-blue-600 text-white shadow-md"
+                : "bg-gray-50 text-gray-600 hover:bg-gray-100"
+            }`}
+          >
+            <TrendingUp size={20} />
+            Daily Transactions
+          </button>
+          <button
+            onClick={() => setActiveTab("withdrawals")}
+            className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-semibold transition-all ${
+              activeTab === "withdrawals"
+                ? "bg-purple-600 text-white shadow-md"
+                : "bg-gray-50 text-gray-600 hover:bg-gray-100"
+            }`}
+          >
+            <Wallet size={20} />
+            Withdrawals
+          </button>
+        </div>
+      </div>
+
+      {/* CONTENT BASED ON ACTIVE TAB */}
       {loadingRecords ? (
         <div className="flex justify-center py-20">
           <Loader2 className="animate-spin text-blue-600" size={48} />
         </div>
-      ) : sortedDates.length === 0 ? (
-        <div className="text-center py-20">
-          <FileText className="mx-auto text-gray-300 mb-4" size={64} />
-          <p className="text-gray-500 font-medium text-lg">No records found</p>
-          <p className="text-gray-400 text-sm mt-2">
-            Start by adding your first transaction
-          </p>
-        </div>
       ) : (
-        <div className="space-y-6">
-          {sortedDates.map((date) => {
-            const dailyRecords = recordsByDate[date] || [];
-            const dailyWithdrawals = withdrawalsByDate[date] || [];
-            
-            const dailyTotals = calculateDailyTotals(dailyRecords);
-            const isDateOpen = openDates[date];
-            
-            const hasRegularTransactions = dailyRecords.length > 0;
-            const hasWithdrawals = dailyWithdrawals.length > 0;
+        <>
+          {/* DAILY TRANSACTIONS TAB */}
+          {activeTab === "transactions" && (
+            <>
+              {regularDates.length === 0 ? (
+                <div className="text-center py-20">
+                  <FileText className="mx-auto text-gray-300 mb-4" size={64} />
+                  <p className="text-gray-500 font-medium text-lg">No daily transactions found</p>
+                  <p className="text-gray-400 text-sm mt-2">
+                    Start by adding income or expenses
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {regularDates.map((date) => {
+                    const dailyRegularRecords = regularRecordsByDate[date] || [];
+                    const dailyTotals = calculateDailyTotals(dailyRegularRecords);
+                    const isDateOpen = openDates[date];
 
-            return (
-              <div key={date} className="space-y-4">
-                {/* DAILY TRANSACTIONS CARD - Only show if there are regular transactions */}
-                {hasRegularTransactions && (
-                  <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-                    <DailySummaryHeader
-                      date={date}
-                      netCollection={dailyTotals.netCollection}
-                      isOpen={isDateOpen}
-                      onToggle={() => toggleDate(date)}
-                    />
+                    return (
+                      <div key={date} className="bg-white rounded-2xl shadow-sm overflow-hidden">
+                        <DailySummaryHeader
+                          date={date}
+                          netCollection={dailyTotals.netCollection}
+                          isOpen={isDateOpen}
+                          onToggle={() => toggleDate(date)}
+                        />
 
-                    {isDateOpen && (
-                      <div className="p-4 space-y-3">
-                        {/* Income Transactions */}
-                        {dailyTotals.incomes.map((record) => (
-                          <TransactionItem
-                            key={record.id}
-                            record={record}
-                            isOwner={isOwner}
-                            onDelete={deleteRecord}
-                          />
-                        ))}
+                        {isDateOpen && (
+                          <div className="p-4 space-y-3">
+                            {/* Income Transactions */}
+                            {dailyTotals.incomes.map((record) => (
+                              <TransactionItem
+                                key={record.id}
+                                record={record}
+                                isOwner={isOwner}
+                                onDelete={deleteRecord}
+                              />
+                            ))}
 
-                        {/* Expense & Maintenance Transactions */}
-                        {[...dailyTotals.expenses, ...dailyTotals.maintenances].map((record) => (
-                          <TransactionItem
-                            key={record.id}
-                            record={record}
-                            isOwner={isOwner}
-                            onDelete={deleteRecord}
-                          />
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* WITHDRAWAL SECTION - Show independently with date header if no regular transactions */}
-                {hasWithdrawals && (
-                  <>
-                    {!hasRegularTransactions && (
-                      <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-                        <div className="px-4 py-4 bg-gradient-to-r from-purple-50 to-purple-100 flex items-center gap-3">
-                          <Calendar size={18} className="text-purple-600" />
-                          <div className="font-bold text-gray-900">
-                            {new Date(date).toLocaleDateString("en-IN", {
-                              weekday: "short",
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                            })}
+                            {/* Expense & Maintenance Transactions */}
+                            {[...dailyTotals.expenses, ...dailyTotals.maintenances].map((record) => (
+                              <TransactionItem
+                                key={record.id}
+                                record={record}
+                                isOwner={isOwner}
+                                onDelete={deleteRecord}
+                              />
+                            ))}
                           </div>
-                        </div>
+                        )}
                       </div>
-                    )}
+                    );
+                  })}
+                </div>
+              )}
+            </>
+          )}
+
+          {/* WITHDRAWALS TAB */}
+          {activeTab === "withdrawals" && (
+            <>
+              {withdrawalDates.length === 0 ? (
+                <div className="text-center py-20">
+                  <Wallet className="mx-auto text-gray-300 mb-4" size={64} />
+                  <p className="text-gray-500 font-medium text-lg">No withdrawals found</p>
+                  <p className="text-gray-400 text-sm mt-2">
+                    Owner withdrawals will appear here
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {withdrawalDates.map((date) => {
+                    const dailyWithdrawals = withdrawalsByDate[date] || [];
+                    const isDateOpen = openDates[date];
                     
-                    <WithdrawalSection
-                      withdrawals={dailyWithdrawals}
-                      totalAmount={dailyWithdrawals.reduce(
-                        (sum, record) => sum + Number(record.amount || 0),
-                        0
-                      )}
-                      isOwner={isOwner}
-                      onDelete={deleteRecord}
-                    />
-                  </>
-                )}
-              </div>
-            );
-          })}
-        </div>
+                    const withdrawalTotal = dailyWithdrawals.reduce(
+                      (sum, record) => sum + Number(record.amount || 0),
+                      0
+                    );
+
+                    return (
+                      <div key={date} className="bg-white rounded-2xl shadow-sm overflow-hidden">
+                        <WithdrawalDateHeader
+                          date={date}
+                          totalAmount={withdrawalTotal}
+                          isOpen={isDateOpen}
+                          onToggle={() => toggleDate(date)}
+                        />
+
+                        {isDateOpen && (
+                          <div className="p-4 space-y-3 bg-gradient-to-br from-purple-50/30 to-purple-100/30">
+                            {dailyWithdrawals.map((record) => (
+                              <TransactionItem
+                                key={record.id}
+                                record={record}
+                                isOwner={isOwner}
+                                onDelete={deleteRecord}
+                              />
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </>
+          )}
+        </>
       )}
 
       {/* ATTACHMENTS MODAL */}
