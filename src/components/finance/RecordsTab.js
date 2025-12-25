@@ -1,4 +1,3 @@
-// components/finance/RecordsTab.js
 "use client";
 
 import React, { useState } from "react";
@@ -10,9 +9,9 @@ import {
   Loader2,
   FileText,
   X,
-  ArrowDownCircle,
   TrendingUp,
   Wallet,
+  User,
 } from "lucide-react";
 
 /* -------------------------------------------------------------------------- */
@@ -46,6 +45,57 @@ const TRANSACTION_CONFIG = {
 };
 
 /* -------------------------------------------------------------------------- */
+/*                               STAFF BADGE                                  */
+/* -------------------------------------------------------------------------- */
+const StaffBadge = ({ role, name }) => {
+  if (!name) return null;
+
+  const getConfig = (role) => {
+    switch (role) {
+      case "DRIVER":
+        return {
+          bgColor: "bg-blue-100",
+          textColor: "text-blue-700",
+          iconColor: "text-blue-600",
+          label: "Driver",
+        };
+      case "CONDUCTOR":
+        return {
+          bgColor: "bg-green-100",
+          textColor: "text-green-700",
+          iconColor: "text-green-600",
+          label: "Conductor",
+        };
+      case "CLEANER":
+        return {
+          bgColor: "bg-orange-100",
+          textColor: "text-orange-700",
+          iconColor: "text-orange-600",
+          label: "Cleaner",
+        };
+      default:
+        return {
+          bgColor: "bg-gray-100",
+          textColor: "text-gray-700",
+          iconColor: "text-gray-600",
+          label: "Staff",
+        };
+    }
+  };
+
+  const config = getConfig(role);
+
+  return (
+    <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full ${config.bgColor}`}>
+      <User size={12} className={config.iconColor} />
+      <span className={`text-xs font-medium ${config.textColor}`}>
+        {config.label}: {name}
+      </span>
+    </div>
+  );
+};
+
+/* -------------------------------------------------------------------------- */
 /*                               TRANSACTION ITEM                             */
 /* -------------------------------------------------------------------------- */
 const TransactionItem = ({ record, isOwner, onDelete }) => {
@@ -69,6 +119,7 @@ const TransactionItem = ({ record, isOwner, onDelete }) => {
           <div className="text-xs text-gray-500 truncate">
             {displayName}
           </div>
+          {/* Staff names removed from individual transactions */}
         </div>
       </div>
 
@@ -168,21 +219,38 @@ const WalletBalance = ({ balance }) => {
 /* -------------------------------------------------------------------------- */
 /*                           DAILY SUMMARY HEADER                             */
 /* -------------------------------------------------------------------------- */
-const DailySummaryHeader = ({ date, netCollection, isOpen, onToggle }) => (
+const DailySummaryHeader = ({ date, netCollection, isOpen, onToggle, staffAssignments }) => (
   <div
     className="px-4 py-4 bg-gradient-to-r from-gray-50 to-gray-100 flex items-center justify-between cursor-pointer hover:from-gray-100 hover:to-gray-200 transition-colors"
     onClick={onToggle}
   >
-    <div className="flex items-center gap-3">
+    <div className="flex-1 flex items-center gap-3">
       {isOpen ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
       <Calendar size={18} className="text-blue-600" />
-      <div className="font-bold text-gray-900">
-        {new Date(date).toLocaleDateString("en-IN", {
-          weekday: "short",
-          year: "numeric",
-          month: "short",
-          day: "numeric",
-        })}
+      <div className="flex-1">
+        <div className="font-bold text-gray-900">
+          {new Date(date).toLocaleDateString("en-IN", {
+            weekday: "short",
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+          })}
+        </div>
+        
+        {/* Staff Summary - Clean full labels */}
+        {(staffAssignments.driver || staffAssignments.conductor || staffAssignments.cleaner) && (
+          <div className="flex flex-wrap gap-2 mt-2">
+            {staffAssignments.driver && (
+              <StaffBadge role="DRIVER" name={staffAssignments.driver} />
+            )}
+            {staffAssignments.conductor && (
+              <StaffBadge role="CONDUCTOR" name={staffAssignments.conductor} />
+            )}
+            {staffAssignments.cleaner && (
+              <StaffBadge role="CLEANER" name={staffAssignments.cleaner} />
+            )}
+          </div>
+        )}
       </div>
     </div>
 
@@ -281,7 +349,7 @@ export default function RecordsTab({
   modalTitle,
   modalAttachments,
 }) {
-  const [activeTab, setActiveTab] = useState("transactions"); // "transactions" or "withdrawals"
+  const [activeTab, setActiveTab] = useState("transactions");
 
   const {
     total_income = 0,
@@ -292,7 +360,6 @@ export default function RecordsTab({
   } = summary;
 
   /* ------------------------------ FILTER & GROUP LOGIC ----------------------------- */
-  // Separate regular transactions from withdrawals
   const regularTransactions = records.filter(
     (record) => record.transaction_type !== "WITHDRAWAL"
   );
@@ -301,14 +368,12 @@ export default function RecordsTab({
     (record) => record.transaction_type === "WITHDRAWAL"
   );
 
-  // Apply bus filter only to regular transactions
   const filteredRegularTransactions = filterBus
     ? regularTransactions.filter(
         (record) => String(record.bus?.id || record.bus_id || "") === String(filterBus)
       )
     : regularTransactions;
 
-  // Group regular transactions by date
   const regularRecordsByDate = filteredRegularTransactions.reduce((grouped, record) => {
     const dateKey = record.date || "unknown";
     if (!grouped[dateKey]) {
@@ -318,7 +383,6 @@ export default function RecordsTab({
     return grouped;
   }, {});
 
-  // Group withdrawals by date
   const withdrawalsByDate = withdrawalTransactions.reduce((grouped, record) => {
     const dateKey = record.date || "unknown";
     if (!grouped[dateKey]) {
@@ -345,6 +409,11 @@ export default function RecordsTab({
       totalIncome: 0,
       totalExpense: 0,
       totalMaintenance: 0,
+      staffAssignments: {
+        driver: "",
+        conductor: "",
+        cleaner: ""
+      }
     };
 
     dayRecords.forEach((record) => {
@@ -363,6 +432,17 @@ export default function RecordsTab({
           totals.maintenances.push(record);
           totals.totalMaintenance += amount;
           break;
+      }
+
+      // Take staff names from the first record that has them
+      if (record.staff_names && !totals.staffAssignments.driver) {
+        totals.staffAssignments.driver = record.staff_names.driver || "";
+      }
+      if (record.staff_names && !totals.staffAssignments.conductor) {
+        totals.staffAssignments.conductor = record.staff_names.conductor || "";
+      }
+      if (record.staff_names && !totals.staffAssignments.cleaner) {
+        totals.staffAssignments.cleaner = record.staff_names.cleaner || "";
       }
     });
 
@@ -467,6 +547,7 @@ export default function RecordsTab({
                           netCollection={dailyTotals.netCollection}
                           isOpen={isDateOpen}
                           onToggle={() => toggleDate(date)}
+                          staffAssignments={dailyTotals.staffAssignments}
                         />
 
                         {isDateOpen && (

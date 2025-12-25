@@ -1,6 +1,5 @@
 // components/finance/BillBookPage.js or pages/finance/billbook.js
 "use client";
-
 import React, { useState, useEffect } from "react";
 import {
   FileText,
@@ -19,38 +18,35 @@ export default function BillBookPage() {
     date: new Date().toISOString().split("T")[0],
     bus: "",
   });
-
   const [ownedBuses, setOwnedBuses] = useState([]);
   const [incomeCategories, setIncomeCategories] = useState([]);
   const [expenseCategories, setExpenseCategories] = useState([]); // EXPENSE only
   const [maintenanceCategories, setMaintenanceCategories] = useState([]); // MAINTENANCE only
-
   const [showAddIncome, setShowAddIncome] = useState(false);
   const [showAddExpense, setShowAddExpense] = useState(false);
   const [showAddMaintenance, setShowAddMaintenance] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
-
   const [expenseFiles, setExpenseFiles] = useState([]);
-
   const [records, setRecords] = useState([]);
   const [summary, setSummary] = useState({}); // New: backend summary
   const [loadingRecords, setLoadingRecords] = useState(false);
-
   const [filterDate, setFilterDate] = useState("");
   const [filterBus, setFilterBus] = useState("");
-
   const [openDates, setOpenDates] = useState({});
-
   const [modalOpen, setModalOpen] = useState(false);
   const [modalOrder, setModalOrder] = useState("");
   const [modalAttachments, setModalAttachments] = useState([]);
   const [modalTitle, setModalTitle] = useState("");
-
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
-
   const [duplicateWarnings, setDuplicateWarnings] = useState({});
-
+  const [staffDetails, setStaffDetails] = useState({
+    driverName: "",
+    conductorName: "",
+    cleanerName: "",
+  });
+  const [dailyCollection, setDailyCollection] = useState("");
+  
   const isOwner = currentUser?.is_owner === true;
 
   const toggleDate = (date) => {
@@ -81,7 +77,7 @@ export default function BillBookPage() {
   // Fetch buses and categories
   useEffect(() => {
     if (!currentUser) return;
-
+    
     const fetchData = async () => {
       setLoading(true);
       try {
@@ -89,20 +85,31 @@ export default function BillBookPage() {
           axiosInstance.get("/finance/buses/"),
           axiosInstance.get("/finance/categories/"),
         ]);
-
+        
         setOwnedBuses(busRes.data);
-
         const sorted = [...catRes.data].sort((a, b) => a.id - b.id);
-
+        
+        // Initialize salary categories if they don't exist
+        let expenseCats = sorted.filter((c) => c.transaction_type === "EXPENSE");
+       
+        // Check if salary categories exist, if not, we'll need to create them dynamically
+        const salaryCategories = ["Driver Salary", "Conductor Salary", "Cleaner Salary"];
+        const existingSalaryCats = expenseCats.filter(cat =>
+          salaryCategories.includes(cat.name)
+        );
+       
+        // If salary categories don't exist, we'll handle them dynamically in the frontend
+        if (existingSalaryCats.length === 0) {
+          console.log("No salary categories found in backend. They will be created dynamically.");
+        }
+        
         setIncomeCategories(
           sorted
             .filter((c) => c.transaction_type === "INCOME")
             .map((c) => ({ ...c, amount: "" }))
         );
         setExpenseCategories(
-          sorted
-            .filter((c) => c.transaction_type === "EXPENSE")
-            .map((c) => ({ ...c, amount: "" }))
+          expenseCats.map((c) => ({ ...c, amount: "" }))
         );
         setMaintenanceCategories(
           sorted
@@ -115,28 +122,27 @@ export default function BillBookPage() {
         setLoading(false);
       }
     };
-
+    
     fetchData();
   }, [currentUser]);
 
   // Fetch records and summary when on Records tab
   useEffect(() => {
     if (activeTab !== "records" || !currentUser) return;
-
+    
     const fetchRecords = async () => {
       setLoadingRecords(true);
       try {
         const params = {};
         if (filterDate) params.date = filterDate;
         if (filterBus) params.bus = filterBus;
-
+        
         // Non-owners default to today's date if no filter
         if (!isOwner && !filterDate) {
           params.date = new Date().toISOString().split("T")[0];
         }
-
+        
         const res = await axiosInstance.get("/finance/transactions/report/", { params });
-
         setRecords(res.data.transactions || []);
         setSummary(res.data.summary || {}); // Important: pass summary
       } catch (err) {
@@ -147,10 +153,49 @@ export default function BillBookPage() {
         setLoadingRecords(false);
       }
     };
-
+    
     fetchRecords();
     setOpenDates({});
   }, [activeTab, filterDate, filterBus, currentUser, isOwner]);
+
+  // Check for existing staff assignments for the selected date and bus
+  useEffect(() => {
+    const fetchStaffAssignments = async () => {
+      if (!formData.date || !formData.bus) return;
+     
+      try {
+        const response = await axiosInstance.get('/finance/staff-assignments/', {
+          params: {
+            date: formData.date,
+            bus_id: formData.bus
+          }
+        });
+       
+        const assignments = response.data;
+        const newStaffDetails = {
+          driverName: "",
+          conductorName: "",
+          cleanerName: ""
+        };
+       
+        assignments.forEach(assignment => {
+          if (assignment.role === "DRIVER") {
+            newStaffDetails.driverName = assignment.staff_name;
+          } else if (assignment.role === "CONDUCTOR") {
+            newStaffDetails.conductorName = assignment.staff_name;
+          } else if (assignment.role === "CLEANER") {
+            newStaffDetails.cleanerName = assignment.staff_name;
+          }
+        });
+       
+        setStaffDetails(newStaffDetails);
+      } catch (error) {
+        console.error('Error fetching staff assignments:', error);
+      }
+    };
+   
+    fetchStaffAssignments();
+  }, [formData.date, formData.bus]);
 
   // Duplicate check logic
   const checkForDuplicate = (categoryId, date, busId) => {
@@ -175,7 +220,6 @@ export default function BillBookPage() {
         return updated;
       });
     }
-
     setIncomeCategories((prev) =>
       prev.map((cat) => (cat.id === id ? { ...cat, amount: value } : cat))
     );
@@ -192,7 +236,6 @@ export default function BillBookPage() {
         return updated;
       });
     }
-
     setExpenseCategories((prev) =>
       prev.map((cat) => (cat.id === id ? { ...cat, amount: value } : cat))
     );
@@ -209,7 +252,6 @@ export default function BillBookPage() {
         return updated;
       });
     }
-
     setMaintenanceCategories((prev) =>
       prev.map((cat) => (cat.id === id ? { ...cat, amount: value } : cat))
     );
@@ -225,15 +267,14 @@ export default function BillBookPage() {
   // Add new category
   const addNewCategory = async (type) => {
     if (!newCategoryName.trim()) return alert("Category name required");
-
+    
     try {
       const res = await axiosInstance.post("/finance/categories/", {
         name: newCategoryName.trim(),
         transaction_type: type,
       });
-
       const newCat = { ...res.data, amount: "" };
-
+      
       if (type === "INCOME") {
         setIncomeCategories((prev) => [...prev, newCat]);
         setShowAddIncome(false);
@@ -244,7 +285,7 @@ export default function BillBookPage() {
         setMaintenanceCategories((prev) => [...prev, newCat]);
         setShowAddMaintenance(false);
       }
-
+      
       setNewCategoryName("");
       alert("Category added!");
     } catch (err) {
@@ -253,15 +294,20 @@ export default function BillBookPage() {
   };
 
   // Delete category (owner only)
-  const deleteCategory = async (id) => {
+  const deleteCategory = async (id, type) => {
     if (!isOwner) return alert("Only owners can delete categories.");
     if (!confirm("Delete this category permanently?")) return;
-
+    
     try {
       await axiosInstance.delete(`/finance/categories/${id}/`);
-      setIncomeCategories((prev) => prev.filter((c) => c.id !== id));
-      setExpenseCategories((prev) => prev.filter((c) => c.id !== id));
-      setMaintenanceCategories((prev) => prev.filter((c) => c.id !== id));
+     
+      if (type === "INCOME") {
+        setIncomeCategories((prev) => prev.filter((c) => c.id !== id));
+      } else if (type === "EXPENSE") {
+        setExpenseCategories((prev) => prev.filter((c) => c.id !== id));
+      } else if (type === "MAINTENANCE") {
+        setMaintenanceCategories((prev) => prev.filter((c) => c.id !== id));
+      }
     } catch (err) {
       alert("Failed to delete category");
     }
@@ -271,7 +317,7 @@ export default function BillBookPage() {
   const deleteRecord = async (id) => {
     if (!isOwner) return alert("Only owners can delete records.");
     if (!confirm("Delete this transaction permanently?")) return;
-
+    
     try {
       await axiosInstance.delete(`/finance/transactions/${id}/`);
       setRecords((prev) => prev.filter((r) => r.id !== id));
@@ -280,15 +326,16 @@ export default function BillBookPage() {
     }
   };
 
-  // Save all entries
+  // Save all entries with staff assignments - FIXED VERSION
   const handleSave = async () => {
     if (!formData.date || !formData.bus) return alert("Please select date and bus");
-
+    
     const busId = Number(formData.bus);
     if (isNaN(busId)) return alert("Invalid bus selected");
-
+    
     const transactions = [];
-
+    
+    // Add income transactions
     incomeCategories.forEach((cat) => {
       const amount = Number(cat.amount || 0);
       if (amount > 0) {
@@ -298,10 +345,12 @@ export default function BillBookPage() {
           date: formData.date,
           bus_id: busId,
           transaction_type: "INCOME",
+          description: cat.name === "Daily Collection" ? "Daily collection from passengers" : ""
         });
       }
     });
-
+    
+    // Add expense transactions
     expenseCategories.forEach((cat) => {
       const amount = Number(cat.amount || 0);
       if (amount > 0) {
@@ -311,10 +360,12 @@ export default function BillBookPage() {
           date: formData.date,
           bus_id: busId,
           transaction_type: "EXPENSE",
+          description: cat.name
         });
       }
     });
-
+    
+    // Add maintenance transactions
     maintenanceCategories.forEach((cat) => {
       const amount = Number(cat.amount || 0);
       if (amount > 0) {
@@ -324,38 +375,119 @@ export default function BillBookPage() {
           date: formData.date,
           bus_id: busId,
           transaction_type: "MAINTENANCE",
+          description: cat.name
         });
       }
     });
-
+    
     if (transactions.length === 0) return alert("Please enter at least one amount");
-
+    
+    // DEBUG: Log staff details
+    console.log("DEBUG - Staff details before save:", staffDetails);
+    console.log("DEBUG - Form data:", formData);
+    console.log("DEBUG - Bus ID:", busId);
+    
+    // Prepare staff assignments
+    const staffAssignments = [];
+   
+    if (staffDetails.driverName && formData.date && busId) {
+      console.log("DEBUG - Adding driver:", staffDetails.driverName);
+      staffAssignments.push({
+        bus_id: busId,
+        date: formData.date,
+        role: "DRIVER",
+        staff_name: staffDetails.driverName.trim()
+      });
+    }
+   
+    if (staffDetails.conductorName && formData.date && busId) {
+      console.log("DEBUG - Adding conductor:", staffDetails.conductorName);
+      staffAssignments.push({
+        bus_id: busId,
+        date: formData.date,
+        role: "CONDUCTOR",
+        staff_name: staffDetails.conductorName.trim()
+      });
+    }
+   
+    if (staffDetails.cleanerName && formData.date && busId) {
+      console.log("DEBUG - Adding cleaner:", staffDetails.cleanerName);
+      staffAssignments.push({
+        bus_id: busId,
+        date: formData.date,
+        role: "CLEANER",
+        staff_name: staffDetails.cleanerName.trim()
+      });
+    }
+    
+    console.log("DEBUG - Final staffAssignments:", staffAssignments);
+    
     try {
       // Optional duplicate check endpoint
-      const checkRes = await axiosInstance.post("/finance/transactions/bulk/?check_only=1", { transactions });
+      console.log("DEBUG - Sending duplicate check with staff_details:", JSON.stringify(staffAssignments));
+      const checkRes = await axiosInstance.post(
+        "/finance/transactions/bulk/?check_only=1",
+        {
+          transactions,
+          staff_details: JSON.stringify(staffAssignments)
+        }
+      );
+     
       if (checkRes.data.warning && !confirm(checkRes.data.warning)) {
         return;
       }
-
+      
       const form = new FormData();
       form.append("transactions", JSON.stringify(transactions));
+      form.append("staff_details", JSON.stringify(staffAssignments));
+     
+      // Add files
       expenseFiles.forEach((file, i) => form.append(`expense_file_${i}`, file));
-
+      
       setSaving(true);
-      await axiosInstance.post("/finance/transactions/bulk/", form, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-
-      alert("Saved successfully!");
-
+      
+      const response = await axiosInstance.post(
+        "/finance/transactions/bulk/",
+        form,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        }
+      );
+      
+      const data = response.data;
+     
+      // Show success message with detailed info
+      let successMessage = `✅ Successfully saved!`;
+      successMessage += `\n• Transactions created: ${data.transactions_created}`;
+      successMessage += `\n• Staff assignments created: ${data.staff_assignments_created}`;
+      if (data.attachments_uploaded > 0) {
+        successMessage += `\n• Files uploaded: ${data.attachments_uploaded}`;
+      }
+      if (data.attachments_failed > 0) {
+        successMessage += `\n• Files failed: ${data.attachments_failed}`;
+      }
+     
+      alert(successMessage);
+      
       // Reset form
       setIncomeCategories((prev) => prev.map((c) => ({ ...c, amount: "" })));
       setExpenseCategories((prev) => prev.map((c) => ({ ...c, amount: "" })));
       setMaintenanceCategories((prev) => prev.map((c) => ({ ...c, amount: "" })));
       setExpenseFiles([]);
       setDuplicateWarnings({});
+      setDailyCollection("");
+      setStaffDetails({
+        driverName: "",
+        conductorName: "",
+        cleanerName: "",
+      });
+     
+      // Optionally switch to records tab
+      setActiveTab("records");
+      
     } catch (err) {
-      alert(err.response?.data?.error || "Save failed");
+      console.error("Save error:", err);
+      alert(err.response?.data?.error || "Save failed. Please check your inputs and try again.");
     } finally {
       setSaving(false);
     }
@@ -391,7 +523,7 @@ export default function BillBookPage() {
             </div>
           </div>
         </header>
-
+        
         {/* Bottom Tab Navigation (Mobile) / Top Sticky (Desktop) */}
         <div className="fixed bottom-0 left-0 right-0 z-40 sm:sticky sm:top-20 bg-white/90 backdrop-blur border-t sm:border-b border-gray-200">
           <div className="max-w-7xl mx-auto flex">
@@ -416,7 +548,7 @@ export default function BillBookPage() {
             })}
           </div>
         </div>
-
+        
         {/* Main Content */}
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {activeTab === "new" && (
@@ -443,17 +575,21 @@ export default function BillBookPage() {
               expenseFiles={expenseFiles}
               setExpenseFiles={setExpenseFiles}
               totalIncome={totalIncome}
-              totalRegularExpense={totalRegularExpense}
-              totalMaintenance={totalMaintenance}
               totalExpense={totalExpense}
+              totalMaintenance={totalMaintenance}
               balance={balance}
               handleSave={handleSave}
               saving={saving}
               isOwner={isOwner}
               duplicateWarnings={duplicateWarnings}
+              // Pass staffDetails and setStaffDetails as props
+              staffDetails={staffDetails}
+              setStaffDetails={setStaffDetails}
+              dailyCollection={dailyCollection}
+              setDailyCollection={setDailyCollection}
             />
           )}
-
+          
           {activeTab === "records" && (
             <RecordsTab
               ownedBuses={ownedBuses}
