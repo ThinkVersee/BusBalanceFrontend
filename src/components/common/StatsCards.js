@@ -7,21 +7,31 @@ export const StatsCards = ({
   active,
   verified,
   operational,
-  label = 'Items'
+  label = 'Items',
 }) => {
   const cards = [];
+
+  const cardClass =
+    'bg-white rounded-lg sm:rounded-xl p-2 sm:p-4 border border-gray-300 text-center sm:text-left min-w-0';
+
+  const titleClass =
+    'text-xs sm:text-sm text-gray-600 truncate';
+
+  const valueBase =
+    'text-lg sm:text-2xl font-semibold sm:font-bold mt-0.5 sm:mt-1';
 
   // Total Card
   if (total != null) {
     cards.push(
       h(
         'div',
-        {
-          key: 'total',
-          className: 'bg-white rounded-xl p-4 shadow-sm border border-gray-100 text-center sm:text-left min-w-0'
-        },
-        h('p', { className: 'text-sm text-gray-600 truncate' }, `Total ${label}`),
-        h('p', { className: 'text-2xl font-bold text-gray-900 mt-1' }, total.toLocaleString())
+        { key: 'total', className: cardClass },
+        h('p', { className: titleClass }, `Total ${label}`),
+        h(
+          'p',
+          { className: `${valueBase} text-gray-900` },
+          total.toLocaleString()
+        )
       )
     );
   }
@@ -31,12 +41,13 @@ export const StatsCards = ({
     cards.push(
       h(
         'div',
-        {
-          key: 'active',
-          className: 'bg-white rounded-xl p-4 shadow-sm border border-gray-100 text-center sm:text-left min-w-0'
-        },
-        h('p', { className: 'text-sm text-gray-600' }, 'Active'),
-        h('p', { className: 'text-2xl font-bold text-green-600 mt-1' }, active.toLocaleString())
+        { key: 'active', className: cardClass },
+        h('p', { className: titleClass }, 'Active'),
+        h(
+          'p',
+          { className: `${valueBase} text-green-600` },
+          active.toLocaleString()
+        )
       )
     );
   }
@@ -46,12 +57,13 @@ export const StatsCards = ({
     cards.push(
       h(
         'div',
-        {
-          key: 'verified',
-          className: 'bg-white rounded-xl p-4 shadow-sm border border-gray-100 text-center sm:text-left min-w-0'
-        },
-        h('p', { className: 'text-sm text-gray-600' }, 'Verified'),
-        h('p', { className: 'text-2xl font-bold text-blue-600 mt-1' }, verified.toLocaleString())
+        { key: 'verified', className: cardClass },
+        h('p', { className: titleClass }, 'Verified'),
+        h(
+          'p',
+          { className: `${valueBase} text-blue-600` },
+          verified.toLocaleString()
+        )
       )
     );
   }
@@ -61,30 +73,31 @@ export const StatsCards = ({
     cards.push(
       h(
         'div',
-        {
-          key: 'operational',
-          className: 'bg-white rounded-xl p-4 shadow-sm border border-gray-100 text-center sm:text-left min-w-0'
-        },
-        h('p', { className: 'text-sm text-gray-600' }, 'Operational'),
-        h('p', { className: 'text-2xl font-bold text-indigo-600 mt-1' }, operational.toLocaleString())
+        { key: 'operational', className: cardClass },
+        h('p', { className: titleClass }, 'Operational'),
+        h(
+          'p',
+          { className: `${valueBase} text-indigo-600` },
+          operational.toLocaleString()
+        )
       )
     );
   }
 
-  // Dynamic responsive grid
+  // Responsive grid logic
   const getGridClass = () => {
     const len = cards.length;
     if (len === 1) return 'grid-cols-1';
-    if (len === 2) return 'grid-cols-1 sm:grid-cols-2';
-    if (len === 3) return 'grid-cols-1 sm:grid-cols-3';
-    if (len >= 4) return 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4';
+    if (len === 2) return 'grid-cols-2 sm:grid-cols-2';
+    if (len === 3) return 'grid-cols-2 sm:grid-cols-3';
+    if (len >= 4) return 'grid-cols-2 sm:grid-cols-2 lg:grid-cols-4';
     return 'grid-cols-1';
   };
 
   return h(
     'div',
     {
-      className: `grid ${getGridClass()} gap-4 mt-4 mb-6`
+      className: `grid ${getGridClass()} gap-2 sm:gap-4 mt-2 sm:mt-4 mb-4 sm:mb-6`,
     },
     ...cards
   );

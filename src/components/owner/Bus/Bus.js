@@ -380,13 +380,13 @@ export default function BusManagement() {
   ], []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-gray-50 p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen bg-white rounded-xl border border-gray-200 p-4 sm:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto">
 
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6 sm:mb-8">
           <div className="flex items-center gap-3 flex-1 min-w-0">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center   flex-shrink-0">
               <Bus className="text-white w-5 h-5 sm:w-6 sm:h-6" />
             </div>
             <div className="min-w-0 flex-1">
@@ -420,7 +420,7 @@ export default function BusManagement() {
           searchPlaceholder="Search by reg. no., name, route..."
         />
 
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
+        <div className="bg-white rounded-xl   overflow-hidden border border-gray-200">
           <GenericTable
             rows={filteredBuses}
             columns={columns}

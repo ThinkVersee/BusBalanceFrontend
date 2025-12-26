@@ -98,7 +98,7 @@ export const FormModal = ({
       }}
     >
       <div
-        className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl"
+        className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto "
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-5 sm:p-8">
@@ -238,7 +238,7 @@ export const FormModal = ({
                             {/* Dropdown */}
                             {isOpen && (
                               <div
-                                className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-xl shadow-lg z-30 max-h-60 overflow-y-auto"
+                                className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-xl  z-30 max-h-60 overflow-y-auto"
                                 onClick={(e) => e.stopPropagation()}
                               >
                                 {field.options?.length > 0 ? (
@@ -313,7 +313,7 @@ export const FormModal = ({
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full sm:w-auto order-1 sm:order-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all disabled:opacity-50 font-medium shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2"
+                className="w-full sm:w-auto order-1 sm:order-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all disabled:opacity-50 font-medium  flex items-center justify-center gap-2"
               >
                 {loading && <Loader2 size={18} className="animate-spin" />}
                 {loading ? 'Saving...' : submitLabel}

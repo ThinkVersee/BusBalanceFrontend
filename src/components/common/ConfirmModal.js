@@ -27,7 +27,7 @@ export const ConfirmModal = ({
       iconBg: 'bg-red-100',
       iconColor: 'text-red-600',
       button: 'bg-red-600 hover:bg-red-700 focus:ring-red-500',
-      shadow: 'shadow-red-600/20',
+      // shadow: 'shadow-red-600/20',
     },
     warning: {
       bg: 'bg-orange-50',
@@ -35,7 +35,7 @@ export const ConfirmModal = ({
       iconBg: 'bg-orange-100',
       iconColor: 'text-orange-600',
       button: 'bg-orange-600 hover:bg-orange-700 focus:ring-orange-500',
-      shadow: 'shadow-orange-600/20',
+      // shadow: 'shadow-orange-600/20',
     },
     success: {
       bg: 'bg-green-50',
@@ -43,7 +43,7 @@ export const ConfirmModal = ({
       iconBg: 'bg-green-100',
       iconColor: 'text-green-600',
       button: 'bg-green-600 hover:bg-green-700 focus:ring-green-500',
-      shadow: 'shadow-green-600/20',
+      // shadow: 'shadow-green-600/20',
     },
   };
 
@@ -74,7 +74,7 @@ export const ConfirmModal = ({
       {/* Modal Card */}
       <div className={`
         relative w-full max-w-md transform transition-all
-        bg-white rounded-2xl shadow-2xl overflow-hidden
+        bg-white rounded-2xl  overflow-hidden
         border ${v.border}
         animate-in fade-in zoom-in-95 duration-200
       `}>
@@ -91,7 +91,7 @@ export const ConfirmModal = ({
           {/* Icon */}
           <div className={`
             w-16 h-16 mx-auto mb-5 rounded-2xl flex items-center justify-center
-            ${v.iconBg} ${v.iconColor} shadow-lg
+            ${v.iconBg} ${v.iconColor} 
           `}>
             <CustomIcon size={32} className="animate-pulse" />
           </div>
@@ -126,7 +126,7 @@ export const ConfirmModal = ({
               className={`
                 flex-1 order-1 sm:order-2 flex items-center justify-center gap-2
                 px-5 py-3 rounded-xl text-white font-medium text-sm sm:text-base
-                transition-all duration-200 shadow-lg
+                transition-all duration-200 
                 ${v.button} focus:ring-4 focus:ring-offset-2
                 disabled:opacity-60 disabled:cursor-not-allowed
               `}

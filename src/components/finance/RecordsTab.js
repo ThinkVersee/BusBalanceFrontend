@@ -375,11 +375,11 @@ export default function RecordsTab({
       </div>
 
       {/* TABS */}
-      <div className="bg-white rounded-xl sm:rounded-xl   p-1.5 sm:p-2 mb-3 sm:mb-6 border border-gray-200">
+      <div className="bg-white rounded-lg sm:rounded-lg   p-1.5 sm:p-2 mb-3 sm:mb-6 border border-gray-200">
         <div className="flex gap-1.5 sm:gap-2">
           <button
             onClick={() => setActiveTab("transactions")}
-            className={`flex-1 flex items-center justify-center gap-2 sm:gap-3 px-3 sm:px-6 py-2.5 sm:py-4 rounded-lg sm:rounded-xl font-bold text-xs sm:text-base transition-all duration-200 ${
+            className={`flex-1 flex items-center justify-center gap-2 sm:gap-3 px-3 sm:px-6 py-2.5 sm:py-4 rounded-lg sm:rounded-lg font-bold text-xs sm:text-base transition-all duration-200 ${
               activeTab === "transactions" 
                 ? "  bg-blue-600   text-white  " 
                 : "bg-gray-200 text-gray-600 hover:bg-gray-100"
@@ -391,7 +391,7 @@ export default function RecordsTab({
           </button>
           <button
             onClick={() => setActiveTab("withdrawals")}
-            className={`flex-1 flex items-center justify-center gap-2 sm:gap-3 px-3 sm:px-6 py-2.5 sm:py-4 rounded-lg sm:rounded-xl font-bold text-xs sm:text-base transition-all duration-200 ${
+            className={`flex-1 flex items-center justify-center gap-2 sm:gap-3 px-3 sm:px-6 py-2.5 sm:py-4 rounded-lg sm:rounded-lg font-bold text-xs sm:text-base transition-all duration-200 ${
               activeTab === "withdrawals" 
                 ? "bg-blue-600   text-white   " 
                 : "bg-gray-200 text-gray-600 hover:bg-gray-100"
@@ -405,7 +405,7 @@ export default function RecordsTab({
 
       {/* CONTENT */}
       {loadingRecords ? (
-        <div className="flex flex-col items-center justify-center py-20 sm:py-32 bg-white rounded-2xl sm:rounded-3xl ">
+        <div className="flex flex-col items-center justify-center py-20 sm:py-32 bg-white rounded-xl sm:rounded-xl ">
           <Loader2 className="animate-spin text-blue-600 mb-4" size={48} />
           <p className="text-gray-600 font-medium text-sm sm:text-base">Loading records...</p>
         </div>
@@ -519,7 +519,7 @@ export default function RecordsTab({
           {activeTab === "withdrawals" && (
             <>
               {withdrawalDates.length === 0 ? (
-                <div className="text-center py-20 sm:py-32 bg-white rounded-2xl sm:rounded-3xl   border border-gray-200">
+                <div className="text-center py-20 sm:py-32 bg-white rounded-xl sm:rounded-xl   border border-gray-200">
                   <Wallet className="mx-auto text-gray-300 mb-4" size={56} />
                   <p className="text-gray-500 font-semibold text-lg sm:text-xl mb-2 px-4">No withdrawals found</p>
                   <p className="text-gray-400 text-xs sm:text-sm px-4">Withdrawal history will appear here</p>
@@ -532,7 +532,7 @@ export default function RecordsTab({
                     const total = dailyWithdrawals.reduce((sum, r) => sum + Number(r.amount || 0), 0);
 
                     return (
-                      <div key={date} className="bg-white rounded-xl sm:rounded-2xl   overflow-hidden border border-gray-200   transition-shadow">
+                      <div key={date} className="bg-white rounded-xl sm:rounded-xl   overflow-hidden border border-gray-200   transition-shadow">
                         <WithdrawalDateHeader 
                           date={date} 
                           totalAmount={total} 
