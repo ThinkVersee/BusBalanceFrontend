@@ -23,7 +23,7 @@ export default function CompaniesPage() {
 
         {/* Page Content */}
          <main className="pt-13 sm:pt-16">
-          <div className="max-w-full px-4 sm:px-6 lg:px-8 py-">
+          <div className="max-w-full px-4 sm:px-6 lg:px-8 py-6">
             <BusOwnerManagement />
           </div>
         </main>

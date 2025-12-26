@@ -385,7 +385,7 @@ export default function BusOwnerManagement() {
   ) : null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-gray-50 p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen bg-white rounded-xl border border-gray-200 p-4 sm:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto">
 
         {/* HEADER */}
@@ -394,7 +394,7 @@ export default function BusOwnerManagement() {
             <div className="flex-shrink-0 w-10 h-10 sm:w-11 sm:h-11 lg:w-12 lg:h-12 
               bg-gradient-to-br from-blue-600 to-blue-700 
               rounded-lg sm:rounded-xl 
-              flex items-center justify-center shadow-md">
+              flex items-center justify-center  ">
               <Building2 className="text-white w-5 h-5 sm:w-5.5 lg:w-6" />
             </div>
 
@@ -435,7 +435,7 @@ export default function BusOwnerManagement() {
         />
 
         {/* TABLE */}
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
+        <div className="bg-white rounded-xl   overflow-hidden border border-gray-300">
           <GenericTable
             rows={filteredOwners}
             columns={columns}
