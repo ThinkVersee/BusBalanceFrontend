@@ -375,25 +375,26 @@ export default function BillBookPage() {
   return (
     <>
       <div className="min-h-screen pb-24 sm:pb-8">
-        {/* Header */}
-        <header className="z-50 backdrop-blur-2xl bg-white/70 border-b border-white/30">
+        {/* Header - Reduced height on mobile */}
+        <header className="rounded-xl sm:rounded-t-xl sm:rounded-b-none bg-white border border-gray-200">
+
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between h-20">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center shadow-lg">
-                  <IndianRupee className="text-white w-6 h-6" />
+            <div className="flex items-center justify-between h-14 sm:h-20">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg sm:rounded-xl flex items-center justify-center ">
+                  <IndianRupee className="text-white w-5 h-5 sm:w-6 sm:h-6" />
                 </div>
                 <div>
-                  <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">Bill Book</h1>
-                  <p className="text-gray-600 text-sm">Manage daily income & expenses</p>
+                  <h1 className="text-lg sm:text-2xl lg:text-3xl font-bold text-gray-900">Bill Book</h1>
+                  <p className="text-gray-600 text-[10px] sm:text-sm">Manage daily income & expenses</p>
                 </div>
               </div>
             </div>
           </div>
         </header>
 
-        {/* Bottom Tab Navigation (Mobile) / Top Sticky (Desktop) */}
-        <div className="fixed bottom-0 left-0 right-0 z-40 sm:sticky sm:top-20 bg-white/90 backdrop-blur border-t sm:border-b border-gray-200">
+        {/* Bottom Tab Navigation (Mobile) / Top Sticky (Desktop) - Reduced height on mobile */}
+        <div className="rounded-b-xl border border-gray-200 fixed bottom-0 left-0 right-0 z-40 sm:sticky sm:top-20 bg-white backdrop-blur border-t sm:border-b border-gray-200">
           <div className="max-w-7xl mx-auto flex">
             {[
               { key: "new", icon: FileText, label: "New Entry" },
@@ -405,20 +406,20 @@ export default function BillBookPage() {
                 <button
                   key={tab.key}
                   onClick={() => setActiveTab(tab.key)}
-                  className={`flex-1 flex flex-col items-center gap-1 py-4 sm:flex-row sm:justify-center sm:gap-3 transition-colors ${
+                  className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 sm:py-4 sm:flex-row sm:justify-center sm:gap-3 transition-colors ${
                     active ? "text-blue-600 border-b-2 border-blue-600" : "text-gray-700"
                   }`}
                 >
-                  <Icon size={24} />
-                  <span className="text-xs font-medium sm:text-sm">{tab.label}</span>
+                  <Icon size={20} className="sm:w-6 sm:h-6" />
+                  <span className="text-[10px] font-medium sm:text-sm">{tab.label}</span>
                 </button>
               );
             })}
           </div>
         </div>
 
-        {/* Main Content */}
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Main Content - Reduced top padding on mobile */}
+        <main className="max-w-7xl mx-auto px-0    py-3 sm:py-8">
           {activeTab === "new" && (
             <NewEntryForm
               formData={formData}
@@ -458,7 +459,7 @@ export default function BillBookPage() {
             <RecordsTab
               ownedBuses={ownedBuses}
               records={records}
-              summary={summary} // ← Critical: pass backend summary
+              summary={summary}
               loadingRecords={loadingRecords}
               filterDate={filterDate}
               setFilterDate={setFilterDate}
