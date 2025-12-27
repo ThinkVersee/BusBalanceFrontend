@@ -11,75 +11,76 @@ export const StatsCards = ({
 }) => {
   const cards = [];
 
-  const cardClass =
-    'bg-white rounded-lg sm:rounded-xl p-2 sm:p-4 border border-gray-300 text-center sm:text-left min-w-0';
-
-  const titleClass =
-    'text-xs sm:text-sm text-gray-600 truncate';
+  const baseCardClass =
+    'rounded-lg sm:rounded-xl p-3 sm:p-4 min-w-0 text-center sm:text-left ';
 
   const valueBase =
-    'text-lg sm:text-2xl font-semibold sm:font-bold mt-0.5 sm:mt-1';
+    'text-lg sm:text-2xl font-semibold sm:font-bold mt-1';
+
+  // Function to get background and text color per type
+  const getCardColors = (type) => {
+    switch (type) {
+      case 'total':
+        return { bg: 'bg-blue-50 border border-blue-200', text: 'text-blue-700', label: 'text-blue-600' };
+      case 'active':
+        return { bg: 'bg-green-50 border border-green-200', text: 'text-green-600', label: 'text-green-600' };
+      case 'verified':
+        return { bg: 'bg-blue-50 border border-blue-200', text: 'text-blue-600', label: 'text-blue-500' };
+      case 'operational':
+        return { bg: 'bg-purple-50 border border-purple-200', text: 'text-purple-600', label: 'text-purple-500' };
+      default:
+        return { bg: 'bg-white border border-gray-300', text: 'text-gray-900', label: 'text-gray-600' };
+    }
+  };
 
   // Total Card
   if (total != null) {
+    const colors = getCardColors('total');
     cards.push(
       h(
         'div',
-        { key: 'total', className: cardClass },
-        h('p', { className: titleClass }, `Total ${label}`),
-        h(
-          'p',
-          { className: `${valueBase} text-gray-900` },
-          total.toLocaleString()
-        )
+        { key: 'total', className: baseCardClass + colors.bg },
+        h('p', { className: `text-sm sm:text-base ${colors.label} truncate` }, `Total ${label}`),
+        h('p', { className: `${valueBase} ${colors.text}` }, total.toLocaleString())
       )
     );
   }
 
   // Active Card
   if (active != null) {
+    const colors = getCardColors('active');
     cards.push(
       h(
         'div',
-        { key: 'active', className: cardClass },
-        h('p', { className: titleClass }, 'Active'),
-        h(
-          'p',
-          { className: `${valueBase} text-green-600` },
-          active.toLocaleString()
-        )
+        { key: 'active', className: baseCardClass + colors.bg },
+        h('p', { className: `text-sm sm:text-base ${colors.label} truncate` }, 'Active'),
+        h('p', { className: `${valueBase} ${colors.text}` }, active.toLocaleString())
       )
     );
   }
 
   // Verified Card
   if (verified != null) {
+    const colors = getCardColors('verified');
     cards.push(
       h(
         'div',
-        { key: 'verified', className: cardClass },
-        h('p', { className: titleClass }, 'Verified'),
-        h(
-          'p',
-          { className: `${valueBase} text-blue-600` },
-          verified.toLocaleString()
-        )
+        { key: 'verified', className: baseCardClass + colors.bg },
+        h('p', { className: `text-sm sm:text-base ${colors.label} truncate` }, 'Verified'),
+        h('p', { className: `${valueBase} ${colors.text}` }, verified.toLocaleString())
       )
     );
   }
 
   // Operational Card
   if (operational != null) {
+    const colors = getCardColors('operational');
     cards.push(
       h(
         'div',
-        { key: 'operational', className: cardClass },
-        h('p', { className: titleClass }, 'Operational'),
-        h(
-          'p',
-          { className: `${valueBase} text-indigo-600` },
-          operational.toLocaleString()
-        )
+        { key: 'operational', className: baseCardClass + colors.bg },
+        h('p', { className: `text-sm sm:text-base ${colors.label} truncate` }, 'Operational'),
+        h('p', { className: `${valueBase} ${colors.text}` }, operational.toLocaleString())
       )
     );
   }
@@ -97,7 +98,7 @@ export const StatsCards = ({
   return h(
     'div',
     {
-      className: `grid ${getGridClass()} gap-2 sm:gap-4 mt-2 sm:mt-4 mb-4 sm:mb-6`,
+      className: `grid ${getGridClass()} gap-3 sm:gap-4 mt-4 sm:mt-6 mb-4 sm:mb-6`,
     },
     ...cards
   );

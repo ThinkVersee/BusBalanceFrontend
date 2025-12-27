@@ -528,7 +528,7 @@ useEffect(() => {
           placeholder="Enter driver's name"
           className="w-full text-sm sm:text-base px-3 py-2 sm:py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
         />
-        <p className="text-xs sm:text-sm text-gray-500 mt-1">
+        <p className="text-xs sm:text-sm text-gray-400 mt-1">
           This will be saved as today's driver assignment
         </p>
       </div>
@@ -550,7 +550,7 @@ useEffect(() => {
           placeholder="Enter conductor's name"
           className="w-full text-sm sm:text-base px-3 py-2 sm:py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 bg-white text-gray-900"
         />
-        <p className="text-xs sm:text-sm text-gray-500 mt-1">
+        <p className="text-xs sm:text-sm text-gray-400 mt-1">
           This will be saved as today's conductor assignment
         </p>
       </div>
@@ -572,7 +572,7 @@ useEffect(() => {
           placeholder="Enter cleaner's name (if applicable)"
           className="w-full text-sm sm:text-base px-3 py-2 sm:py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 bg-white text-gray-900"
         />
-        <p className="text-xs sm:text-sm text-gray-500 mt-1">
+        <p className="text-xs sm:text-sm text-gray-400 mt-1">
           This will be saved as today's cleaner assignment
         </p>
       </div>
@@ -675,7 +675,7 @@ useEffect(() => {
             type="button"
             onClick={() => calculateStaffSalaries().then(applyCalculatedSalaries)}
             disabled={batthaLoading}
-            className="text-xs sm:text-sm text-blue-700 hover:text-blue-900 font-medium flex items-center gap-1 mt-2 sm:mt-0"
+            className="text-xs sm:text-sm text-red-400 hover:text-gray-400 font-medium flex items-center gap-1 mt-2 sm:mt-0"
           >
             {batthaLoading ? (
               <Loader2 size={12} className="animate-spin" />
@@ -716,57 +716,75 @@ useEffect(() => {
       </div> */}
 
       {/* Salary Inputs */}
-<section className="p-3 sm:p-6 bg-gray-50 rounded-lg w-full">
-  <div className="space-y-4 sm:space-y-6 max-w-5xl mx-auto">
+<section className="p-2 sm:p-5 bg-gray-50 border border-gray-200 rounded-lg w-full">
+  <div className="space-y-2.5 sm:space-y-5 max-w-5xl mx-auto">
     {[
       ["driverName", "Driver", "blue"],
       ["conductorName", "Conductor", "green"],
-      ["cleanerName", "Cleaner", "orange"]
-    ].map(([key, label, color]) =>
+      ["cleanerName", "Cleaner", "orange"],
+    ].map(([key, label, color], index, arr) =>
       staffDetails[key] ? (
-        <div key={key} className="w-full border-b border-gray-200 pb-3 sm:pb-4">
-          {/* Heading */}
-          <div
-            className={
-              color === "blue"
-                ? "text-blue-600 font-semibold text-sm sm:text-lg"
-                : color === "green"
-                ? "text-green-600 font-semibold text-sm sm:text-lg"
-                : "text-orange-600 font-semibold text-sm sm:text-lg"
-            }
-          >
-            {label} Salary
-          </div>
+        <div key={key} className="pb-2 sm:pb-3">
+          
+          {/* Heading with User Icon */}
+         {/* Heading with User Icon before text */}
+<div className="flex items-center gap-1 font-semibold text-xs sm:text-lg">
+  <User
+    size={16}
+    className={
+      color === "blue"
+        ? "text-blue-600"
+        : color === "green"
+        ? "text-green-600"
+        : "text-orange-600"
+    }
+  />
+  <span
+    className={
+      color === "blue"
+        ? "text-black"
+        : color === "black"
+        ? "text-black"
+        : "text-black"
+    }
+  >
+    {label} Salary
+  </span>
+</div>
 
-          {/* Name & Editable Salary */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 mt-1 sm:mt-2 items-center">
-            {/* Staff Name */}
-            <div className="text-gray-700 text-xs sm:text-base truncate sm:col-span-2">
+
+          {/* NAME + SALARY (FIXED POSITION) */}
+          <div className="grid grid-cols-[1fr_96px] sm:grid-cols-[1fr_128px] items-center gap-2 sm:gap-2.5 mt-1 sm:mt-1.5">
+            <div className="min-w-0 truncate text-gray-700 text-sm sm:text-base">
               {staffDetails[key]}
             </div>
 
-            {/* Salary Input */}
-           <div className="sm:w-32">
-  <NumberInput
-    value={
-      expenseCategories.find(c => c.name === `${label} Salary`)?.amount || ""
-    }
-    onChange={(value) => handleSalaryChange(`${label} Salary`, value)}
-  />
-  {/* Bonus: Show that it was auto-calculated */}
-  {batthaCalculations.hasConfig &&
-   batthaCalculations[label.toLowerCase()]?.isCalculated && (
-    <p className="text-xs text-green-600 mt-1 text-right">
-      Auto-calculated ✓
-    </p>
-  )}
-</div>
+            <NumberInput
+              className="!w-full !box-border !px-2 !py-1 text-sm sm:!px-3 sm:!py-2"
+              value={
+                expenseCategories.find(
+                  (c) => c.name === `${label} Salary`
+                )?.amount || ""
+              }
+              onChange={(value) =>
+                handleSalaryChange(`${label} Salary`, value)
+              }
+            />
           </div>
+
+          {/* Divider */}
+          {index !== arr.length - 1 && (
+            <div className="mt-1.5 sm:mt-2.5 h-px bg-gray-200" />
+          )}
         </div>
       ) : null
     )}
   </div>
 </section>
+
+
+
+
 
 
     </div>
@@ -778,41 +796,46 @@ useEffect(() => {
     <h3 className="font-semibold text-sm sm:text-base">Other Expenses</h3>
     <button
       onClick={() => setShowAddExpense(true)}
-      className="flex items-center gap-1 px-2 py-1 text-xs sm:px-3 sm:py-1.5 sm:text-sm bg-red-50 text-red-700 rounded-md hover:bg-red-100"
+      className="flex items-center gap-1 px-2 py-2 text-xs sm:px-3 sm:py-2 sm:text-sm bg-red-50 text-red-700 rounded-md hover:bg-red-100"
     >
       <Plus size={14} /> Add
     </button>
   </div>
 
   {/* Add Expense Form */}
-  {showAddExpense && (
-    <div className="mb-2 sm:mb-3 p-2 sm:p-3 bg-gray-50 rounded-md">
-      <div className="flex items-center gap-1 sm:gap-2 mb-2">
-        <input
-          type="text"
-          value={newCategoryName}
-          onChange={(e) => setNewCategoryName(e.target.value)}
-          placeholder="Category name"
-          className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded-md bg-white text-gray-900"
-        />
-        <button
-          onClick={() => {
-            setShowAddExpense(false);
-            setNewCategoryName("");
-          }}
-          className="p-1 text-gray-500 hover:text-gray-700"
-        >
-          <X size={16} />
-        </button>
-      </div>
+ {showAddExpense && (
+  <div className="mb-2 sm:mb-3 p-2 sm:p-3 bg-gray-50 rounded-md max-w-sm">
+    {/* Input + Close button */}
+    <div className="flex items-center gap-2 mb-2">
+      <input
+        type="text"
+        value={newCategoryName}
+        onChange={(e) => setNewCategoryName(e.target.value)}
+        placeholder="Category name"
+        className="flex-1 px-2 py-2 text-sm border border-gray-300 rounded-md bg-white text-gray-900"
+      />
       <button
-        onClick={() => addNewCategory("EXPENSE")}
-        className="w-full px-2 py-1 text-sm bg-red-600 text-white rounded-md hover:bg-red-700"
+        onClick={() => {
+          setShowAddExpense(false);
+          setNewCategoryName("");
+        }}
+        className="px-2 py-2 text-gray-500 hover:text-gray-700 border border-l-0 border-gray-300 rounded-md bg-gray-100"
       >
-        Add Category
+        <X size={16} />
       </button>
     </div>
-  )}
+
+    {/* Add Category button */}
+    <button
+      onClick={() => addNewCategory("EXPENSE")}
+      className="w-full px-2 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
+    >
+      Add Category
+    </button>
+  </div>
+)}
+ 
+
 
   {/* Expense Categories List */}
   <div className="space-y-1">
@@ -849,7 +872,7 @@ useEffect(() => {
 
 
     {/* Maintenance Section */}
- <div className="mt-3 sm:mt-6 border-t-2 border-dashed border-orange-400 pt-2 sm:pt-4">
+ <div className="mt-3 sm:mt-6 border-t-2 border-dashed border-gray-600 pt-2 sm:pt-4">
   {/* Header + Add Button */}
 {/* Header + Add Button */}
 <div className="flex items-center justify-between gap-2">
@@ -857,7 +880,7 @@ useEffect(() => {
   {!showAddMaintenance && (
     <button
       onClick={() => setShowAddMaintenance(true)}
-      className="flex items-center gap-1 px-2 py-1 text-xs sm:px-3 sm:py-1.5 sm:text-sm bg-orange-50 text-orange-700 rounded-md hover:bg-orange-100"
+      className="flex items-center gap-1 px-2 py-2 text-xs sm:px-3 sm:py-2 sm:text-sm bg-red-50 text-red-700 rounded-md hover:bg-red-100"
     >
       <Plus size={14} /> Add
     </button>
@@ -867,28 +890,31 @@ useEffect(() => {
 
   {/* Add Maintenance Form */}
 {showAddMaintenance && (
-  <div className="mt-2 mb-2 sm:mb-3 p-2 sm:p-3 bg-orange-50 rounded-md">
+  <div className="mt-2 mb-2 sm:mb-3 p-2 sm:p-3 bg-gray-50 rounded-md max-w-sm">
+    {/* Input + Close button */}
     <div className="flex items-center gap-2 mb-2">
       <input
         type="text"
         value={newCategoryName}
         onChange={(e) => setNewCategoryName(e.target.value)}
         placeholder="Maintenance item e.g. Engine Oil"
-        className="flex-1 px-2 py-1 text-sm sm:px-3 sm:py-2 border border-gray-300 rounded-md bg-white text-gray-900"
+        className="flex-1 px-2 py-2 text-sm border border-gray-300 rounded-md bg-white text-gray-900"
       />
       <button
         onClick={() => {
           setShowAddMaintenance(false);
           setNewCategoryName("");
         }}
-        className="p-1 sm:p-2 text-gray-500 hover:text-gray-700"
+        className="px-2 py-2 text-gray-500 hover:text-gray-700   rounded-md bg-gray-100"
       >
         <X size={16} />
       </button>
     </div>
+
+    {/* Add Maintenance Item button */}
     <button
       onClick={() => addNewCategory("MAINTENANCE")}
-      className="w-full px-2 sm:px-3 py-1 sm:py-1.5 text-sm bg-orange-600 text-white rounded-md hover:bg-orange-700"
+      className="w-full px-2 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-gray-700"
     >
       Add Maintenance Item
     </button>
@@ -896,8 +922,9 @@ useEffect(() => {
 )}
 
 
+
   {/* Maintenance Categories List */}
-  <div className="mt-2 space-y-1 sm:space-y-1 pl-3 sm:pl-6 border-l-4 border-orange-400">
+  <div className="mt-2 space-y-1 sm:space-y-1  ">
     {maintenanceCategories?.map((cat) => (
       <div
         key={cat.id}
@@ -930,22 +957,22 @@ useEffect(() => {
     <FileInputSection files={expenseFiles} setFiles={setExpenseFiles} />
 
     {/* Transaction Summary */}
-    <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-md border border-blue-200 space-y-3 sm:space-y-4">
+    <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-white rounded-md border border-gray-300 space-y-3 sm:space-y-4">
       <h3 className="font-bold text-gray-800 flex items-center gap-2 text-sm sm:text-base">
         <IndianRupee size={16} className="text-blue-600" />
         Transaction Summary
       </h3>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
-        <div className="bg-white rounded-md p-2 sm:p-3 border border-green-300 text-center">
-          <div className="text-xs sm:text-sm font-medium text-green-700">Income</div>
-          <div className="text-lg sm:text-xl font-bold text-green-700 mt-1">₹{totalIncome.toFixed(0)}</div>
+        <div className="bg-blue-50 rounded-md p-2 sm:p-3 border border-blue-300 text-center">
+          <div className="text-xs sm:text-sm font-medium text-blue-700">Income</div>
+          <div className="text-lg sm:text-xl font-bold text-blue-700 mt-1">₹{totalIncome.toFixed(0)}</div>
         </div>
-        <div className="bg-white rounded-md p-2 sm:p-3 border border-red-300 text-center">
+        <div className="bg-red-50 rounded-md p-2 sm:p-3 border border-red-300 text-center">
           <div className="text-xs sm:text-sm font-medium text-red-700">Total Expense</div>
           <div className="text-lg sm:text-xl font-bold text-red-700 mt-1">₹{totalExpense.toFixed(0)}</div>
         </div>
-        <div className={`bg-white rounded-md p-2 sm:p-3 border text-center ${balance >= 0 ? "border-green-300" : "border-red-300"}`}>
+        <div className={`bg-green-50 rounded-md p-2 sm:p-3 border text-center ${balance >= 0 ? "border-green-300" : "border-red-300"}`}>
           <div className={`text-xs sm:text-sm font-medium ${balance >= 0 ? "text-green-700" : "text-red-700"}`}>Net Balance</div>
           <div className={`text-lg sm:text-xl font-bold mt-1 ${balance >= 0 ? "text-green-700" : "text-red-700"}`}>
             {balance >= 0 ? "₹" : "-₹"}{Math.abs(balance).toFixed(0)}

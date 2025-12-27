@@ -120,7 +120,7 @@ export default function OwnerDashboard() {
         <div className="mb-4 sm:mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
           <div className="flex items-center gap-2 sm:gap-4">
             <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-blue-600 flex items-center justify-center">
-              <Activity className="w-5 h-5 sm:w-7 sm:h-7 text-white" />
+              <Activity className="  w-5 h-5 sm:w-7 sm:h-7 text-white" />
             </div>
             <div>
               <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">Owner Dashboard</h1>
@@ -131,39 +131,40 @@ export default function OwnerDashboard() {
             <button className="px-3 sm:px-4 py-2 sm:py-2.5 bg-white border border-gray-300 rounded-lg font-medium text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2 hover:bg-gray-50">
               <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Today
             </button>
-            <Link href="/owner/expense" className="px-3 sm:px-5 py-2 sm:py-2.5 bg-blue-600 text-white rounded-lg font-medium text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2 hover:bg-blue-700">
+            <Link href="/owner/expense" className="px-3 sm:px-5 py-2 sm:py-2.5 bg-white text-black border border-gray-300 rounded-lg font-medium text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2 hover:bg-blue-700">
               <BarChart3 className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Reports
             </Link>
           </div>
         </div>
 
         {/* Current Balance Card */}
-        <div className="mb-4 sm:mb-8">
-          <div className="bg-blue-600 rounded-xl sm:rounded-2xl p-4 sm:p-6 text-white">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-blue-100 text-xs sm:text-sm font-medium">Current Balance</p>
-                <p className="text-2xl sm:text-4xl font-bold mt-1">₹{stats.currentBalance.toLocaleString('en-IN')}</p>
-              </div>
-              <Wallet className="w-12 h-12 sm:w-16 sm:h-16 opacity-30" />
-            </div>
-            <button
-              onClick={() => setShowWithdrawModal(true)}
-              className="mt-3 sm:mt-5 w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-3 bg-white/20 backdrop-blur-sm rounded-lg sm:rounded-xl text-sm sm:text-base font-medium hover:bg-white/30 transition"
-            >
-              Withdraw Funds
-            </button>
-          </div>
-        </div>
+<div className="mb-4 sm:mb-8">
+  <div className="bg-white border border-gray-300 rounded-xl sm:rounded-xl p-4 sm:p-6 text-black">
+    <div className="flex items-center justify-between">
+      <div>
+        <p className="text-black text-xs sm:text-sm font-medium">Current Balance</p>
+        <p className="text-2xl sm:text-4xl font-bold mt-1">₹{stats.currentBalance.toLocaleString('en-IN')}</p>
+      </div>
+      <Wallet className="w-12 h-12 sm:w-16 sm:h-16 opacity-30 text-blue-400" />
+    </div>
+    <button
+      onClick={() => setShowWithdrawModal(true)}
+      className="mt-3 sm:mt-5 w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-3 bg-blue-600 rounded-lg sm:rounded-xl text-sm sm:text-base font-medium text-white transition"
+    >
+      Withdraw Funds
+    </button>
+  </div>
+</div>
+
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-6 mb-4 sm:mb-8">
-          <Link href="/owner/bus" className="bg-white rounded-xl border border-gray-300 p-4 sm:p-6 transition">
+          <Link href="/owner/bus" className="bg-blue-50 rounded-xl border border-gray-300 p-4 sm:p-6 transition">
             <div className="flex items-center justify-between mb-3 sm:mb-4">
               <div className="p-2 sm:p-3 bg-blue-100 rounded-lg">
                 <Bus className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
               </div>
-              <span className="text-2xl sm:text-3xl font-bold text-gray-900">{stats.totalBuses}</span>
+              <span className="text-2xl sm:text-3xl font-bold text-blue-600">{stats.totalBuses}</span>
             </div>
             <p className="font-medium text-sm sm:text-base text-gray-900">Total Buses</p>
             <div className="mt-2 sm:mt-3 flex items-center gap-3 sm:gap-4 text-xs sm:text-sm">
@@ -174,12 +175,12 @@ export default function OwnerDashboard() {
             </div>
           </Link>
 
-          <Link href="/owner/staff" className="bg-white rounded-xl border border-gray-300 p-4 sm:p-6 transition">
+          <Link href="/owner/staff" className="bg-purple-50 rounded-xl border border-gray-300 p-4 sm:p-6 transition">
             <div className="flex items-center justify-between mb-3 sm:mb-4">
               <div className="p-2 sm:p-3 bg-purple-100 rounded-lg">
                 <Users className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />
               </div>
-              <span className="text-2xl sm:text-3xl font-bold text-gray-900">{stats.totalStaff}</span>
+              <span className="text-2xl sm:text-3xl font-bold text-purple-600">{stats.totalStaff}</span>
             </div>
             <p className="font-medium text-sm sm:text-base text-gray-900">Total Staff</p>
             <div className="mt-2 sm:mt-3 text-xs sm:text-sm text-green-600 font-medium flex items-center gap-1">
@@ -187,10 +188,10 @@ export default function OwnerDashboard() {
             </div>
           </Link>
 
-          <div className="bg-white rounded-xl border border-gray-300 p-4 sm:p-6">
+          <div className="bg-emerald-50 rounded-xl border border-gray-300 p-4 sm:p-6">
             <div className="flex items-center justify-between mb-3 sm:mb-4">
               <div className="p-2 sm:p-3 bg-emerald-100 rounded-lg">
-                <IndianRupee className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-600" />
+                <IndianRupee className="w-5 h-5 sm:w-6 sm:h-6 text-black" />
               </div>
               <span className={`text-2xl sm:text-3xl font-bold ${stats.netProfit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                 {stats.netProfit >= 0 ? '+' : '-'}₹{Math.abs(stats.netProfit).toLocaleString('en-IN')}
@@ -205,71 +206,96 @@ export default function OwnerDashboard() {
         </div>
 
         {/* Recent Transactions + Quick Actions */}
-        <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
-          <div className="bg-white rounded-xl border border-gray-300 p-4 sm:p-6">
-            <h3 className="font-bold text-sm sm:text-base text-gray-900 mb-3 sm:mb-4">Quick Actions</h3>
-            <div className="space-y-2 sm:space-y-3">
-              {[
-                { to: "/owner/expense?tab=new", label: "New Entry", icon: IndianRupee, color: "bg-emerald-500" },
-                { to: "/owner/bus", label: "Manage Buses", icon: Bus, color: "bg-blue-500" },
-                { to: "/owner/staff", label: "Manage Staff", icon: Users, color: "bg-purple-500" },
-                { to: "/owner/expense?tab=records", label: "View Reports", icon: BarChart3, color: "bg-orange-500" },
-              ].map((item, i) => (
-                <Link key={i} href={item.to} className="flex items-center justify-between p-3 sm:p-4 rounded-lg hover:bg-gray-50 transition group">
-                  <div className="flex items-center gap-2 sm:gap-4">
-                    <div className={`p-2 sm:p-2.5 ${item.color} text-white rounded-lg`}>
-                      <item.icon className="w-4 h-4 sm:w-5 sm:h-5" />
-                    </div>
-                    <span className="font-medium text-sm sm:text-base text-gray-800">{item.label}</span>
-                  </div>
-                  <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 group-hover:translate-x-1 transition" />
-                </Link>
-              ))}
+      <div className="grid lg:grid-cols-3  gap-3 sm:gap-4">
+  {/* Quick Actions */}
+  <div className="bg-white rounded-xl  border border-gray-300 p-4 sm:p-5">
+    <h3 className="font-semibold text-base text-gray-900 mb-3">Quick Actions</h3>
+    <div className="space-y-2.5">
+      {[
+        { to: "/owner/expense?tab=new", label: "New Entry", icon: IndianRupee, color: "bg-emerald-500" },
+        { to: "/owner/bus", label: "Manage Buses", icon: Bus, color: "bg-blue-500" },
+        { to: "/owner/staff", label: "Manage Staff", icon: Users, color: "bg-purple-500" },
+        { to: "/owner/expense?tab=records", label: "View Reports", icon: BarChart3, color: "bg-orange-500" },
+      ].map((item, i) => (
+        <Link
+          key={i}
+          href={item.to}
+          className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition"
+        >
+          <div className="flex items-center gap-3">
+            <div className={`p-2 rounded-lg ${item.color} text-white flex-shrink-0`}>
+              <item.icon className="w-5 h-5" />
             </div>
+            <span className="font-medium text-sm text-gray-800">{item.label}</span>
           </div>
+          <ArrowRight className="w-5 h-5 text-gray-400 transition-transform group-hover:translate-x-1" />
+        </Link>
+      ))}
+    </div>
+  </div>
 
-          <div className="lg:col-span-2 bg-white rounded-xl border border-gray-300 p-4 sm:p-6">
-            <div className="flex items-center justify-between mb-3 sm:mb-5">
-              <h3 className="font-bold text-sm sm:text-base text-gray-900">Recent Transactions</h3>
-              <Link href="/owner/expense?tab=records" className="text-blue-600 hover:underline text-xs sm:text-sm font-medium">
-                View all
-              </Link>
+  {/* Recent Transactions */}
+  <div className="lg:col-span-2 bg-white rounded-xl border border-gray-300 p-4 sm:p-5">
+    <div className="flex items-center justify-between mb-3 sm:mb-4">
+      <h3 className="font-semibold text-base text-gray-900">Recent Transactions</h3>
+      <Link href="/owner/expense?tab=records" className="text-blue-600 hover:underline text-sm font-medium">
+        View all
+      </Link>
+    </div>
+
+    {recentTransactions.length === 0 ? (
+      <div className="text-center py-6 text-gray-400">
+        <IndianRupee className="w-12 h-12 mx-auto mb-2 opacity-20" />
+        <p className="text-sm">No transactions today</p>
+      </div>
+    ) : (
+      <div className="space-y-2">
+        {recentTransactions.map((t) => (
+          <div
+            key={t.id}
+            className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition"
+          >
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              <div
+                className={`p-2 rounded-lg flex-shrink-0 ${
+                  t.transaction_type === "INCOME"
+                    ? "bg-emerald-100 text-emerald-600"
+                    : t.transaction_type === "WITHDRAWAL"
+                    ? "bg-purple-100 text-purple-600"
+                    : "bg-red-100 text-red-600"
+                }`}
+              >
+                {t.transaction_type === "INCOME" ? (
+                  <TrendingUp className="w-5 h-5" />
+                ) : t.transaction_type === "WITHDRAWAL" ? (
+                  <Wallet className="w-5 h-5" />
+                ) : (
+                  <TrendingDown className="w-5 h-5" />
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="font-medium text-sm text-gray-900 truncate">{t.category_name}</p>
+                <p className="text-xs text-gray-500 truncate">{t.bus_name || "General"}</p>
+              </div>
             </div>
-            {recentTransactions.length === 0 ? (
-              <div className="text-center py-8 sm:py-12 text-gray-500">
-                <IndianRupee className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-2 sm:mb-3 opacity-30" />
-                <p className="text-sm sm:text-base">No transactions today</p>
-              </div>
-            ) : (
-              <div className="space-y-2 sm:space-y-3">
-                {recentTransactions.map((t) => (
-                  <div key={t.id} className="flex items-center justify-between p-3 sm:p-4 rounded-lg hover:bg-gray-50 transition">
-                    <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
-                      <div className={`p-2 sm:p-2.5 rounded-lg flex-shrink-0 ${t.transaction_type === "INCOME" ? "bg-emerald-100 text-emerald-600" :
-                        t.transaction_type === "WITHDRAWAL" ? "bg-purple-100 text-purple-600" :
-                          "bg-red-100 text-red-600"
-                        }`}>
-                        {t.transaction_type === "INCOME" ? <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5" /> :
-                          t.transaction_type === "WITHDRAWAL" ? <Wallet className="w-4 h-4 sm:w-5 sm:h-5" /> :
-                            <TrendingDown className="w-4 h-4 sm:w-5 sm:h-5" />}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="font-medium text-sm sm:text-base text-gray-900 truncate">{t.category_name}</p>
-                        <p className="text-xs sm:text-sm text-gray-500 truncate">{t.bus_name || "General"}</p>
-                      </div>
-                    </div>
-                    <span className={`font-bold text-base sm:text-lg flex-shrink-0 ml-2 ${t.transaction_type === "INCOME" ? "text-emerald-600" :
-                      t.transaction_type === "WITHDRAWAL" ? "text-purple-600" :
-                        "text-red-600"
-                      }`}>
-                      {t.transaction_type === "INCOME" ? "+" : "-"}₹{parseFloat(t.amount).toLocaleString('en-IN')}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
+            <span
+              className={`font-semibold text-sm flex-shrink-0 ml-2 ${
+                t.transaction_type === "INCOME"
+                  ? "text-emerald-600"
+                  : t.transaction_type === "WITHDRAWAL"
+                  ? "text-purple-600"
+                  : "text-red-600"
+              }`}
+            >
+              {t.transaction_type === "INCOME" ? "+" : "-"}₹{parseFloat(t.amount).toLocaleString("en-IN")}
+            </span>
           </div>
-        </div>
+        ))}
+      </div>
+    )}
+  </div>
+</div>
+
       </div>
 
       {/* WITHDRAWAL MODAL */}
