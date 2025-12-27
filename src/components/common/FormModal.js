@@ -1,4 +1,5 @@
 'use client';
+
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Loader2, ChevronDown } from 'lucide-react';
 
@@ -17,9 +18,11 @@ export const FormModal = ({
   extraInfo = null,
   watch,
   setValue,
+  customRenderers = {}, // ← NEW: support for custom field renderers
+  extraButtons, // ← NEW: optional extra buttons (like "Back")
 }) => {
   const [openDropdown, setOpenDropdown] = useState({});
-  const dropdownRefs = useRef({}); // To track dropdown DOM nodes
+  const dropdownRefs = useRef({});
 
   useEffect(() => {
     if (isOpen) {
@@ -28,7 +31,6 @@ export const FormModal = ({
   }, [isOpen]);
 
   useEffect(() => {
-    // Close dropdown when clicking outside
     const handleClickOutside = (event) => {
       Object.keys(dropdownRefs.current).forEach((name) => {
         if (
@@ -62,7 +64,6 @@ export const FormModal = ({
   const toggleDropdown = (name) => {
     setOpenDropdown((prev) => {
       const newState = { ...prev };
-      // Close all others
       Object.keys(newState).forEach((key) => {
         if (key !== name) newState[key] = false;
       });
@@ -83,7 +84,6 @@ export const FormModal = ({
       newSelected = selected.filter((v) => v !== value);
     }
     setValue(name, newSelected);
-    // Close dropdown after selection
     closeDropdown(name);
   };
 
@@ -98,7 +98,7 @@ export const FormModal = ({
       }}
     >
       <div
-        className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto "
+        className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-5 sm:p-8">
@@ -133,18 +133,29 @@ export const FormModal = ({
                     <span className="w-2 h-2 bg-blue-600 rounded-full" />
                     {section.title}
                   </h3>
+
+                  {section.description && (
+                    <p className="text-sm text-gray-600 mb-4">{section.description}</p>
+                  )}
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {section.fields.map((field) => {
                       if (field.hidden) return null;
+
                       const error = errors[field.name] && (
                         <p className="text-red-600 text-xs mt-1">
                           {errors[field.name].message}
                         </p>
                       );
+
                       let inputElement;
 
+                      // CUSTOM RENDERER (new)
+                      if (customRenderers?.[field.name]) {
+                        inputElement = customRenderers[field.name]();
+                      }
                       // TEXT / EMAIL / TEL / DATE / NUMBER
-                      if (!field.type || ['text', 'email', 'tel', 'date', 'number'].includes(field.type)) {
+                      else if (!field.type || ['text', 'email', 'tel', 'date', 'number'].includes(field.type)) {
                         inputElement = (
                           <input
                             {...register(field.name)}
@@ -168,7 +179,7 @@ export const FormModal = ({
                           />
                         );
                       }
-                      // SELECT (Native)
+                      // SELECT (native)
                       else if (field.type === 'select') {
                         inputElement = (
                           <select
@@ -185,25 +196,20 @@ export const FormModal = ({
                           </select>
                         );
                       }
-                      // MULTISELECT (Custom)
+                      // MULTISELECT (custom dropdown)
                       else if (field.type === 'multiselect') {
                         const selected = watch(field.name) || [];
                         const isOpen = !!openDropdown[field.name];
 
                         inputElement = (
-                          <div
-                            className="relative"
-                            ref={(el) => (dropdownRefs.current[field.name] = el)}
-                          >
+                          <div className="relative" ref={(el) => (dropdownRefs.current[field.name] = el)}>
                             {/* Selected Tags */}
                             <div
                               className={`${baseInputClass} min-h-[42px] flex flex-wrap items-center gap-2 py-2 pr-10 cursor-pointer select-none`}
                               onClick={() => toggleDropdown(field.name)}
                             >
                               {selected.length === 0 ? (
-                                <span className="text-gray-500">
-                                  {field.placeholder || 'Select...'}
-                                </span>
+                                <span className="text-gray-500">{field.placeholder || 'Select...'}</span>
                               ) : (
                                 selected.map((val) => {
                                   const opt = field.options?.find((o) => o.value === val);
@@ -217,7 +223,10 @@ export const FormModal = ({
                                         type="button"
                                         onClick={(e) => {
                                           e.stopPropagation();
-                                          setValue(field.name, selected.filter((v) => v !== val));
+                                          setValue(
+                                            field.name,
+                                            selected.filter((v) => v !== val)
+                                          );
                                         }}
                                         className="ml-1 hover:text-blue-900"
                                       >
@@ -237,10 +246,7 @@ export const FormModal = ({
 
                             {/* Dropdown */}
                             {isOpen && (
-                              <div
-                                className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-xl  z-30 max-h-60 overflow-y-auto"
-                                onClick={(e) => e.stopPropagation()}
-                              >
+                              <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-xl shadow-lg z-30 max-h-60 overflow-y-auto">
                                 {field.options?.length > 0 ? (
                                   field.options.map((opt) => {
                                     const checked = selected.includes(opt.value);
@@ -269,7 +275,7 @@ export const FormModal = ({
                                   })
                                 ) : (
                                   <div className="p-3 text-sm text-gray-500 !text-gray-900">
-                                    {field.disabled ? 'Loading buses...' : 'No buses available'}
+                                    {field.disabled ? 'Loading...' : 'No options available'}
                                   </div>
                                 )}
                               </div>
@@ -303,17 +309,23 @@ export const FormModal = ({
 
             {/* BUTTONS */}
             <div className="flex flex-col sm:flex-row justify-end gap-3 mt-6">
+              {extraButtons}
+
               <button
                 type="button"
-                onClick={onClose}
+                onClick={() => {
+                  Object.keys(openDropdown).forEach((name) => closeDropdown(name));
+                  onClose();
+                }}
                 className="w-full sm:w-auto order-2 sm:order-1 px-5 py-2.5 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-all font-medium"
               >
                 {cancelLabel}
               </button>
+
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full sm:w-auto order-1 sm:order-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all disabled:opacity-50 font-medium  flex items-center justify-center gap-2"
+                className="w-full sm:w-auto order-1 sm:order-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all disabled:opacity-50 font-medium shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2"
               >
                 {loading && <Loader2 size={18} className="animate-spin" />}
                 {loading ? 'Saving...' : submitLabel}
