@@ -217,11 +217,11 @@ const WalletBalance = ({ balance }) => {
 };
 
 /* -------------------------------------------------------------------------- */
-/*                           DAILY SUMMARY HEADER                             */
+/*                           DAILY SUMMARY HEADER (NO STAFF)                  */
 /* -------------------------------------------------------------------------- */
-const DailySummaryHeader = ({ date, netCollection, isOpen, onToggle, staffAssignments }) => (
+const DailySummaryHeader = ({ date, netCollection, isOpen, onToggle }) => (
   <div
-    className="px-3 sm:px-4 py-3 sm:py-4 bg-gray-100 flex items-center justify-between cursor-pointer transition-colors"
+    className="px-3 sm:px-4 py-3 sm:py-4 bg-gray-100 flex items-center justify-between cursor-pointer transition-colors hover:bg-gray-200"
     onClick={onToggle}
   >
     <div className="flex-1 flex items-center gap-2 sm:gap-3 min-w-0">
@@ -236,20 +236,6 @@ const DailySummaryHeader = ({ date, netCollection, isOpen, onToggle, staffAssign
             day: "numeric",
           })}
         </div>
-        
-        {(staffAssignments.driver || staffAssignments.conductor || staffAssignments.cleaner) && (
-          <div className="flex flex-wrap gap-1 sm:gap-2 mt-1 sm:mt-2">
-            {staffAssignments.driver && (
-              <StaffBadge role="DRIVER" name={staffAssignments.driver} />
-            )}
-            {staffAssignments.conductor && (
-              <StaffBadge role="CONDUCTOR" name={staffAssignments.conductor} />
-            )}
-            {staffAssignments.cleaner && (
-              <StaffBadge role="CLEANER" name={staffAssignments.cleaner} />
-            )}
-          </div>
-        )}
       </div>
     </div>
 
@@ -267,7 +253,7 @@ const DailySummaryHeader = ({ date, netCollection, isOpen, onToggle, staffAssign
 /* -------------------------------------------------------------------------- */
 const WithdrawalDateHeader = ({ date, totalAmount, isOpen, onToggle }) => (
   <div
-    className="px-3 sm:px-4 py-3 sm:py-4 bg-gray-100 flex items-center justify-between cursor-pointer transition-colors"
+    className="px-3 sm:px-4 py-3 sm:py-4 bg-gray-100 flex items-center justify-between cursor-pointer transition-colors hover:bg-gray-200"
     onClick={onToggle}
   >
     <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
@@ -439,14 +425,11 @@ export default function RecordsTab({
           break;
       }
 
-      if (record.staff_names && !totals.staffAssignments.driver) {
-        totals.staffAssignments.driver = record.staff_names.driver || "";
-      }
-      if (record.staff_names && !totals.staffAssignments.conductor) {
-        totals.staffAssignments.conductor = record.staff_names.conductor || "";
-      }
-      if (record.staff_names && !totals.staffAssignments.cleaner) {
-        totals.staffAssignments.cleaner = record.staff_names.cleaner || "";
+      // Extract staff names (assuming only one set per day)
+      if (record.staff_names) {
+        if (!totals.staffAssignments.driver) totals.staffAssignments.driver = record.staff_names.driver || "";
+        if (!totals.staffAssignments.conductor) totals.staffAssignments.conductor = record.staff_names.conductor || "";
+        if (!totals.staffAssignments.cleaner) totals.staffAssignments.cleaner = record.staff_names.cleaner || "";
       }
     });
 
@@ -554,6 +537,10 @@ export default function RecordsTab({
 
                     const busNamesOnDate = getUniqueBusNamesForDate(date);
 
+                    const hasStaff = dailyTotals.staffAssignments.driver ||
+                                     dailyTotals.staffAssignments.conductor ||
+                                     dailyTotals.staffAssignments.cleaner;
+
                     return (
                       <div key={date} className="bg-white rounded-lg sm:rounded-xl border border-gray-200 overflow-hidden">
                         <DailySummaryHeader
@@ -561,11 +548,25 @@ export default function RecordsTab({
                           netCollection={dailyTotals.netCollection}
                           isOpen={isDateOpen}
                           onToggle={() => toggleDate(date)}
-                          staffAssignments={dailyTotals.staffAssignments}
                         />
 
                         {isDateOpen && (
                           <div className="p-3 sm:p-4 space-y-3 sm:space-y-4">
+                            {/* Staff Assignments - Now inside expanded section */}
+                            {hasStaff && (
+                              <div className="flex flex-wrap gap-2 sm:gap-3 pb-2 border-b border-gray-200">
+                                {dailyTotals.staffAssignments.driver && (
+                                  <StaffBadge role="DRIVER" name={dailyTotals.staffAssignments.driver} />
+                                )}
+                                {dailyTotals.staffAssignments.conductor && (
+                                  <StaffBadge role="CONDUCTOR" name={dailyTotals.staffAssignments.conductor} />
+                                )}
+                                {dailyTotals.staffAssignments.cleaner && (
+                                  <StaffBadge role="CLEANER" name={dailyTotals.staffAssignments.cleaner} />
+                                )}
+                              </div>
+                            )}
+
                             {busNamesOnDate.length > 1 && (
                               <div className="bg-blue-50 border border-blue-200 rounded-lg sm:rounded-xl p-3 sm:p-4">
                                 <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">

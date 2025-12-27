@@ -293,15 +293,15 @@ export default function NewEntryForm({
   }, [currentStep, formData.bus, dailyCollection]);
 
   // Update daily collection in income categories
-  useEffect(() => {
-    if (dailyCollection && incomeCategories.length > 0) {
-      const dailyCollectionCat = incomeCategories.find(c => c.name === "Daily Collection");
-      if (dailyCollectionCat) {
-        updateIncomeAmount(dailyCollectionCat.id, dailyCollection);
-      }
+// Update daily collection in income categories
+useEffect(() => {
+  if (dailyCollection && incomeCategories.length > 0) {
+    const dailyCollectionCat = incomeCategories.find(c => c.name === "Daily Collection");
+    if (dailyCollectionCat) {
+      updateIncomeAmount(dailyCollectionCat.id, dailyCollection);
     }
-  }, [dailyCollection]);
-
+  }
+}, [dailyCollection]);
   const validateStep = (step) => {
     if (step === 1) {
       if (!formData.date || !formData.bus) {
@@ -746,21 +746,21 @@ export default function NewEntryForm({
             </div>
 
             {/* Salary Input */}
-            <input
-              type="number"
-              value={
-                (() => {
-                  const cat = expenseCategories.find(
-                    (c) => c.name === `${label} Salary`
-                  );
-                  return cat?.amount || 0;
-                })()
-              }
-              onChange={(e) =>
-                handleSalaryChange(`${label} Salary`, e.target.value)
-              }
-              className="w-full sm:w-32 text-right border border-gray-300 rounded px-3 py-2 sm:px-3 sm:py-2 text-xs sm:text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
-            />
+           <div className="sm:w-32">
+  <NumberInput
+    value={
+      expenseCategories.find(c => c.name === `${label} Salary`)?.amount || ""
+    }
+    onChange={(value) => handleSalaryChange(`${label} Salary`, value)}
+  />
+  {/* Bonus: Show that it was auto-calculated */}
+  {batthaCalculations.hasConfig &&
+   batthaCalculations[label.toLowerCase()]?.isCalculated && (
+    <p className="text-xs text-green-600 mt-1 text-right">
+      Auto-calculated ✓
+    </p>
+  )}
+</div>
           </div>
         </div>
       ) : null
