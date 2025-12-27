@@ -25,7 +25,7 @@ export const StatsCards = ({
       case 'active':
         return { bg: 'bg-green-50 border border-green-200', text: 'text-green-600', label: 'text-green-600' };
       case 'verified':
-        return { bg: 'bg-blue-50 border border-blue-200', text: 'text-blue-600', label: 'text-blue-500' };
+        return { bg: 'bg-red-50 border border-red-200', text: 'text-red-600', label: 'text-red-500' };
       case 'operational':
         return { bg: 'bg-purple-50 border border-purple-200', text: 'text-purple-600', label: 'text-purple-500' };
       default:
