@@ -95,7 +95,7 @@ export default function SuperadminDashboard() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-3 border-gray-200 border-t-gray-900 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-3 border-blue-100 border-t-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600 font-medium">Loading dashboard...</p>
         </div>
       </div>
@@ -103,7 +103,7 @@ export default function SuperadminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-3 sm:p-6 lg:p-8">
+    <div className="min-h-screen bg-gray-50 p-2 sm:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto space-y-5 sm:space-y-6">
 
         {/* HEADER */}
@@ -115,13 +115,6 @@ export default function SuperadminDashboard() {
               Real-time analytics and insights
             </p>
           </div>
-          <button
-            onClick={fetchDashboardData}
-            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-900 hover:bg-gray-800 text-white rounded-lg transition-colors text-sm font-medium"
-          >
-            <Activity size={16} />
-            Refresh
-          </button>
         </div>
 
         {/* ERROR */}
@@ -134,82 +127,82 @@ export default function SuperadminDashboard() {
         {/* MAIN STATS */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
           
-          {/* Bus Owners */}
+          {/* Bus Owners - Blue Theme */}
           <div 
             onClick={() => router.push('/admin/companies')}
-            className="group bg-white border border-gray-200 rounded-xl p-5 sm:p-6 cursor-pointer transition-all hover:border-gray-300 hover:shadow-lg"
+            className="group bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-200 rounded-xl p-5 sm:p-6 cursor-pointer transition-all hover:border-blue-400 hover:shadow-lg"
           >
             <div className="flex items-start justify-between mb-4">
-              <div className="w-11 h-11 bg-gray-100 rounded-lg flex items-center justify-center group-hover:bg-gray-900 transition-colors">
-                <Building2 className="text-gray-700 group-hover:text-white transition-colors" size={20} />
+              <div className="w-11 h-11 bg-white rounded-lg flex items-center justify-center group-hover:bg-blue-600 transition-colors shadow-sm">
+                <Building2 className="text-blue-600 group-hover:text-white transition-colors" size={20} />
               </div>
-              <ArrowUpRight className="text-gray-400 group-hover:text-gray-900 transition-colors" size={18} />
+              <ArrowUpRight className="text-blue-400 group-hover:text-blue-600 transition-colors" size={18} />
             </div>
             <h3 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-1">{stats.owners.total}</h3>
-            <p className="text-sm text-gray-600 font-medium mb-3">Bus Owners</p>
+            <p className="text-sm text-gray-700 font-semibold mb-3">Bus Owners</p>
             <div className="flex flex-wrap gap-2 text-xs">
-              <span className="px-2.5 py-1 bg-green-50 text-green-700 rounded-md font-medium">
+              <span className="px-2.5 py-1 bg-white/70 text-blue-700 rounded-md font-medium shadow-sm">
                 {stats.owners.active} Active
               </span>
-              <span className="px-2.5 py-1 bg-blue-50 text-blue-700 rounded-md font-medium">
+              <span className="px-2.5 py-1 bg-white/70 text-blue-700 rounded-md font-medium shadow-sm">
                 {stats.owners.verified} Verified
               </span>
             </div>
           </div>
 
-          {/* Subscribers */}
+          {/* Subscribers - Green Theme */}
           <div 
             onClick={() => router.push('/admin/subscribers')}
-            className="group bg-white border border-gray-200 rounded-xl p-5 sm:p-6 cursor-pointer transition-all hover:border-gray-300 hover:shadow-lg"
+            className="group bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-200 rounded-xl p-5 sm:p-6 cursor-pointer transition-all hover:border-green-400 hover:shadow-lg"
           >
             <div className="flex items-start justify-between mb-4">
-              <div className="w-11 h-11 bg-gray-100 rounded-lg flex items-center justify-center group-hover:bg-gray-900 transition-colors">
-                <Users className="text-gray-700 group-hover:text-white transition-colors" size={20} />
+              <div className="w-11 h-11 bg-white rounded-lg flex items-center justify-center group-hover:bg-green-600 transition-colors shadow-sm">
+                <Users className="text-green-600 group-hover:text-white transition-colors" size={20} />
               </div>
-              <ArrowUpRight className="text-gray-400 group-hover:text-gray-900 transition-colors" size={18} />
+              <ArrowUpRight className="text-green-400 group-hover:text-green-600 transition-colors" size={18} />
             </div>
             <h3 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-1">{stats.subscribers.total}</h3>
-            <p className="text-sm text-gray-600 font-medium mb-3">Subscribers</p>
+            <p className="text-sm text-gray-700 font-semibold mb-3">Subscribers</p>
             <div className="flex flex-wrap gap-2 text-xs">
-              <span className="px-2.5 py-1 bg-green-50 text-green-700 rounded-md font-medium">
+              <span className="px-2.5 py-1 bg-white/70 text-green-700 rounded-md font-medium shadow-sm">
                 {stats.subscribers.active} Active
               </span>
-              <span className="px-2.5 py-1 bg-gray-100 text-gray-700 rounded-md font-medium">
+              <span className="px-2.5 py-1 bg-white/70 text-green-700 rounded-md font-medium shadow-sm">
                 {stats.subscribers.expired} Expired
               </span>
             </div>
           </div>
 
-          {/* Plans */}
+          {/* Plans - Purple Theme */}
           <div 
             onClick={() => router.push('/admin/subscription')}
-            className="group bg-white border border-gray-200 rounded-xl p-5 sm:p-6 cursor-pointer transition-all hover:border-gray-300 hover:shadow-lg"
+            className="group bg-gradient-to-br from-purple-50 to-purple-100 border-2 border-purple-200 rounded-xl p-5 sm:p-6 cursor-pointer transition-all hover:border-purple-400 hover:shadow-lg"
           >
             <div className="flex items-start justify-between mb-4">
-              <div className="w-11 h-11 bg-gray-100 rounded-lg flex items-center justify-center group-hover:bg-gray-900 transition-colors">
-                <Calendar className="text-gray-700 group-hover:text-white transition-colors" size={20} />
+              <div className="w-11 h-11 bg-white rounded-lg flex items-center justify-center group-hover:bg-purple-600 transition-colors shadow-sm">
+                <Calendar className="text-purple-600 group-hover:text-white transition-colors" size={20} />
               </div>
-              <ArrowUpRight className="text-gray-400 group-hover:text-gray-900 transition-colors" size={18} />
+              <ArrowUpRight className="text-purple-400 group-hover:text-purple-600 transition-colors" size={18} />
             </div>
             <h3 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-1">{stats.subscriptions.total}</h3>
-            <p className="text-sm text-gray-600 font-medium mb-3">Subscription Plans</p>
+            <p className="text-sm text-gray-700 font-semibold mb-3">Subscription Plans</p>
             <div className="flex flex-wrap gap-2 text-xs">
-              <span className="px-2.5 py-1 bg-green-50 text-green-700 rounded-md font-medium">
+              <span className="px-2.5 py-1 bg-white/70 text-purple-700 rounded-md font-medium shadow-sm">
                 {stats.subscriptions.active} Active
               </span>
-              <span className="px-2.5 py-1 bg-gray-100 text-gray-700 rounded-md font-medium">
+              <span className="px-2.5 py-1 bg-white/70 text-purple-700 rounded-md font-medium shadow-sm">
                 {stats.subscriptions.blocked} Inactive
               </span>
             </div>
           </div>
 
-          {/* Revenue */}
-          <div className="bg-gray-900 rounded-xl p-5 sm:p-6 text-white">
+          {/* Revenue - Blue Gradient */}
+          <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl p-5 sm:p-6 text-white shadow-lg">
             <div className="flex items-start justify-between mb-4">
-              <div className="w-11 h-11 bg-white/10 rounded-lg flex items-center justify-center">
+              <div className="w-11 h-11 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur-sm">
                 <IndianRupee size={20} />
               </div>
-              <div className="px-2.5 py-1 bg-white/10 rounded-md flex items-center gap-1">
+              <div className="px-2.5 py-1 bg-white/20 rounded-md flex items-center gap-1 backdrop-blur-sm">
                 <TrendingUp size={12} />
                 <span className="text-xs font-medium">Live</span>
               </div>
@@ -217,8 +210,8 @@ export default function SuperadminDashboard() {
             <h3 className="text-3xl sm:text-4xl font-bold mb-1">
               ₹{stats.revenue.total.toLocaleString()}
             </h3>
-            <p className="text-sm text-gray-400 font-medium mb-3">Total Revenue</p>
-            <p className="text-xs text-gray-400">
+            <p className="text-sm text-blue-100 font-semibold mb-3">Total Revenue</p>
+            <p className="text-xs text-blue-100">
               From {stats.subscribers.active} active subscribers
             </p>
           </div>
@@ -227,40 +220,40 @@ export default function SuperadminDashboard() {
         {/* INSIGHTS */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
           
-          <div className="bg-white border border-gray-200 rounded-xl p-5 sm:p-6 hover:border-gray-300 transition-colors">
+          <div className="bg-white border-2 border-blue-100 rounded-xl p-5 sm:p-6 hover:border-blue-300 hover:shadow-md transition-all">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
                 <CheckCircle className="text-blue-600" size={18} />
               </div>
               <h4 className="font-semibold text-gray-900">Conversion Rate</h4>
             </div>
-            <p className="text-3xl sm:text-4xl font-bold text-gray-900 mb-1">
+            <p className="text-3xl sm:text-4xl font-bold text-blue-600 mb-1">
               {stats.owners.total > 0 ? Math.round((stats.subscribers.total / stats.owners.total) * 100) : 0}%
             </p>
             <p className="text-sm text-gray-600">Owners to subscribers</p>
           </div>
 
-          <div className="bg-white border border-gray-200 rounded-xl p-5 sm:p-6 hover:border-gray-300 transition-colors">
+          <div className="bg-white border-2 border-green-100 rounded-xl p-5 sm:p-6 hover:border-green-300 hover:shadow-md transition-all">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center">
                 <CheckCircle className="text-green-600" size={18} />
               </div>
               <h4 className="font-semibold text-gray-900">Verification Rate</h4>
             </div>
-            <p className="text-3xl sm:text-4xl font-bold text-gray-900 mb-1">
+            <p className="text-3xl sm:text-4xl font-bold text-green-600 mb-1">
               {stats.owners.total > 0 ? Math.round((stats.owners.verified / stats.owners.total) * 100) : 0}%
             </p>
             <p className="text-sm text-gray-600">Verified owners</p>
           </div>
 
-          <div className="bg-white border border-gray-200 rounded-xl p-5 sm:p-6 hover:border-gray-300 transition-colors">
+          <div className="bg-white border-2 border-purple-100 rounded-xl p-5 sm:p-6 hover:border-purple-300 hover:shadow-md transition-all">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                <TrendingUp className="text-gray-900" size={18} />
+              <div className="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center">
+                <TrendingUp className="text-purple-600" size={18} />
               </div>
               <h4 className="font-semibold text-gray-900">Avg Revenue</h4>
             </div>
-            <p className="text-3xl sm:text-4xl font-bold text-gray-900 mb-1">
+            <p className="text-3xl sm:text-4xl font-bold text-purple-600 mb-1">
               ₹{stats.subscribers.active > 0 ? Math.round(stats.revenue.total / stats.subscribers.active).toLocaleString() : 0}
             </p>
             <p className="text-sm text-gray-600">Per subscriber</p>
@@ -268,45 +261,45 @@ export default function SuperadminDashboard() {
         </div>
 
         {/* QUICK ACTIONS */}
-        <div className="bg-white border border-gray-200 rounded-xl p-5 sm:p-6 lg:p-8">
+        <div className="bg-white border-2 border-gray-200 rounded-xl p-5 sm:p-6 lg:p-8">
           <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-5">Quick Actions</h3>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             
             <button 
               onClick={() => router.push('/admin/companies')}
-              className="flex flex-col items-center gap-3 p-4 sm:p-5 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg transition-all"
+              className="flex flex-col items-center gap-3 p-4 sm:p-5 bg-gradient-to-br from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 border-2 border-blue-200 hover:border-blue-300 rounded-lg transition-all"
             >
-              <div className="w-11 h-11 bg-white border border-gray-200 rounded-lg flex items-center justify-center">
-                <Building2 className="text-gray-900" size={20} />
+              <div className="w-11 h-11 bg-white rounded-lg flex items-center justify-center shadow-sm">
+                <Building2 className="text-blue-600" size={20} />
               </div>
-              <span className="text-sm font-medium text-gray-900">Owners</span>
+              <span className="text-sm font-semibold text-gray-900">Owners</span>
             </button>
 
             <button 
               onClick={() => router.push('/admin/subscribers')}
-              className="flex flex-col items-center gap-3 p-4 sm:p-5 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg transition-all"
+              className="flex flex-col items-center gap-3 p-4 sm:p-5 bg-gradient-to-br from-green-50 to-green-100 hover:from-green-100 hover:to-green-200 border-2 border-green-200 hover:border-green-300 rounded-lg transition-all"
             >
-              <div className="w-11 h-11 bg-white border border-gray-200 rounded-lg flex items-center justify-center">
-                <Users className="text-gray-900" size={20} />
+              <div className="w-11 h-11 bg-white rounded-lg flex items-center justify-center shadow-sm">
+                <Users className="text-green-600" size={20} />
               </div>
-              <span className="text-sm font-medium text-gray-900">Subscribers</span>
+              <span className="text-sm font-semibold text-gray-900">Subscribers</span>
             </button>
 
             <button 
               onClick={() => router.push('/admin/subscription')}
-              className="flex flex-col items-center gap-3 p-4 sm:p-5 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg transition-all"
+              className="flex flex-col items-center gap-3 p-4 sm:p-5 bg-gradient-to-br from-purple-50 to-purple-100 hover:from-purple-100 hover:to-purple-200 border-2 border-purple-200 hover:border-purple-300 rounded-lg transition-all"
             >
-              <div className="w-11 h-11 bg-white border border-gray-200 rounded-lg flex items-center justify-center">
-                <Calendar className="text-gray-900" size={20} />
+              <div className="w-11 h-11 bg-white rounded-lg flex items-center justify-center shadow-sm">
+                <Calendar className="text-purple-600" size={20} />
               </div>
-              <span className="text-sm font-medium text-gray-900">Plans</span>
+              <span className="text-sm font-semibold text-gray-900">Plans</span>
             </button>
 
-            <button className="flex flex-col items-center gap-3 p-4 sm:p-5 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg transition-all">
-              <div className="w-11 h-11 bg-white border border-gray-200 rounded-lg flex items-center justify-center">
-                <BarChart3 className="text-gray-900" size={20} />
+            <button className="flex flex-col items-center gap-3 p-4 sm:p-5 bg-gradient-to-br from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 border-2 border-blue-200 hover:border-blue-300 rounded-lg transition-all">
+              <div className="w-11 h-11 bg-white rounded-lg flex items-center justify-center shadow-sm">
+                <BarChart3 className="text-blue-600" size={20} />
               </div>
-              <span className="text-sm font-medium text-gray-900">Reports</span>
+              <span className="text-sm font-semibold text-gray-900">Reports</span>
             </button>
           </div>
         </div>

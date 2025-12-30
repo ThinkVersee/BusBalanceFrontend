@@ -450,7 +450,7 @@ export default function BillBookPage() {
         "/finance/transactions/bulk/",
         form,
         {
-          headers: { "Content-Type": "multipart/form-data" },
+         headers : { "Content-Type": "multipart/form-data" },
         }
       );
       

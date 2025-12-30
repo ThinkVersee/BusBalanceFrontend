@@ -980,30 +980,7 @@ useEffect(() => {
         </div>
       </div>
 
-      {/* Staff Summary */}
-      {/* <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-blue-200">
-        <div className="text-xs sm:text-sm font-medium text-blue-700 mb-2">Staff Assignments (Will be saved)</div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3 text-xs sm:text-sm">
-          {staffDetails.driverName && (
-            <div className="bg-blue-50 p-2 rounded border">
-              <div className="text-blue-900 font-medium">Driver</div>
-              <div className="text-blue-700">{staffDetails.driverName}</div>
-            </div>
-          )}
-          {staffDetails.conductorName && (
-            <div className="bg-green-50 p-2 rounded border">
-              <div className="text-green-900 font-medium">Conductor</div>
-              <div className="text-green-700">{staffDetails.conductorName}</div>
-            </div>
-          )}
-          {staffDetails.cleanerName && (
-            <div className="bg-orange-50 p-2 rounded border">
-              <div className="text-orange-900 font-medium">Cleaner</div>
-              <div className="text-orange-700">{staffDetails.cleanerName}</div>
-            </div>
-          )}
-        </div>
-      </div> */}
+ 
     </div>
 
     {/* Navigation Buttons */}
