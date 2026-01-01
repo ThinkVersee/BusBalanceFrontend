@@ -644,7 +644,7 @@ const downloadRangeReport = async (fromDate, toDate, busName = null) => {
         <div className="flex gap-1.5 sm:gap-2">
           <button
             onClick={() => setActiveTab("transactions")}
-            className={`flex-1 flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl text-xs sm:text-black font-semibold transition-all ${
+            className={`flex-1 flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl text-xs sm:text-white font-semibold transition-all ${
               activeTab === "transactions" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
             }`}
           >
