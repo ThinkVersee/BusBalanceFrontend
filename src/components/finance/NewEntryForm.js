@@ -795,7 +795,7 @@ useEffect(() => {
 <div className="space-y-2">
   {/* Header */}
   <div className="flex items-center justify-between">
-    <h3 className="font-semibold text-black sm:text-black">Other Expenses</h3>
+    <h3 className="font-semibold text-black text-sm sm:text-black">Other Expenses</h3>
     <button
       onClick={() => setShowAddExpense(true)}
       className="flex items-center gap-1 px-2 py-2 text-xs sm:px-3 sm:py-2 sm:text-sm bg-red-50 text-red-700 rounded-md hover:bg-red-100"
