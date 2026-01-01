@@ -48,16 +48,6 @@ const batthaSchema = z.object({
   cleaner_battha: z.coerce.number().min(0, 'Must be ≥ 0').max(100, 'Cannot exceed 100').default(0),
 });
 
-// Combined schema for single API call
-const busWithBatthaSchema = z.object({
-  ...busBasicSchema.shape,
-  battha_configs: z.array(z.object({
-    employee_type: z.string(),
-    percentage: z.number(),
-    effective_from: z.string().optional(),
-  })).optional(),
-});
-
 // ── MAIN COMPONENT ─────────────────────────────────────────────────────────
 export default function BusManagement() {
   const [buses, setBuses] = useState([]);
@@ -108,7 +98,7 @@ export default function BusManagement() {
   });
 
   const { register: registerBasic, handleSubmit: handleBasicSubmit, reset: resetBasic, watch: watchBasic, setValue: setBasicValue, getValues: getBasicValues } = basicForm;
-  const { register: registerBattha, handleSubmit: handleBatthaSubmit, reset: resetBattha, watch: watchBattha, formState: batthaFormState } = batthaForm;
+  const { register: registerBattha, handleSubmit: handleBatthaSubmit, reset: resetBattha, formState: batthaFormState } = batthaForm;
 
   // Auto uppercase registration number
   const regNumber = watchBasic('registration_number');
@@ -159,7 +149,6 @@ export default function BusManagement() {
   const cleanPayload = (data) => {
     const cleaned = { ...data };
 
-    // Convert empty strings to null for optional fields
     const nullableFields = [
       'bus_type',
       'manufacturer',
@@ -181,7 +170,6 @@ export default function BusManagement() {
       }
     });
 
-    // Handle numbers properly
     if (cleaned.year_of_manufacture) {
       cleaned.year_of_manufacture = Number(cleaned.year_of_manufacture);
     }
@@ -227,164 +215,109 @@ export default function BusManagement() {
     setCurrentStep(1);
   };
 
-const handleEdit = (bus) => {
-  setSelectedBus(bus);
+  const handleEdit = (bus) => {
+    setSelectedBus(bus);
 
-  // RESET basic form with bus data
-  resetBasic({
-    registration_number: bus.registration_number || '',
-    bus_name: bus.bus_name || '',
-    route: bus.route || '',
-    bus_type: bus.bus_type || null,
-    manufacturer: bus.manufacturer || null,
-    model: bus.model || null,
-    year_of_manufacture: bus.year_of_manufacture || null,
-    seating_capacity: bus.seating_capacity || null,
-    chassis_number: bus.chassis_number || null,
-    engine_number: bus.engine_number || null,
-    permit_number: bus.permit_number || null,
-    permit_expiry: bus.permit_expiry || null,
-    insurance_number: bus.insurance_number || null,
-    insurance_expiry: bus.insurance_expiry || null,
-    fitness_certificate_expiry: bus.fitness_certificate_expiry || null,
-    is_operational: bus.is_operational ?? true,
-  });
-
-  // RESET battha form
-  resetBattha({
-    driver_battha: 0,
-    conductor_battha: 0,
-    cleaner_battha: 0,
-  });
-
-  if (bus.battha_configs?.length) {
-    bus.battha_configs.forEach((config) => {
-      if (config.employee_type === 'DRIVER') {
-        batthaForm.setValue('driver_battha', Number(config.percentage));
-      }
-      if (config.employee_type === 'CONDUCTOR') {
-        batthaForm.setValue('conductor_battha', Number(config.percentage));
-      }
-      if (config.employee_type === 'CLEANER') {
-        batthaForm.setValue('cleaner_battha', Number(config.percentage));
-      }
+    // Populate basic form
+    resetBasic({
+      registration_number: bus.registration_number || '',
+      bus_name: bus.bus_name || '',
+      route: bus.route || '',
+      bus_type: bus.bus_type || null,
+      manufacturer: bus.manufacturer || null,
+      model: bus.model || null,
+      year_of_manufacture: bus.year_of_manufacture || null,
+      seating_capacity: bus.seating_capacity || null,
+      chassis_number: bus.chassis_number || null,
+      engine_number: bus.engine_number || null,
+      permit_number: bus.permit_number || null,
+      permit_expiry: bus.permit_expiry || null,
+      insurance_number: bus.insurance_number || null,
+      insurance_expiry: bus.insurance_expiry || null,
+      fitness_certificate_expiry: bus.fitness_certificate_expiry || null,
+      is_operational: bus.is_operational ?? true,
     });
-  }
 
-  setCurrentStep(1);
-  setIsModalOpen(true);
-};
+    // Populate battha form with existing values (or 0 if not present)
+    const driverBattha = bus.battha_configs?.find(c => c.employee_type === 'DRIVER')?.percentage || 0;
+    const conductorBattha = bus.battha_configs?.find(c => c.employee_type === 'CONDUCTOR')?.percentage || 0;
+    const cleanerBattha = bus.battha_configs?.find(c => c.employee_type === 'CLEANER')?.percentage || 0;
 
+    resetBattha({
+      driver_battha: driverBattha,
+      conductor_battha: conductorBattha,
+      cleaner_battha: cleanerBattha,
+    });
 
-  // ── SUBMIT LOGIC (SINGLE API CALL) ──────────────────────────────────────
-  const onSubmitBasic = async (data) => {
+    setCurrentStep(1);
+    setIsModalOpen(true);
+  };
+
+  // ── SUBMIT LOGIC ────────────────────────────────────────────────────────
+  const onSubmitBasic = () => {
+    // Always proceed to commission step for both add and edit
+    setCurrentStep(2);
+  };
+
+const onSubmitBattha = async (batthaData) => {
+  try {
+    setLoading(true);
+
+    const rawBasic = getBasicValues();
+    const busPayload = cleanPayload({
+      ...rawBasic,
+      registration_number: rawBasic.registration_number?.trim().toUpperCase() || null,
+      bus_name: rawBasic.bus_name?.trim() || null,
+      route: rawBasic.route?.trim() || null,
+      is_operational: rawBasic.is_operational ?? true,
+    });
+
+    // IMPORTANT: Send ALL three configs, even if percentage = 0
+    const batthaConfigs = [
+      { employee_type: 'DRIVER', percentage: batthaData.driver_battha || 0 },
+      { employee_type: 'CONDUCTOR', percentage: batthaData.conductor_battha || 0 },
+      { employee_type: 'CLEANER', percentage: batthaData.cleaner_battha || 0 },
+    ].map((cfg) => ({
+      employee_type: cfg.employee_type,
+      percentage: cfg.percentage,
+      effective_from: new Date().toISOString().split('T')[0],
+    }));
+
+    const combinedPayload = {
+      ...busPayload,
+      battha_configs: batthaConfigs, // Always array of 3 items
+    };
+
     if (selectedBus) {
-      // Edit mode - update bus only (battha configs handled separately)
-      await submitBusUpdate(data);
-      setIsModalOpen(false);
-      resetForms();
+      // EDIT: Update bus + battha configs
+      await axiosInstance.put(`/buses/buses/${selectedBus.id}/`, combinedPayload);
     } else {
-      // Create mode - go to commission step
-      setCurrentStep(2);
-    }
-  };
-
-  const onSubmitBattha = async (batthaData) => {
-    try {
-      setLoading(true);
-
-      // 1. Prepare bus payload
-      const rawBasic = getBasicValues();
-      const busPayload = cleanPayload({
-        ...rawBasic,
-        registration_number: rawBasic.registration_number?.trim().toUpperCase() || null,
-        bus_name: rawBasic.bus_name?.trim() || null,
-        route: rawBasic.route?.trim() || null,
-        is_operational: rawBasic.is_operational ?? true,
-      });
-
-      // 2. Prepare battha configs
-      const batthaConfigs = [
-        { employee_type: 'DRIVER', percentage: batthaData.driver_battha },
-        { employee_type: 'CONDUCTOR', percentage: batthaData.conductor_battha },
-        { employee_type: 'CLEANER', percentage: batthaData.cleaner_battha },
-      ]
-      .filter((cfg) => cfg.percentage > 0) // Filter out zero percentages
-      .map((cfg) => ({
-        employee_type: cfg.employee_type,
-        percentage: cfg.percentage,
-        effective_from: new Date().toISOString().split('T')[0],
-      }));
-
-      // 3. Combine and send single request
-      const combinedPayload = {
-        ...busPayload,
-        battha_configs: batthaConfigs,
-      };
-
-      // 4. Send single POST request
+      // ADD: Create new bus + battha configs
       await axiosInstance.post('/buses/buses/', combinedPayload);
-      
-      // 5. Refresh data and close modal
-      await fetchBuses();
-      setIsModalOpen(false);
-      resetForms();
-      
-    } catch (e) {
-      console.error('Create bus error:', e);
-      const errorData = e.response?.data;
-      
-      if (errorData) {
-        // Handle validation errors
-        if (typeof errorData === 'object') {
-          const errorMessages = [];
-          Object.entries(errorData).forEach(([field, messages]) => {
-            if (Array.isArray(messages)) {
-              errorMessages.push(`${field}: ${messages.join(', ')}`);
-            } else if (typeof messages === 'string') {
-              errorMessages.push(`${field}: ${messages}`);
-            }
-          });
-          alert(errorMessages.join('\n') || 'Failed to create bus');
-        } else {
-          alert(errorData.detail || 'Failed to create bus');
-        }
-      } else {
-        alert(e.message || 'Failed to create bus');
-      }
-    } finally {
-      setLoading(false);
     }
-  };
 
-  const submitBusUpdate = async (data) => {
-    try {
-      setLoading(true);
+    await fetchBuses();
+    setIsModalOpen(false);
+    resetForms();
+  } catch (e) {
+    console.error('Bus operation error:', e);
+    const errorData = e.response?.data;
+    let errorMsg = e.message || 'Operation failed';
 
-      const cleanedPayload = cleanPayload({
-        registration_number: data.registration_number?.trim().toUpperCase() || null,
-        bus_name: data.bus_name?.trim() || null,
-        route: data.route?.trim() || null,
-        is_operational: data.is_operational ?? true,
-        ...data,
-      });
-
-      await axiosInstance.put(`/buses/buses/${selectedBus.id}/`, cleanedPayload);
-      await fetchBuses();
-    } catch (e) {
-      const errorData = e.response?.data;
-      if (errorData) {
-        const errorMessages = Object.entries(errorData)
-          .map(([field, messages]) => `${field}: ${Array.isArray(messages) ? messages.join(', ') : messages}`)
+    if (errorData) {
+      if (typeof errorData === 'object') {
+        errorMsg = Object.entries(errorData)
+          .map(([field, msgs]) => `${field}: ${Array.isArray(msgs) ? msgs.join(', ') : msgs}`)
           .join('\n');
-        alert(errorMessages || 'Failed to update bus');
       } else {
-        alert(e.message || 'Failed to update bus');
+        errorMsg = errorData.detail || errorMsg;
       }
-    } finally {
-      setLoading(false);
     }
-  };
+    alert(errorMsg);
+  } finally {
+    setLoading(false);
+  }
+};
 
   // ── DELETE & TOGGLE ─────────────────────────────────────────────────────
   const openDelete = (bus) => {
@@ -597,7 +530,7 @@ const handleEdit = (bus) => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6 sm:mb-8">
           <div className="flex items-center gap-3 flex-1 min-w-0">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center   flex-shrink-0">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center flex-shrink-0">
               <Bus className="text-white w-5 h-5 sm:w-6 sm:h-6" />
             </div>
             <div className="min-w-0 flex-1">
@@ -629,7 +562,7 @@ const handleEdit = (bus) => {
           searchPlaceholder="Search by reg. no., name, route..."
         />
 
-        <div className="bg-white rounded-xl  overflow-hidden border border-gray-100">
+        <div className="bg-white rounded-xl overflow-hidden border border-gray-100">
           <GenericTable
             rows={filteredBuses}
             columns={columns}
@@ -645,7 +578,11 @@ const handleEdit = (bus) => {
             setIsModalOpen(false);
             resetForms();
           }}
-          title={selectedBus ? 'Edit Bus' : currentStep === 1 ? 'Step 1: Bus Information' : 'Step 2: Commission Rates'}
+          title={
+            currentStep === 1
+              ? (selectedBus ? 'Step 1: Edit Bus Information' : 'Step 1: Bus Information')
+              : 'Step 2: Commission (Battha) Rates'
+          }
           icon={currentStep === 1 ? Bus : Percent}
           sections={currentStep === 1 ? basicSections() : batthaSections()}
           register={currentStep === 1 ? registerBasic : registerBattha}
@@ -657,10 +594,10 @@ const handleEdit = (bus) => {
           }
           loading={loading}
           submitLabel={
-            selectedBus
-              ? 'Update Bus'
-              : currentStep === 1
+            currentStep === 1
               ? 'Next → Commission'
+              : selectedBus
+              ? 'Finish & Update Bus'
               : 'Finish & Create Bus'
           }
           extraButtons={
