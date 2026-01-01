@@ -227,37 +227,54 @@ export default function BusManagement() {
     setCurrentStep(1);
   };
 
-  const handleEdit = (bus) => {
-    setSelectedBus(bus);
-    
-    // Set basic form values
-    Object.keys(basicForm.defaultValues).forEach(key => {
-      const value = bus[key];
-      if (value !== undefined) {
-        setBasicValue(key, value, { shouldValidate: true });
+const handleEdit = (bus) => {
+  setSelectedBus(bus);
+
+  // RESET basic form with bus data
+  resetBasic({
+    registration_number: bus.registration_number || '',
+    bus_name: bus.bus_name || '',
+    route: bus.route || '',
+    bus_type: bus.bus_type || null,
+    manufacturer: bus.manufacturer || null,
+    model: bus.model || null,
+    year_of_manufacture: bus.year_of_manufacture || null,
+    seating_capacity: bus.seating_capacity || null,
+    chassis_number: bus.chassis_number || null,
+    engine_number: bus.engine_number || null,
+    permit_number: bus.permit_number || null,
+    permit_expiry: bus.permit_expiry || null,
+    insurance_number: bus.insurance_number || null,
+    insurance_expiry: bus.insurance_expiry || null,
+    fitness_certificate_expiry: bus.fitness_certificate_expiry || null,
+    is_operational: bus.is_operational ?? true,
+  });
+
+  // RESET battha form
+  resetBattha({
+    driver_battha: 0,
+    conductor_battha: 0,
+    cleaner_battha: 0,
+  });
+
+  if (bus.battha_configs?.length) {
+    bus.battha_configs.forEach((config) => {
+      if (config.employee_type === 'DRIVER') {
+        batthaForm.setValue('driver_battha', Number(config.percentage));
+      }
+      if (config.employee_type === 'CONDUCTOR') {
+        batthaForm.setValue('conductor_battha', Number(config.percentage));
+      }
+      if (config.employee_type === 'CLEANER') {
+        batthaForm.setValue('cleaner_battha', Number(config.percentage));
       }
     });
+  }
 
-    // Set battha values if they exist
-    if (bus.battha_configs && Array.isArray(bus.battha_configs)) {
-      bus.battha_configs.forEach(config => {
-        switch(config.employee_type) {
-          case 'DRIVER':
-            batthaForm.setValue('driver_battha', parseFloat(config.percentage));
-            break;
-          case 'CONDUCTOR':
-            batthaForm.setValue('conductor_battha', parseFloat(config.percentage));
-            break;
-          case 'CLEANER':
-            batthaForm.setValue('cleaner_battha', parseFloat(config.percentage));
-            break;
-        }
-      });
-    }
+  setCurrentStep(1);
+  setIsModalOpen(true);
+};
 
-    setCurrentStep(1);
-    setIsModalOpen(true);
-  };
 
   // ── SUBMIT LOGIC (SINGLE API CALL) ──────────────────────────────────────
   const onSubmitBasic = async (data) => {

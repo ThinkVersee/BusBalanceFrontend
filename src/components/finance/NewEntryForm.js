@@ -462,15 +462,17 @@ useEffect(() => {
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <IndianRupee size={16} className="text-gray-500" />
           </div>
-          <input
-            type="number"
-            step="0.01"
-            min="0"
-            value={dailyCollection}
-            onChange={(e) => setDailyCollection(e.target.value)}
-            placeholder="0.00"
-            className="w-full pl-10 pr-3 py-2 sm:py-2.5 text-sm sm:text-base font-medium border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white text-gray-900"
-          />
+        <input
+  type="number"
+  step="0.01"
+  min="0"
+  value={dailyCollection}
+  onChange={(e) => setDailyCollection(e.target.value)}
+  onWheel={(e) => e.target.blur()}
+  placeholder="0.00"
+  className="w-full pl-10 pr-3 py-2 sm:py-2.5 text-sm sm:text-base font-medium border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white text-gray-900"
+/>
+
         </div>
         {dailyCollection && (
           <p className="mt-1 text-xs sm:text-sm text-green-600 font-medium">
