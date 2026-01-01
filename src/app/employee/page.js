@@ -8,9 +8,16 @@ export default function EmployeePage() {
   const { user, logout } = useAuth();
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+    <div className="min-h-screen bg-gray-50">
+      {/* Navbar stays on top */}
       <Navbar />
-      <BillBookForm />
+
+      {/* Page Content */}
+      <main className="pt-15 sm:pt-17">
+        <div className="max-w-3xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6">
+          <BillBookForm />
+        </div>
+      </main>
     </div>
   );
 }
