@@ -62,7 +62,7 @@ export default function Navbar({ onMenuToggle }) {
         </button>
 
         {/* Title */}
-        <h1 className="flex-1 text-sm font-semibold text-gray-800 truncate text-center sm:text-base md:text-lg lg:text-xl">
+        <h1 className="flex-1 text-sm font-semibold text-gray-800 truncate text-center sm:text-black md:text-lg lg:text-xl">
           <span className="hidden sm:inline">Admin Dashboard</span>
           <span className="sm:hidden">Dashboard</span>
         </h1>

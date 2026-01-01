@@ -110,7 +110,7 @@ const TransactionItem = ({ record, isOwner, onDelete }) => {
 
             <div className="flex items-center gap-3 sm:gap-4 flex-shrink-0">
               <span
-                className={`font-bold text-base sm:text-lg whitespace-nowrap ${config.amountColor}`}
+                className={`font-bold text-black sm:text-lg whitespace-nowrap ${config.amountColor}`}
               >
                 ₹{Number(record.amount).toFixed(0)}
               </span>
@@ -236,7 +236,7 @@ const DailySummaryHeader = ({ date, netCollection, isOpen, onToggle }) => (
       {isOpen ? <ChevronDown size={18} className="sm:w-5 sm:h-5 flex-shrink-0" /> : <ChevronRight size={18} className="sm:w-5 sm:h-5 flex-shrink-0" />}
       <Calendar size={16} className="text-blue-600 flex-shrink-0 sm:w-[18px] sm:h-[18px]" />
       <div className="flex-1 min-w-0">
-        <div className="font-bold text-gray-900 text-xs sm:text-base truncate">
+        <div className="font-bold text-gray-900 text-xs sm:text-black truncate">
           {new Date(date).toLocaleDateString("en-IN", {
             weekday: "short",
             year: "numeric",
@@ -249,7 +249,7 @@ const DailySummaryHeader = ({ date, netCollection, isOpen, onToggle }) => (
 
     <div className="text-right flex-shrink-0">
       <div className="text-[10px] sm:text-xs text-gray-500 font-medium">Net</div>
-      <div className={`font-bold text-base sm:text-xl ${netCollection >= 0 ? "text-green-600" : "text-red-600"}`}>
+      <div className={`font-bold text-black sm:text-xl ${netCollection >= 0 ? "text-green-600" : "text-red-600"}`}>
         ₹{netCollection.toFixed(0)}
       </div>
     </div>
@@ -267,7 +267,7 @@ const WithdrawalDateHeader = ({ date, totalAmount, isOpen, onToggle }) => (
     <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
       {isOpen ? <ChevronDown size={18} className="text-gray-700 sm:w-5 sm:h-5 flex-shrink-0" /> : <ChevronRight size={18} className="text-gray-700 sm:w-5 sm:h-5 flex-shrink-0" />}
       <Calendar size={16} className="text-blue-600 flex-shrink-0 sm:w-[18px] sm:h-[18px]" />
-      <div className="font-bold text-gray-900 text-xs sm:text-base truncate">
+      <div className="font-bold text-gray-900 text-xs sm:text-black truncate">
         {new Date(date).toLocaleDateString("en-IN", {
           weekday: "short",
           year: "numeric",
@@ -279,7 +279,7 @@ const WithdrawalDateHeader = ({ date, totalAmount, isOpen, onToggle }) => (
 
     <div className="text-right flex-shrink-0">
       <div className="text-[10px] sm:text-xs text-gray-600 font-medium">Total</div>
-      <div className="font-bold text-base sm:text-xl text-purple-700">
+      <div className="font-bold text-black sm:text-xl text-purple-700">
         -₹{totalAmount.toFixed(0)}
       </div>
     </div>
@@ -298,7 +298,7 @@ const AttachmentsModal = ({ isOpen, title, attachments, onClose }) => {
       <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
         <div className="bg-white rounded-xl sm:rounded-2xl max-w-sm w-full max-h-[80vh] overflow-hidden">
           <div className="flex justify-between items-center p-3 sm:p-4 border-b sticky top-0 bg-white">
-            <h3 className="font-semibold text-sm sm:text-base text-gray-900">{title}</h3>
+            <h3 className="font-semibold text-sm sm:text-black text-gray-900">{title}</h3>
             <button
               onClick={onClose}
               className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
@@ -374,7 +374,7 @@ const CustomRangeReportModal = ({ isOpen, onClose, onDownload, buses = [] }) => 
                 type="date"
                 value={fromDate}
                 onChange={(e) => setFromDate(e.target.value)}
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none text-base"
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none text-black"
                 max={new Date().toISOString().split("T")[0]}
               />
             </div>
@@ -385,7 +385,7 @@ const CustomRangeReportModal = ({ isOpen, onClose, onDownload, buses = [] }) => 
                 type="date"
                 value={toDate}
                 onChange={(e) => setToDate(e.target.value)}
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none text-base"
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none text-black"
                 min={fromDate}
                 max={new Date().toISOString().split("T")[0]}
               />
@@ -397,7 +397,7 @@ const CustomRangeReportModal = ({ isOpen, onClose, onDownload, buses = [] }) => 
                 <select
                   value={selectedBus}
                   onChange={(e) => setSelectedBus(e.target.value)}
-                  className="w-full px-4 py-3 pr-10 bg-white border-2 border-gray-300 rounded-lg text-base font-medium focus:outline-none focus:border-blue-500 appearance-none cursor-pointer"
+                  className="w-full px-4 py-3 pr-10 bg-white border-2 border-gray-300 rounded-lg text-black font-medium focus:outline-none focus:border-blue-500 appearance-none cursor-pointer"
                 >
                   <option value="">All Buses ({buses.length})</option>
                   {buses.map((bus) => (
@@ -644,7 +644,7 @@ const downloadRangeReport = async (fromDate, toDate, busName = null) => {
         <div className="flex gap-1.5 sm:gap-2">
           <button
             onClick={() => setActiveTab("transactions")}
-            className={`flex-1 flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl text-xs sm:text-base font-semibold transition-all ${
+            className={`flex-1 flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl text-xs sm:text-black font-semibold transition-all ${
               activeTab === "transactions" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
             }`}
           >
@@ -656,7 +656,7 @@ const downloadRangeReport = async (fromDate, toDate, busName = null) => {
           {isOwner && (
             <button
               onClick={() => setActiveTab("withdrawals")}
-              className={`flex-1 flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl text-xs sm:text-base font-semibold transition-all ${
+              className={`flex-1 flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl text-xs sm:text-black font-semibold transition-all ${
                 activeTab === "withdrawals" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
               }`}
             >
@@ -755,7 +755,7 @@ const downloadRangeReport = async (fromDate, toDate, busName = null) => {
                               <div className="bg-blue-50 border border-blue-200 rounded-lg sm:rounded-xl p-3 sm:p-4">
                                 <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
                                   <Filter size={16} className="text-blue-600 sm:w-[18px] sm:h-[18px]" />
-                                  <span className="font-semibold text-gray-800 text-xs sm:text-base">Filter by Bus</span>
+                                  <span className="font-semibold text-gray-800 text-xs sm:text-black">Filter by Bus</span>
                                 </div>
                                 <div className="relative">
                                   <select
@@ -766,7 +766,7 @@ const downloadRangeReport = async (fromDate, toDate, busName = null) => {
                                         [date]: e.target.value,
                                       }))
                                     }
-                                    className="w-full px-3 sm:px-4 py-2 sm:py-3 pr-9 sm:pr-10 bg-white border-2 border-blue-300 rounded-lg text-xs sm:text-base font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer"
+                                    className="w-full px-3 sm:px-4 py-2 sm:py-3 pr-9 sm:pr-10 bg-white border-2 border-blue-300 rounded-lg text-xs sm:text-black font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer"
                                   >
                                     <option value="">All Buses  </option>
                                     {busNamesOnDate.map((name) => {
@@ -862,7 +862,7 @@ const downloadRangeReport = async (fromDate, toDate, busName = null) => {
                             </div>
 
                             {filteredRecords.length === 0 && (
-                              <div className="text-center py-6 sm:py-8 text-gray-500 text-xs sm:text-base">
+                              <div className="text-center py-6 sm:py-8 text-gray-500 text-xs sm:text-black">
                                 No transactions found for selected filter
                               </div>
                             )}

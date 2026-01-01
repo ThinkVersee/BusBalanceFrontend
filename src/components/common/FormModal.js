@@ -56,10 +56,10 @@ export const FormModal = ({
   if (!isOpen) return null;
 
   const baseInputClass =
-    'w-full px-2.5 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed text-gray-900 !text-gray-900 text-sm sm:text-base';
+    'w-full px-2.5 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed text-gray-900 !text-gray-900 text-sm sm:text-black';
 
   const baseSelectClass =
-    'w-full px-2.5 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed text-gray-900 !text-gray-900 bg-white appearance-none text-sm sm:text-base';
+    'w-full px-2.5 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed text-gray-900 !text-gray-900 bg-white appearance-none text-sm sm:text-black';
 
   const toggleDropdown = (name) => {
     setOpenDropdown((prev) => {
@@ -129,7 +129,7 @@ export const FormModal = ({
               if (section.hidden) return null;
               return (
                 <div key={secIdx} className="bg-white border border-gray-200 rounded-lg sm:rounded-xl p-3 sm:p-4 md:p-5">
-                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
+                  <h3 className="text-black sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
                     <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-blue-600 rounded-full" />
                     {section.title}
                   </h3>
@@ -317,7 +317,7 @@ export const FormModal = ({
                   Object.keys(openDropdown).forEach((name) => closeDropdown(name));
                   onClose();
                 }}
-                className="w-full sm:w-auto order-2 sm:order-1 px-4 py-2 sm:px-5 sm:py-2.5 border border-gray-300 bg-gray-200 rounded-lg sm:rounded-xl text-gray-700 hover:bg-gray-50 transition-all font-medium text-sm sm:text-base"
+                className="w-full sm:w-auto order-2 sm:order-1 px-4 py-2 sm:px-5 sm:py-2.5 border border-gray-300 bg-gray-200 rounded-lg sm:rounded-xl text-gray-700 hover:bg-gray-50 transition-all font-medium text-sm sm:text-black"
               >
                 {cancelLabel}
               </button>
@@ -326,7 +326,7 @@ export const FormModal = ({
                 type="submit"
                 disabled={loading}
                 onClick={onSubmit}
-                className="w-full sm:w-auto order-1 sm:order-2 px-4 py-2 sm:px-5 sm:py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg sm:rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all disabled:opacity-50 font-medium   flex items-center justify-center gap-2 text-sm sm:text-base"
+                className="w-full sm:w-auto order-1 sm:order-2 px-4 py-2 sm:px-5 sm:py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg sm:rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all disabled:opacity-50 font-medium   flex items-center justify-center gap-2 text-sm sm:text-black"
               >
                 {loading && <Loader2 size={16} className="sm:w-[18px] sm:h-[18px] animate-spin" />}
                 {loading ? 'Saving...' : submitLabel}

@@ -22,7 +22,7 @@ export const SearchBar = ({
       className={`
         w-full
         pl-10 pr-4 py-2.5
-        text-sm sm:text-base
+        text-sm sm:text-black
         border border-gray-300 rounded-lg
         focus:outline-none 
         transition-all duration-200
