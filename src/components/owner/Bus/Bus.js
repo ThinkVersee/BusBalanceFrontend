@@ -285,7 +285,7 @@ const onSubmitBattha = async (batthaData) => {
 
     const combinedPayload = {
       ...busPayload,
-      battha_configs: batthaConfigs, // Always array of 3 items
+      battha_configs: batthaConfigs, 
     };
 
     if (selectedBus) {

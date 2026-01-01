@@ -768,12 +768,12 @@ const downloadRangeReport = async (fromDate, toDate, busName = null) => {
                                     }
                                     className="w-full px-3 sm:px-4 py-2 sm:py-3 pr-9 sm:pr-10 bg-white border-2 border-blue-300 rounded-lg text-xs sm:text-base font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer"
                                   >
-                                    <option value="">All Buses ({dailyRecords.length})</option>
+                                    <option value="">All Buses  </option>
                                     {busNamesOnDate.map((name) => {
                                       const count = dailyRecords.filter((r) => r.bus_name?.trim() === name).length;
                                       return (
                                         <option key={name} value={name}>
-                                          {name} ({count})
+                                          {name}  
                                         </option>
                                       );
                                     })}
