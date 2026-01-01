@@ -71,7 +71,7 @@ const FileInputSection = ({ files, setFiles }) => {
     <div className="mt-4 p-4 border rounded-lg bg-gray-50">
       <div className="flex items-center gap-2 mb-2">
         <Upload size={18} className="text-red-600" />
-        <h4 className="font-medium text-sm">Expense Attachments</h4>
+        <h4 className="font-medium text-black text-sm">Expense Attachments</h4>
       </div>
       <input
         type="file"
@@ -592,7 +592,7 @@ useEffect(() => {
       </button>
       <button
         onClick={nextStep}
-        className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 sm:px-6 py-2 sm:py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold transition-all text-sm sm:text-black"
+        className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 sm:px-6 py-2 sm:py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold transition-all text-sm sm:text-white"
       >
         Next: Expenses
         <ArrowRight size={18} />
@@ -878,7 +878,7 @@ useEffect(() => {
   {/* Header + Add Button */}
 {/* Header + Add Button */}
 <div className="flex items-center justify-between gap-2">
-  <h3 className="font-semibold text-sm sm:text-black">Maintenance</h3>
+  <h3 className="font-semibold text-sm text-black sm:text-black">Maintenance</h3>
   {!showAddMaintenance && (
     <button
       onClick={() => setShowAddMaintenance(true)}
@@ -966,9 +966,9 @@ useEffect(() => {
       </h3>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
-        <div className="bg-blue-50 rounded-md p-2 sm:p-3 border border-blue-300 text-center">
-          <div className="text-xs sm:text-sm font-medium text-blue-700">Income</div>
-          <div className="text-lg sm:text-xl font-bold text-blue-700 mt-1">₹{totalIncome.toFixed(0)}</div>
+        <div className="bg-green-50 rounded-md p-2 sm:p-3 border border-green-300 text-center">
+          <div className="text-xs sm:text-sm font-medium text-green-700">Income</div>
+          <div className="text-lg sm:text-xl font-bold text-green-700 mt-1">₹{totalIncome.toFixed(0)}</div>
         </div>
         <div className="bg-red-50 rounded-md p-2 sm:p-3 border border-red-300 text-center">
           <div className="text-xs sm:text-sm font-medium text-red-700">Total Expense</div>
