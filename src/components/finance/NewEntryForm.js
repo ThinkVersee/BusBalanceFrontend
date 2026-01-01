@@ -1,11 +1,14 @@
 "use client";
 import React, { useRef, useState, useEffect, useCallback } from "react";
+ 
+
 import {
   TrendingUp,
   TrendingDown,
   Plus,
   Save,
   Loader2,
+ 
   Upload,
   X,
   IndianRupee,
@@ -22,6 +25,7 @@ import {
   Calculator,
   Settings,
   RefreshCw,
+  Receipt,
   User,
 } from "lucide-react";
 import axiosInstance from "@/config/axiosInstance";
@@ -794,15 +798,21 @@ useEffect(() => {
     {/* Other Expenses */}
 <div className="space-y-2">
   {/* Header */}
-  <div className="flex items-center justify-between">
-    <h3 className="font-semibold text-black text-sm sm:text-black">Other Expenses</h3>
-    <button
-      onClick={() => setShowAddExpense(true)}
-      className="flex items-center gap-1 px-2 py-2 text-xs sm:px-3 sm:py-2 sm:text-sm bg-red-50 text-red-700 rounded-md hover:bg-red-100"
-    >
-      <Plus size={14} /> Add
-    </button>
+<div className="flex items-center justify-between">
+  <div className="flex items-center gap-2">
+    <Receipt size={16} className="text-red-700" />
+    <h3 className="font-semibold text-red-700 text-sm">
+      Other Expenses
+    </h3>
   </div>
+
+  <button
+    onClick={() => setShowAddExpense(true)}
+    className="flex items-center gap-1 px-2 py-2 text-xs sm:px-3 sm:py-2 sm:text-sm bg-red-50 text-red-700 rounded-md hover:bg-red-100"
+  >
+    <Plus size={14} /> Add
+  </button>
+</div>
 
   {/* Add Expense Form */}
  {showAddExpense && (
@@ -878,11 +888,17 @@ useEffect(() => {
   {/* Header + Add Button */}
 {/* Header + Add Button */}
 <div className="flex items-center justify-between gap-2">
-  <h3 className="font-semibold text-sm text-black sm:text-black">Maintenance</h3>
+  <div className="flex items-center gap-2">
+    <Wrench size={16} className="text-orange-700" />
+    <h3 className="font-semibold text-sm text-orange-700">
+      Maintenance
+    </h3>
+  </div>
+
   {!showAddMaintenance && (
     <button
       onClick={() => setShowAddMaintenance(true)}
-      className="flex items-center gap-1 px-2 py-2 text-xs sm:px-3 sm:py-2 sm:text-sm bg-red-50 text-red-700 rounded-md hover:bg-red-100"
+      className="flex items-center gap-1 px-2 py-2 text-xs sm:px-3 sm:py-2 sm:text-sm bg-orange-50 text-orange-700 rounded-md hover:bg-red-100"
     >
       <Plus size={14} /> Add
     </button>
