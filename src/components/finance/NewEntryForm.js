@@ -490,7 +490,7 @@ useEffect(() => {
     <div className="mt-4 sm:mt-6 flex justify-end">
       <button
         onClick={nextStep}
-        className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 sm:px-6 py-2 sm:py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold transition-all text-sm sm:text-black"
+        className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 sm:px-6 py-2 sm:py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold transition-all text-sm sm:text-white"
       >
         Next: Staff Names
         <ArrowRight size={18} />
