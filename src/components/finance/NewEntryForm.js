@@ -430,7 +430,7 @@ useEffect(() => {
           type="date"
           value={formData.date}
           onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-          className="w-full text-sm sm:text-base px-3 py-2 sm:py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
+          className="w-full text-sm sm:text-black px-3 py-2 sm:py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
         />
       </div>
 
@@ -442,7 +442,7 @@ useEffect(() => {
         <select
           value={formData.bus}
           onChange={(e) => setFormData({ ...formData, bus: e.target.value })}
-          className="w-full text-sm sm:text-base px-3 py-2 sm:py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
+          className="w-full text-sm sm:text-black px-3 py-2 sm:py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
         >
           <option value="">Select Bus</option>
           {ownedBuses.map((bus) => (
@@ -470,7 +470,7 @@ useEffect(() => {
   onChange={(e) => setDailyCollection(e.target.value)}
   onWheel={(e) => e.target.blur()}
   placeholder="0.00"
-  className="w-full pl-10 pr-3 py-2 sm:py-2.5 text-sm sm:text-base font-medium border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white text-gray-900"
+  className="w-full pl-10 pr-3 py-2 sm:py-2.5 text-sm sm:text-black font-medium border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white text-gray-900"
 />
 
         </div>
@@ -486,7 +486,7 @@ useEffect(() => {
     <div className="mt-4 sm:mt-6 flex justify-end">
       <button
         onClick={nextStep}
-        className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 sm:px-6 py-2 sm:py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold transition-all text-sm sm:text-base"
+        className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 sm:px-6 py-2 sm:py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold transition-all text-sm sm:text-black"
       >
         Next: Staff Names
         <ArrowRight size={18} />
@@ -528,7 +528,7 @@ useEffect(() => {
             setStaffDetails({ ...staffDetails, driverName: e.target.value })
           }
           placeholder="Enter driver's name"
-          className="w-full text-sm sm:text-base px-3 py-2 sm:py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
+          className="w-full text-sm sm:text-black px-3 py-2 sm:py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
         />
         <p className="text-xs sm:text-sm text-gray-400 mt-1">
           This will be saved as today's driver assignment
@@ -550,7 +550,7 @@ useEffect(() => {
             setStaffDetails({ ...staffDetails, conductorName: e.target.value })
           }
           placeholder="Enter conductor's name"
-          className="w-full text-sm sm:text-base px-3 py-2 sm:py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 bg-white text-gray-900"
+          className="w-full text-sm sm:text-black px-3 py-2 sm:py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 bg-white text-gray-900"
         />
         <p className="text-xs sm:text-sm text-gray-400 mt-1">
           This will be saved as today's conductor assignment
@@ -572,7 +572,7 @@ useEffect(() => {
             setStaffDetails({ ...staffDetails, cleanerName: e.target.value })
           }
           placeholder="Enter cleaner's name (if applicable)"
-          className="w-full text-sm sm:text-base px-3 py-2 sm:py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 bg-white text-gray-900"
+          className="w-full text-sm sm:text-black px-3 py-2 sm:py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 bg-white text-gray-900"
         />
         <p className="text-xs sm:text-sm text-gray-400 mt-1">
           This will be saved as today's cleaner assignment
@@ -585,14 +585,14 @@ useEffect(() => {
     <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row justify-between gap-2 sm:gap-0">
       <button
         onClick={prevStep}
-        className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 sm:px-6 py-2 sm:py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-semibold transition-all text-sm sm:text-base"
+        className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 sm:px-6 py-2 sm:py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-semibold transition-all text-sm sm:text-black"
       >
         <ArrowLeft size={18} />
         Back
       </button>
       <button
         onClick={nextStep}
-        className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 sm:px-6 py-2 sm:py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold transition-all text-sm sm:text-base"
+        className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 sm:px-6 py-2 sm:py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold transition-all text-sm sm:text-black"
       >
         Next: Expenses
         <ArrowRight size={18} />
@@ -663,7 +663,7 @@ useEffect(() => {
     {/* Staff Salaries Section */}
     <div className="space-y-3 sm:space-y-4">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-2 sm:mb-4">
-        <h3 className="font-semibold text-gray-900 flex items-center gap-2 text-sm sm:text-base">
+        <h3 className="font-semibold text-gray-900 flex items-center gap-2 text-sm sm:text-black">
           <Users size={16} />
           Staff Salaries
           {batthaLoading && (
@@ -696,7 +696,7 @@ useEffect(() => {
             <div className="text-xs sm:text-sm text-blue-700 font-medium flex items-center gap-1">
               <User size={12} /> Driver
             </div>
-            <div className="text-sm sm:text-base text-gray-900 mt-1">{staffDetails.driverName}</div>
+            <div className="text-sm sm:text-black text-gray-900 mt-1">{staffDetails.driverName}</div>
           </div>
         )}
         {staffDetails.conductorName && (
@@ -704,7 +704,7 @@ useEffect(() => {
             <div className="text-xs sm:text-sm text-green-700 font-medium flex items-center gap-1">
               <User size={12} /> Conductor
             </div>
-            <div className="text-sm sm:text-base text-gray-900 mt-1">{staffDetails.conductorName}</div>
+            <div className="text-sm sm:text-black text-gray-900 mt-1">{staffDetails.conductorName}</div>
           </div>
         )}
         {staffDetails.cleanerName && (
@@ -712,7 +712,7 @@ useEffect(() => {
             <div className="text-xs sm:text-sm text-orange-700 font-medium flex items-center gap-1">
               <User size={12} /> Cleaner
             </div>
-            <div className="text-sm sm:text-base text-gray-900 mt-1">{staffDetails.cleanerName}</div>
+            <div className="text-sm sm:text-black text-gray-900 mt-1">{staffDetails.cleanerName}</div>
           </div>
         )}
       </div> */}
@@ -757,7 +757,7 @@ useEffect(() => {
 
           {/* NAME + SALARY (FIXED POSITION) */}
           <div className="grid grid-cols-[1fr_96px] sm:grid-cols-[1fr_128px] items-center gap-2 sm:gap-2.5 mt-1 sm:mt-1.5">
-            <div className="min-w-0 truncate text-gray-700 text-sm sm:text-base">
+            <div className="min-w-0 truncate text-gray-700 text-sm sm:text-black">
               {staffDetails[key]}
             </div>
 
@@ -795,7 +795,7 @@ useEffect(() => {
 <div className="space-y-2">
   {/* Header */}
   <div className="flex items-center justify-between">
-    <h3 className="font-semibold text-sm sm:text-base">Other Expenses</h3>
+    <h3 className="font-semibold text-black sm:text-black">Other Expenses</h3>
     <button
       onClick={() => setShowAddExpense(true)}
       className="flex items-center gap-1 px-2 py-2 text-xs sm:px-3 sm:py-2 sm:text-sm bg-red-50 text-red-700 rounded-md hover:bg-red-100"
@@ -878,7 +878,7 @@ useEffect(() => {
   {/* Header + Add Button */}
 {/* Header + Add Button */}
 <div className="flex items-center justify-between gap-2">
-  <h3 className="font-semibold text-sm sm:text-base">Maintenance</h3>
+  <h3 className="font-semibold text-sm sm:text-black">Maintenance</h3>
   {!showAddMaintenance && (
     <button
       onClick={() => setShowAddMaintenance(true)}
@@ -960,7 +960,7 @@ useEffect(() => {
 
     {/* Transaction Summary */}
     <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-white rounded-md border border-gray-300 space-y-3 sm:space-y-4">
-      <h3 className="font-bold text-gray-800 flex items-center gap-2 text-sm sm:text-base">
+      <h3 className="font-bold text-gray-800 flex items-center gap-2 text-sm sm:text-black">
         <IndianRupee size={16} className="text-blue-600" />
         Transaction Summary
       </h3>
@@ -989,7 +989,7 @@ useEffect(() => {
     <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row justify-between gap-2 sm:gap-4">
       <button
         onClick={prevStep}
-        className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 sm:px-6 py-2 sm:py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-semibold text-sm sm:text-base"
+        className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 sm:px-6 py-2 sm:py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-semibold text-sm sm:text-black"
       >
         <ArrowLeft size={18} /> Back
       </button>

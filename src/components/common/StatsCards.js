@@ -40,7 +40,7 @@ export const StatsCards = ({
       h(
         'div',
         { key: 'total', className: baseCardClass + colors.bg },
-        h('p', { className: `text-sm sm:text-base ${colors.label} truncate` }, `Total ${label}`),
+        h('p', { className: `text-sm sm:text-black ${colors.label} truncate` }, `Total ${label}`),
         h('p', { className: `${valueBase} ${colors.text}` }, total.toLocaleString())
       )
     );
@@ -53,7 +53,7 @@ export const StatsCards = ({
       h(
         'div',
         { key: 'active', className: baseCardClass + colors.bg },
-        h('p', { className: `text-sm sm:text-base ${colors.label} truncate` }, 'Active'),
+        h('p', { className: `text-sm sm:text-black ${colors.label} truncate` }, 'Active'),
         h('p', { className: `${valueBase} ${colors.text}` }, active.toLocaleString())
       )
     );
@@ -66,7 +66,7 @@ export const StatsCards = ({
       h(
         'div',
         { key: 'verified', className: baseCardClass + colors.bg },
-        h('p', { className: `text-sm sm:text-base ${colors.label} truncate` }, 'Verified'),
+        h('p', { className: `text-sm sm:text-black ${colors.label} truncate` }, 'Verified'),
         h('p', { className: `${valueBase} ${colors.text}` }, verified.toLocaleString())
       )
     );
@@ -79,7 +79,7 @@ export const StatsCards = ({
       h(
         'div',
         { key: 'operational', className: baseCardClass + colors.bg },
-        h('p', { className: `text-sm sm:text-base ${colors.label} truncate` }, 'Operational'),
+        h('p', { className: `text-sm sm:text-black ${colors.label} truncate` }, 'Operational'),
         h('p', { className: `${valueBase} ${colors.text}` }, operational.toLocaleString())
       )
     );

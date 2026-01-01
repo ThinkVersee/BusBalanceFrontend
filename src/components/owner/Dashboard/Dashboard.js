@@ -149,7 +149,7 @@ export default function OwnerDashboard() {
     </div>
     <button
       onClick={() => setShowWithdrawModal(true)}
-      className="mt-3 sm:mt-5 w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-3 bg-blue-600 rounded-lg sm:rounded-xl text-sm sm:text-base font-medium text-white transition"
+      className="mt-3 sm:mt-5 w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-3 bg-blue-600 rounded-lg sm:rounded-xl text-sm sm:text-black font-medium text-white transition"
     >
       Withdraw Funds
     </button>
@@ -166,7 +166,7 @@ export default function OwnerDashboard() {
               </div>
               <span className="text-2xl sm:text-3xl font-bold text-blue-600">{stats.totalBuses}</span>
             </div>
-            <p className="font-medium text-sm sm:text-base text-gray-900">Total Buses</p>
+            <p className="font-medium text-sm sm:text-black text-gray-900">Total Buses</p>
             <div className="mt-2 sm:mt-3 flex items-center gap-3 sm:gap-4 text-xs sm:text-sm">
               <span className="text-green-600 font-medium flex items-center gap-1">
                 <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> {stats.operationalBuses} Running
@@ -182,7 +182,7 @@ export default function OwnerDashboard() {
               </div>
               <span className="text-2xl sm:text-3xl font-bold text-purple-600">{stats.totalStaff}</span>
             </div>
-            <p className="font-medium text-sm sm:text-base text-gray-900">Total Staff</p>
+            <p className="font-medium text-sm sm:text-black text-gray-900">Total Staff</p>
             <div className="mt-2 sm:mt-3 text-xs sm:text-sm text-green-600 font-medium flex items-center gap-1">
               <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> {stats.activeStaff} Active
             </div>
@@ -197,7 +197,7 @@ export default function OwnerDashboard() {
                 {stats.netProfit >= 0 ? '+' : '-'}₹{Math.abs(stats.netProfit).toLocaleString('en-IN')}
               </span>
             </div>
-            <p className="font-medium text-sm sm:text-base text-gray-900">Today's Net Profit</p>
+            <p className="font-medium text-sm sm:text-black text-gray-900">Today's Net Profit</p>
             <div className="mt-2 sm:mt-3 flex justify-between text-xs sm:text-sm">
               <span className="text-emerald-600">+₹{stats.todayIncome.toLocaleString('en-IN')}</span>
               <span className="text-red-600">-₹{stats.todayExpense.toLocaleString('en-IN')}</span>
@@ -209,7 +209,7 @@ export default function OwnerDashboard() {
       <div className="grid lg:grid-cols-3  gap-3 sm:gap-4">
   {/* Quick Actions */}
   <div className="bg-white rounded-xl  border border-gray-300 p-4 sm:p-5">
-    <h3 className="font-semibold text-base text-gray-900 mb-3">Quick Actions</h3>
+    <h3 className="font-semibold text-black text-gray-900 mb-3">Quick Actions</h3>
     <div className="space-y-2.5">
       {[
         { to: "/owner/expense?tab=new", label: "New Entry", icon: IndianRupee, color: "bg-emerald-500" },
@@ -237,7 +237,7 @@ export default function OwnerDashboard() {
   {/* Recent Transactions */}
   <div className="lg:col-span-2 bg-white rounded-xl border border-gray-300 p-4 sm:p-5">
     <div className="flex items-center justify-between mb-3 sm:mb-4">
-      <h3 className="font-semibold text-base text-gray-900">Recent Transactions</h3>
+      <h3 className="font-semibold text-black text-gray-900">Recent Transactions</h3>
       <Link href="/owner/expense?tab=records" className="text-blue-600 hover:underline text-sm font-medium">
         View all
       </Link>
@@ -302,7 +302,7 @@ export default function OwnerDashboard() {
       {showWithdrawModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-3 sm:p-4 z-50">
           <div className="bg-white rounded-xl max-w-md w-full p-4 sm:p-6">
-            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Withdraw Funds</h3>
+            <h3 className="text-black sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Withdraw Funds</h3>
             <form onSubmit={handleWithdraw}>
               <div className="space-y-3 sm:space-y-4">
                 <div>
@@ -313,7 +313,7 @@ export default function OwnerDashboard() {
                     required
                     value={withdrawForm.amount}
                     onChange={(e) => setWithdrawForm(prev => ({ ...prev, amount: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base text-gray-900 placeholder-gray-400 bg-white"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-black text-gray-900 placeholder-gray-400 bg-white"
                     placeholder="0.00"
                   />
                 </div>
@@ -324,7 +324,7 @@ export default function OwnerDashboard() {
                     rows={3}
                     value={withdrawForm.reason}
                     onChange={(e) => setWithdrawForm(prev => ({ ...prev, reason: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base text-gray-900 placeholder-gray-400 bg-white resize-none"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-black text-gray-900 placeholder-gray-400 bg-white resize-none"
                     placeholder="Purpose of withdrawal..."
                   />
                 </div>
@@ -333,7 +333,7 @@ export default function OwnerDashboard() {
                   <select
                     value={withdrawForm.method}
                     onChange={(e) => setWithdrawForm(prev => ({ ...prev, method: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base text-gray-900 bg-white"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-black text-gray-900 bg-white"
                   >
                     <option value="Cash">Cash</option>
                     <option value="Bank Transfer">Bank Transfer</option>
@@ -346,7 +346,7 @@ export default function OwnerDashboard() {
                     type="text"
                     value={withdrawForm.reference}
                     onChange={(e) => setWithdrawForm(prev => ({ ...prev, reference: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-base text-gray-900 placeholder-gray-400 bg-white"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm sm:text-black text-gray-900 placeholder-gray-400 bg-white"
                     placeholder="Transaction ID, UTR, etc."
                   />
                 </div>
@@ -366,14 +366,14 @@ export default function OwnerDashboard() {
                     setShowWithdrawModal(false);
                     setWithdrawError("");
                   }}
-                  className="px-3 sm:px-4 py-2 text-sm sm:text-base text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors"
+                  className="px-3 sm:px-4 py-2 text-sm sm:text-black text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={withdrawLoading}
-                  className="px-3 sm:px-4 py-2 text-sm sm:text-base bg-blue-600 text-white hover:bg-blue-700 rounded-lg font-medium transition-colors disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2"
+                  className="px-3 sm:px-4 py-2 text-sm sm:text-black bg-blue-600 text-white hover:bg-blue-700 rounded-lg font-medium transition-colors disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2"
                 >
                   {withdrawLoading && <Loader2 size={14} className="sm:w-4 sm:h-4 animate-spin" />}
                   Withdraw

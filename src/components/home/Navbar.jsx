@@ -58,7 +58,7 @@ export default function Navbar() {
               <button
                 key={link.id}
                 onClick={() => handleNav(link.id)}
-                className={`text-base font-normal relative transition-colors pb-1
+                className={`text-black font-normal relative transition-colors pb-1
                   ${active === link.id ? "text-gray-900" : "text-gray-600"}
                   hover:text-gray-900`}
               >
@@ -122,7 +122,7 @@ export default function Navbar() {
                 handleGetStarted();
                 setMobileOpen(false);
               }}
-              className="w-full bg-blue-600 text-white py-3 rounded-lg text-base font-medium hover:bg-blue-700 transition-colors mt-4"
+              className="w-full bg-blue-600 text-white py-3 rounded-lg text-black font-medium hover:bg-blue-700 transition-colors mt-4"
             >
               Get started free
             </button>

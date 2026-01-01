@@ -102,7 +102,7 @@ export const ConfirmModal = ({
           </h2>
 
           {/* Message */}
-          <p className="text-center text-gray-600 text-sm sm:text-base leading-relaxed mb-8">
+          <p className="text-center text-gray-600 text-sm sm:text-black leading-relaxed mb-8">
             {finalMessage}
           </p>
 
@@ -113,7 +113,7 @@ export const ConfirmModal = ({
               onClick={onClose}
               className="flex-1 order-2 sm:order-1 px-5 py-3 rounded-xl
                          border border-gray-300 text-gray-700
-                         hover:bg-gray-50 font-medium text-sm sm:text-base
+                         hover:bg-gray-50 font-medium text-sm sm:text-black
                          transition-all duration-200"
             >
               {cancelText}
@@ -125,7 +125,7 @@ export const ConfirmModal = ({
               disabled={loading}
               className={`
                 flex-1 order-1 sm:order-2 flex items-center justify-center gap-2
-                px-5 py-3 rounded-xl text-white font-medium text-sm sm:text-base
+                px-5 py-3 rounded-xl text-white font-medium text-sm sm:text-black
                 transition-all duration-200 
                 ${v.button} focus:ring-4 focus:ring-offset-2
                 disabled:opacity-60 disabled:cursor-not-allowed
