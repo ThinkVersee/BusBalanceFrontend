@@ -51,6 +51,7 @@ const TRANSACTION_CONFIG = {
 /* -------------------------------------------------------------------------- */
 const StaffBadge = ({ role, name }) => {
   if (!name) return null;
+  
   const getConfig = (role) => {
     switch (role) {
       case "DRIVER":
@@ -63,7 +64,9 @@ const StaffBadge = ({ role, name }) => {
         return { bgColor: "bg-gray-100", textColor: "text-gray-700", iconColor: "text-gray-600", label: "Staff" };
     }
   };
+  
   const config = getConfig(role);
+  
   return (
     <div className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full ${config.bgColor}`}>
       <User size={10} className={`sm:w-3 sm:h-3 ${config.iconColor}`} />
@@ -82,6 +85,7 @@ const TransactionItem = ({ record, isOwner, onDelete }) => {
   const displayName =
     record.bus_name || (record.transaction_type === "WITHDRAWAL" ? "Owner Wallet" : "No bus");
   const showReason = record.transaction_type === "WITHDRAWAL" && record.description?.trim();
+  
   return (
     <div className="bg-white rounded-lg sm:rounded-xl border border-gray-200 p-3 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
       <div className="flex items-start gap-2 sm:gap-3 min-w-0 w-full">
@@ -148,6 +152,7 @@ const TransactionItem = ({ record, isOwner, onDelete }) => {
 /* -------------------------------------------------------------------------- */
 const AttachmentItem = ({ attachment }) => {
   const isImage = /\.(jpe?g|png|gif|webp)$/i.test(attachment.file_name);
+  
   return (
     <a
       href={attachment.file_url}
@@ -191,12 +196,14 @@ const SummaryCard = ({ label, amount, bgColor, textColor }) => (
 const WalletBalance = ({ balance }) => {
   const isPositive = balance >= 0;
   const displayAmount = Math.abs(balance).toFixed(0);
+  
   return (
     <div
-      className={`mt-3 sm:mt-5 rounded-lg sm:rounded-xl p-3 sm:p-5 border-2 text-center ${isPositive
-        ? "bg-gradient-to-br from-green-50 to-green-100 border-green-300"
-        : "bg-gradient-to-br from-red-50 to-red-100 border-red-300"
-        }`}
+      className={`mt-3 sm:mt-5 rounded-lg sm:rounded-xl p-3 sm:p-5 border-2 text-center ${
+        isPositive
+          ? "bg-gradient-to-br from-green-50 to-green-100 border-green-300"
+          : "bg-gradient-to-br from-red-50 to-red-100 border-red-300"
+      }`}
     >
       <div className={`text-sm sm:text-lg font-semibold ${isPositive ? "text-green-800" : "text-red-800"}`}>
         Wallet Balance
@@ -272,30 +279,11 @@ const WithdrawalDateHeader = ({ date, totalAmount, isOpen, onToggle }) => (
 );
 
 /* -------------------------------------------------------------------------- */
-/* BUS HEADING (CENTERED) */
-/* -------------------------------------------------------------------------- */
-const BusHeading = ({ busDetails }) => {
-  if (!busDetails) return null;
-
-  const { bus_name, route, registration_number } = busDetails;
-
-  return (
-    <div className="text-center py-4">
-      <div className="font-bold text-black text-lg">
-        {bus_name} {route ? `(${route})` : ""}
-      </div>
-      <div className="text-gray-700 text-sm mt-1">
-        {registration_number || "No registration number"}
-      </div>
-    </div>
-  );
-};
-
-/* -------------------------------------------------------------------------- */
 /* ATTACHMENTS MODAL */
 /* -------------------------------------------------------------------------- */
 const AttachmentsModal = ({ isOpen, title, attachments, onClose }) => {
   if (!isOpen) return null;
+  
   return (
     <>
       <div className="fixed inset-0 bg-black/60 z-50 backdrop-blur-sm" onClick={onClose} />
@@ -326,116 +314,14 @@ const AttachmentsModal = ({ isOpen, title, attachments, onClose }) => {
 };
 
 /* -------------------------------------------------------------------------- */
-/* GLOBAL FILTER MODAL */
-/* -------------------------------------------------------------------------- */
-const GlobalFilterModal = ({ isOpen, onClose, buses = [], onApplyFilter, currentFilter }) => {
-  const [fromDate, setFromDate] = useState(currentFilter.fromDate || "");
-  const [toDate, setToDate] = useState(currentFilter.toDate || "");
-  const [selectedBusName, setSelectedBusName] = useState(currentFilter.bus || "");
-
-  const handleApply = () => {
-    if (fromDate && toDate && fromDate !== toDate) {
-      alert("Date range filtering is not supported yet. Please select a single date.");
-      return;
-    }
-
-    const appliedFilter = {
-      fromDate: fromDate || null,
-      toDate: toDate || null,
-      bus: selectedBusName || null,
-    };
-
-    onApplyFilter(appliedFilter);
-    onClose();
-  };
-
-  const handleClear = () => {
-    setFromDate("");
-    setToDate("");
-    setSelectedBusName("");
-    onApplyFilter({ fromDate: null, toDate: null, bus: null });
-    onClose();
-  };
-
-  if (!isOpen) return null;
-
-  return (
-    <>
-      <div className="fixed inset-0 bg-black/60 z-50 backdrop-blur-sm" onClick={onClose} />
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl">
-          <div className="flex justify-between items-center p-5 border-b">
-            <h3 className="font-bold text-lg text-gray-900">Filter Transactions</h3>
-            <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-              <X size={22} />
-            </button>
-          </div>
-          <div className="p-6 space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Date (Single Day)</label>
-              <input
-                type="date"
-                value={fromDate}
-                onChange={(e) => {
-                  setFromDate(e.target.value);
-                  setToDate(e.target.value); // Force same as From
-                }}
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none"
-                max={new Date().toISOString().split("T")[0]}
-              />
-              <p className="text-xs text-gray-500 mt-2">Range filtering not supported yet. Use single date.</p>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Bus</label>
-              <div className="relative">
-                <select
-                  value={selectedBusName}
-                  onChange={(e) => setSelectedBusName(e.target.value)}
-                  className="w-full px-4 py-3 pr-10 bg-white border-2 border-gray-300 rounded-lg font-medium focus:outline-none focus:border-blue-500 appearance-none cursor-pointer"
-                >
-                  <option value="">All Buses ({buses.length})</option>
-                  {buses.map((bus) => (
-                    <option key={bus.id} value={bus.bus_name}>
-                      {bus.bus_name} {bus.registration_number ? `(${bus.registration_number})` : ""}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown
-                  size={20}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none"
-                />
-              </div>
-            </div>
-            <div className="flex gap-3">
-              <button
-                onClick={handleApply}
-                className="flex-1 px-6 py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-all"
-              >
-                Apply Filter
-              </button>
-              <button
-                onClick={handleClear}
-                className="px-6 py-4 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold rounded-xl transition-all"
-              >
-                Clear
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </>
-  );
-};
-
-/* -------------------------------------------------------------------------- */
-/* CUSTOM RANGE REPORT MODAL */
+/* UPDATED: CUSTOM DATE RANGE REPORT MODAL */
 /* -------------------------------------------------------------------------- */
 const CustomRangeReportModal = ({ isOpen, onClose, onDownload, buses = [] }) => {
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
-  const [selectedBus, setSelectedBus] = useState("");
+  const [selectedBus, setSelectedBus] = useState(""); // "" = All Buses
   const [loading, setLoading] = useState(false);
-
+  
   const handleDownload = async () => {
     if (!fromDate || !toDate) {
       alert("Please select both From and To dates");
@@ -445,6 +331,7 @@ const CustomRangeReportModal = ({ isOpen, onClose, onDownload, buses = [] }) => 
       alert("To date cannot be earlier than From date");
       return;
     }
+    
     setLoading(true);
     try {
       await onDownload(fromDate, toDate, selectedBus || null);
@@ -455,8 +342,9 @@ const CustomRangeReportModal = ({ isOpen, onClose, onDownload, buses = [] }) => 
       setLoading(false);
     }
   };
-
+  
   if (!isOpen) return null;
+  
   return (
     <>
       <div className="fixed inset-0 bg-black/60 z-50 backdrop-blur-sm" onClick={onClose} />
@@ -544,32 +432,51 @@ const CustomRangeReportModal = ({ isOpen, onClose, onDownload, buses = [] }) => 
 };
 
 /* -------------------------------------------------------------------------- */
+/* BUS HEADER COMPONENT */
+/* -------------------------------------------------------------------------- */
+const BusHeader = ({ busDetails }) => {
+  if (!busDetails) return null;
+  
+  const { bus_name, route, registration_number } = busDetails;
+  
+  return (
+    <div className="text-center py-3 border-b border-gray-200 bg-gray-50 rounded-lg mb-3">
+      <div className="text-base sm:text-lg font-semibold text-black">
+        {bus_name}{route ? ` (${route})` : ''}
+      </div>
+      {registration_number && (
+        <div className="text-sm sm:text-base text-black mt-1">
+          {registration_number}
+        </div>
+      )}
+    </div>
+  );
+};
+
+/* -------------------------------------------------------------------------- */
 /* MAIN COMPONENT */
 /* -------------------------------------------------------------------------- */
 export default function RecordsTab({
-  records: initialRecords = [],
-  summary: initialSummary = {},
-  loadingRecords: initialLoading = false,
-  openDates: initialOpenDates = {},
-  toggleDate: initialToggleDate,
+  records,
+  loadingRecords,
+  summary = {},
+  openDates,
+  toggleDate,
   deleteRecord,
   isOwner,
+  modalOpen,
+  setModalOpen,
+  modalTitle,
+  setModalTitle,
+  modalAttachments,
+  setModalAttachments,
 }) {
   const [activeTab, setActiveTab] = useState("transactions");
-  const [records, setRecords] = useState(initialRecords);
-  const [summary, setSummary] = useState(initialSummary);
-  const [loadingRecords, setLoadingRecords] = useState(initialLoading);
-  const [openDates, setOpenDates] = useState(initialOpenDates);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [modalTitle, setModalTitle] = useState("");
-  const [modalAttachments, setModalAttachments] = useState([]);
   const [dateBusFilters, setDateBusFilters] = useState({});
   const [rangeModalOpen, setRangeModalOpen] = useState(false);
-  const [filterModalOpen, setFilterModalOpen] = useState(false);
   const [ownerBuses, setOwnerBuses] = useState([]);
-
-  const [globalFilter, setGlobalFilter] = useState({ fromDate: null, toDate: null, bus: null });
-
+  
+  // Fetch owner's buses
   useEffect(() => {
     if (isOwner) {
       axiosInstance.get("/finance/buses/")
@@ -577,76 +484,36 @@ export default function RecordsTab({
         .catch(err => console.error("Failed to load buses:", err));
     }
   }, [isOwner]);
-
-  const fetchData = async (filter = {}) => {
-    setLoadingRecords(true);
-    try {
-      const params = new URLSearchParams();
-
-      if (filter.fromDate && filter.fromDate === filter.toDate) {
-        params.append("date", filter.fromDate);
-      }
-
-      if (filter.bus) {
-        const bus = ownerBuses.find(b => b.bus_name === filter.bus);
-        if (bus) params.append("bus", bus.id);
-      }
-
-      const url = params.toString()
-        ? `/finance/transactions/report/?${params.toString()}`
-        : "/finance/transactions/report/";
-
-      const response = await axiosInstance.get(url);
-      setRecords(response.data.transactions || []);
-      setSummary(response.data.summary || {});
-    } catch (err) {
-      console.error("Failed to fetch filtered data:", err);
-      alert("Failed to apply filter. Try again.");
-    } finally {
-      setLoadingRecords(false);
-    }
-  };
-
-  // Initial load
-  useEffect(() => {
-    fetchData({});
-  }, [ownerBuses]); // Wait for buses to load if needed for bus filter
-
-  // Apply filter when changed
-  useEffect(() => {
-    fetchData(globalFilter);
-  }, [globalFilter]);
-
-  const toggleDate = (date) => {
-    setOpenDates(prev => ({ ...prev, [date]: !prev[date] }));
-  };
-
+  
+  const {
+    total_income = 0,
+    total_expense = 0,
+    total_maintenance = 0,
+    total_withdrawal = 0,
+    balance = 0,
+  } = summary;
+  
   const today = new Date().toISOString().split("T")[0];
-
-  const displayRecords = isOwner
-    ? records
-    : records.filter(r => r.date === today);
-
-  const regularTransactions = displayRecords.filter(r => r.transaction_type !== "WITHDRAWAL");
-  const regularRecordsByDate = regularTransactions.reduce((acc, record) => {
-    const key = record.date || "unknown";
-    if (!acc[key]) acc[key] = [];
-    acc[key].push(record);
-    return acc;
+  const displayRecords = isOwner ? records : records.filter((r) => r.date === today);
+  
+  const regularTransactions = displayRecords.filter((r) => r.transaction_type !== "WITHDRAWAL");
+  const regularRecordsByDate = regularTransactions.reduce((grouped, record) => {
+    const dateKey = record.date || "unknown";
+    if (!grouped[dateKey]) grouped[dateKey] = [];
+    grouped[dateKey].push(record);
+    return grouped;
   }, {});
-
   const regularDates = Object.keys(regularRecordsByDate).sort((a, b) => new Date(b) - new Date(a));
-
-  const withdrawalTransactions = displayRecords.filter(r => r.transaction_type === "WITHDRAWAL");
-  const withdrawalsByDate = withdrawalTransactions.reduce((acc, record) => {
-    const key = record.date || "unknown";
-    if (!acc[key]) acc[key] = [];
-    acc[key].push(record);
-    return acc;
+  
+  const withdrawalTransactions = records.filter((r) => r.transaction_type === "WITHDRAWAL");
+  const withdrawalsByDate = withdrawalTransactions.reduce((grouped, record) => {
+    const dateKey = record.date || "unknown";
+    if (!grouped[dateKey]) grouped[dateKey] = [];
+    grouped[dateKey].push(record);
+    return grouped;
   }, {});
-
   const withdrawalDates = Object.keys(withdrawalsByDate).sort((a, b) => new Date(b) - new Date(a));
-
+  
   const calculateDailyTotals = (dayRecords) => {
     const totals = {
       totalIncome: 0,
@@ -654,6 +521,7 @@ export default function RecordsTab({
       totalMaintenance: 0,
       staffAssignments: { driver: "", conductor: "", cleaner: "" },
     };
+    
     dayRecords.forEach((record) => {
       const amount = Number(record.amount || 0);
       switch (record.transaction_type) {
@@ -661,31 +529,18 @@ export default function RecordsTab({
         case "EXPENSE": totals.totalExpense += amount; break;
         case "MAINTENANCE": totals.totalMaintenance += amount; break;
       }
+      
       if (record.staff_names) {
         if (!totals.staffAssignments.driver) totals.staffAssignments.driver = record.staff_names.driver || "";
         if (!totals.staffAssignments.conductor) totals.staffAssignments.conductor = record.staff_names.conductor || "";
         if (!totals.staffAssignments.cleaner) totals.staffAssignments.cleaner = record.staff_names.cleaner || "";
       }
     });
+    
     totals.netCollection = totals.totalIncome - (totals.totalExpense + totals.totalMaintenance);
     return totals;
   };
-
-  const getUniqueBusInfoForDate = (date, selectedBusName = "") => {
-    const dayRecords = regularRecordsByDate[date] || [];
-    const filtered = selectedBusName
-      ? dayRecords.filter(r => (r.bus_name?.trim() || "") === selectedBusName)
-      : dayRecords;
-
-    const busMap = new Map();
-    filtered.forEach((record) => {
-      if (record.bus_details) {
-        busMap.set(record.bus_name, record.bus_details);
-      }
-    });
-    return Array.from(busMap.values());
-  };
-
+  
   const getUniqueBusNamesForDate = (date) => {
     const dayRecords = regularRecordsByDate[date] || [];
     const busNames = new Set();
@@ -695,28 +550,76 @@ export default function RecordsTab({
     });
     return Array.from(busNames).sort();
   };
-
+  
+  const getGroupedRecordsByBus = (records) => {
+    const grouped = {};
+    
+    records.forEach(record => {
+      const busName = record.bus_name?.trim() || "Unknown Bus";
+      const busDetails = record.bus_details || { 
+        bus_name: busName, 
+        route: "", 
+        registration_number: "" 
+      };
+      
+      if (!grouped[busName]) {
+        grouped[busName] = {
+          busDetails,
+          records: [],
+          attachments: [],
+          staffAssignments: { driver: "", conductor: "", cleaner: "" }
+        };
+      }
+      
+      grouped[busName].records.push(record);
+      
+      // Collect attachments
+      if (record.attachments && record.attachments.length > 0) {
+        grouped[busName].attachments.push(...record.attachments.filter(att => att && att.file_url));
+      }
+      
+      // Collect staff assignments
+      if (record.staff_names) {
+        if (!grouped[busName].staffAssignments.driver && record.staff_names.driver) {
+          grouped[busName].staffAssignments.driver = record.staff_names.driver;
+        }
+        if (!grouped[busName].staffAssignments.conductor && record.staff_names.conductor) {
+          grouped[busName].staffAssignments.conductor = record.staff_names.conductor;
+        }
+        if (!grouped[busName].staffAssignments.cleaner && record.staff_names.cleaner) {
+          grouped[busName].staffAssignments.cleaner = record.staff_names.cleaner;
+        }
+      }
+    });
+    
+    return grouped;
+  };
+  
   const downloadReport = async (date, busName = null) => {
     try {
       const params = new URLSearchParams();
       params.append("date", date);
       if (busName) params.append("bus", busName);
-
+      
+      // Get the filtered attachments for this date and bus
       const dayRecords = regularRecordsByDate[date] || [];
       const filteredRecords = busName
-        ? dayRecords.filter(r => (r.bus_name?.trim() || "") === busName)
+        ? dayRecords.filter((r) => (r.bus_name?.trim() || "") === busName)
         : dayRecords;
+      
       const dayAttachments = filteredRecords
-        .flatMap(record => record.attachments || [])
-        .filter(att => att && att.file_url);
-
+        .flatMap((record) => record.attachments || [])
+        .filter((att) => att && att.file_url);
+      
+      // Send attachments as JSON in query (we'll parse in backend)
       if (dayAttachments.length > 0) {
         params.append("attachments", JSON.stringify(dayAttachments));
       }
-
+      
       const response = await axiosInstance.get(`/finance/reports/daily-pdf/?${params.toString()}`, {
         responseType: 'blob',
       });
+      
       const filename = `Daily_Report_${date}${busName ? `_${busName}` : ''}.pdf`;
       const blob = new Blob([response.data], { type: 'application/pdf' });
       const url = window.URL.createObjectURL(blob);
@@ -732,7 +635,7 @@ export default function RecordsTab({
       alert("Failed to download daily PDF");
     }
   };
-
+  
   const downloadRangeReport = async (fromDate, toDate, busName = null) => {
     try {
       const params = new URLSearchParams();
@@ -741,12 +644,16 @@ export default function RecordsTab({
       if (busName) {
         params.append("bus", busName);
       }
+      
+      console.log("Requesting URL with params:", params.toString());
       const response = await axiosInstance.get(`/finance/reports/range-pdf/?${params.toString()}`, {
         responseType: 'blob',
       });
+      
       const filename = busName
         ? `Report_${fromDate}_to_${toDate}_${busName.replace(/\s+/g, '_')}.pdf`
         : `Report_${fromDate}_to_${toDate}_All_Buses.pdf`;
+      
       const blob = new Blob([response.data], { type: 'application/pdf' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -761,25 +668,25 @@ export default function RecordsTab({
       throw err;
     }
   };
-
+  
   return (
     <>
       {/* SUMMARY SECTION */}
       <div className="bg-white rounded-lg sm:rounded-xl border border-gray-200 p-3 sm:p-5 mb-3 sm:mb-6">
         <div className={`grid grid-cols-2 ${isOwner ? "lg:grid-cols-4" : "sm:grid-cols-3"} gap-3 sm:gap-4`}>
-          <SummaryCard label="Total Income" amount={summary.total_income || 0} bgColor="bg-gradient-to-br from-green-50 to-green-100" textColor="text-green-700" />
-          <SummaryCard label="Regular Expense" amount={summary.total_expense || 0} bgColor="bg-gradient-to-br from-red-50 to-red-100" textColor="text-red-700" />
-          <SummaryCard label="Maintenance" amount={summary.total_maintenance || 0} bgColor="bg-gradient-to-br from-orange-50 to-orange-100" textColor="text-orange-700" />
+          <SummaryCard label="Total Income" amount={total_income} bgColor="bg-gradient-to-br from-green-50 to-green-100" textColor="text-green-700" />
+          <SummaryCard label="Regular Expense" amount={total_expense} bgColor="bg-gradient-to-br from-red-50 to-red-100" textColor="text-red-700" />
+          <SummaryCard label="Maintenance" amount={total_maintenance} bgColor="bg-gradient-to-br from-orange-50 to-orange-100" textColor="text-orange-700" />
           {isOwner && (
-            <SummaryCard label="Owner Withdrawal" amount={summary.total_withdrawal || 0} bgColor="bg-gradient-to-br from-purple-50 to-purple-100" textColor="text-purple-700" />
+            <SummaryCard label="Owner Withdrawal" amount={total_withdrawal} bgColor="bg-gradient-to-br from-purple-50 to-purple-100" textColor="text-purple-700" />
           )}
         </div>
-        {isOwner && <WalletBalance balance={summary.balance || 0} />}
+        {isOwner && <WalletBalance balance={balance} />}
       </div>
-
-      {/* TABS + FILTER */}
+      
+      {/* TABS */}
       <div className="bg-white rounded-lg sm:rounded-xl border border-gray-200 p-1.5 sm:p-2 mb-3 sm:mb-6">
-        <div className="flex gap-1.5 sm:gap-2 items-center">
+        <div className="flex gap-1.5 sm:gap-2">
           <button
             onClick={() => setActiveTab("transactions")}
             className={`flex-1 flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl text-xs font-semibold transition-all ${
@@ -805,28 +712,24 @@ export default function RecordsTab({
               Withdrawals
             </button>
           )}
-          <button
-            onClick={() => setFilterModalOpen(true)}
-            className="px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-100 hover:bg-gray-200 rounded-lg sm:rounded-xl transition-all"
-          >
-            <Filter size={18} className="text-gray-700" />
-          </button>
         </div>
       </div>
-
-      {/* Floating Report Button */}
-      {isOwner && (
-        <div className="fixed bottom-20 right-4 z-40 flex flex-col gap-3">
-          <button
-            onClick={() => setRangeModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-full shadow-lg transition-all hover:scale-105"
-          >
-            <Download size={22} />
-            <span>Report</span>
-          </button>
-        </div>
-      )}
-
+      
+      <div className="">
+        {/* Floating Custom Report Button */}
+        {isOwner && (
+          <div className="fixed bottom-20 right-4 z-40">
+            <button
+              onClick={() => setRangeModalOpen(true)}
+              className="flex items-center gap-2 p-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold text-sm rounded-full transition-all hover:scale-105 active:scale-95"
+            >
+              <Download size={24} />
+              <span> Report</span>
+            </button>
+          </div>
+        )}
+      </div>
+      
       {/* MAIN CONTENT */}
       {loadingRecords ? (
         <div className="flex justify-center py-12 sm:py-20">
@@ -840,8 +743,13 @@ export default function RecordsTab({
                 <div className="text-center py-12 sm:py-20">
                   <FileText className="mx-auto text-gray-300 mb-3 sm:mb-4" size={48} />
                   <p className="text-gray-500 font-medium text-sm sm:text-lg">
-                    {isOwner ? "No transactions found" : "No transactions for today"}
+                    {isOwner ? "No daily transactions found" : "No transactions for today"}
                   </p>
+                  {!isOwner && (
+                    <p className="text-gray-400 text-xs sm:text-sm mt-1 sm:mt-2">
+                      Only today's records are visible to staff
+                    </p>
+                  )}
                 </div>
               ) : (
                 <div className="space-y-3 sm:space-y-6">
@@ -850,24 +758,21 @@ export default function RecordsTab({
                     const dailyTotals = calculateDailyTotals(dailyRecords);
                     const isDateOpen = openDates[date];
                     const selectedBusName = dateBusFilters[date] || "";
+                    
+                    // Filter records based on selected bus
                     const filteredRecords = selectedBusName
-                      ? dailyRecords.filter(r => (r.bus_name?.trim() || "") === selectedBusName)
+                      ? dailyRecords.filter((r) => (r.bus_name?.trim() || "") === selectedBusName)
                       : dailyRecords;
-
-                    const activeBuses = getUniqueBusInfoForDate(date, selectedBusName);
-                    const busToShow = activeBuses.length === 1 ? activeBuses[0] : null;
-
+                    
+                    // Group filtered records by bus
+                    const groupedByBus = getGroupedRecordsByBus(filteredRecords);
                     const busNamesOnDate = getUniqueBusNamesForDate(date);
+                    
                     const hasStaff =
                       dailyTotals.staffAssignments.driver ||
                       dailyTotals.staffAssignments.conductor ||
                       dailyTotals.staffAssignments.cleaner;
-
-                    const dayAttachments = filteredRecords
-                      .flatMap(record => record.attachments || [])
-                      .filter(att => att && att.file_url);
-                    const hasAttachments = dayAttachments.length > 0;
-
+                    
                     return (
                       <div key={date} className="bg-white rounded-lg sm:rounded-xl border border-gray-200 overflow-hidden">
                         <DailySummaryHeader
@@ -878,8 +783,6 @@ export default function RecordsTab({
                         />
                         {isDateOpen && (
                           <div className="p-3 sm:p-4 space-y-3 sm:space-y-4">
-                            {busToShow && <BusHeading busDetails={busToShow} />}
-
                             {hasStaff && (
                               <div className="flex flex-wrap gap-2 sm:gap-3 pb-2 border-b border-gray-200">
                                 {dailyTotals.staffAssignments.driver && (
@@ -893,7 +796,7 @@ export default function RecordsTab({
                                 )}
                               </div>
                             )}
-
+                            
                             {busNamesOnDate.length > 1 && (
                               <div className="bg-blue-50 border border-blue-200 rounded-lg sm:rounded-xl p-3 sm:p-4">
                                 <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
@@ -904,7 +807,7 @@ export default function RecordsTab({
                                   <select
                                     value={selectedBusName}
                                     onChange={(e) =>
-                                      setDateBusFilters(prev => ({
+                                      setDateBusFilters((prev) => ({
                                         ...prev,
                                         [date]: e.target.value,
                                       }))
@@ -912,13 +815,20 @@ export default function RecordsTab({
                                     className="w-full px-3 sm:px-4 py-2 sm:py-3 pr-9 sm:pr-10 bg-white border-2 border-blue-300 rounded-lg text-xs sm:text-black font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer"
                                   >
                                     <option value="">All Buses</option>
-                                    {busNamesOnDate.map(name => (
-                                      <option key={name} value={name}>{name}</option>
+                                    {busNamesOnDate.map((name) => (
+                                      <option key={name} value={name}>
+                                        {name}
+                                      </option>
                                     ))}
                                   </select>
                                   {selectedBusName && (
                                     <button
-                                      onClick={() => setDateBusFilters(prev => ({ ...prev, [date]: "" }))}
+                                      onClick={() =>
+                                        setDateBusFilters((prev) => ({
+                                          ...prev,
+                                          [date]: "",
+                                        }))
+                                      }
                                       className="absolute right-9 sm:right-10 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
                                     >
                                       <X size={14} className="sm:w-4 sm:h-4" />
@@ -931,61 +841,101 @@ export default function RecordsTab({
                                 </div>
                               </div>
                             )}
-
-                            <div className="flex items-center justify-between gap-3">
-                              {hasAttachments && (
+                            
+                            {/* Display transactions grouped by bus */}
+                            {Object.entries(groupedByBus).map(([busName, busData]) => {
+                              const hasBusStaff = 
+                                busData.staffAssignments.driver || 
+                                busData.staffAssignments.conductor || 
+                                busData.staffAssignments.cleaner;
+                              
+                              return (
+                                <div key={busName} className="space-y-3 sm:space-y-4">
+                                  {/* Bus Header */}
+                                  <BusHeader busDetails={busData.busDetails} />
+                                  
+                                  {/* Bus-specific staff badges */}
+                                  {hasBusStaff && (
+                                    <div className="flex flex-wrap gap-2 sm:gap-3 pb-2">
+                                      {busData.staffAssignments.driver && (
+                                        <StaffBadge role="DRIVER" name={busData.staffAssignments.driver} />
+                                      )}
+                                      {busData.staffAssignments.conductor && (
+                                        <StaffBadge role="CONDUCTOR" name={busData.staffAssignments.conductor} />
+                                      )}
+                                      {busData.staffAssignments.cleaner && (
+                                        <StaffBadge role="CLEANER" name={busData.staffAssignments.cleaner} />
+                                      )}
+                                    </div>
+                                  )}
+                                  
+                                  {/* Attachments button for this bus */}
+                                  {busData.attachments.length > 0 && (
+                                    <div className="flex items-center justify-between gap-3">
+                                      <button
+                                        onClick={() => {
+                                          setModalOpen(true);
+                                          setModalTitle(
+                                            `Attachments - ${busName} (${busData.attachments.length})`
+                                          );
+                                          setModalAttachments(busData.attachments);
+                                        }}
+                                        className="flex items-center gap-2 px-3 py-1.5 bg-blue-100 hover:bg-blue-200 rounded-lg transition-colors"
+                                      >
+                                        <FileText size={16} className="text-blue-600" />
+                                        <span className="text-xs font-medium text-blue-800">
+                                          {busData.attachments.length} file{busData.attachments.length > 1 ? "s" : ""}
+                                        </span>
+                                      </button>
+                                    </div>
+                                  )}
+                                  
+                                  {/* Transactions for this bus */}
+                                  <div className="space-y-2 sm:space-y-3">
+                                    {busData.records
+                                      .filter((r) => r.transaction_type === "INCOME")
+                                      .map((record) => (
+                                        <TransactionItem
+                                          key={record.id}
+                                          record={record}
+                                          isOwner={isOwner}
+                                          onDelete={deleteRecord}
+                                        />
+                                      ))}
+                                    {busData.records
+                                      .filter((r) => r.transaction_type === "EXPENSE" || r.transaction_type === "MAINTENANCE")
+                                      .map((record) => (
+                                        <TransactionItem
+                                          key={record.id}
+                                          record={record}
+                                          isOwner={isOwner}
+                                          onDelete={deleteRecord}
+                                        />
+                                      ))}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                            
+                            {/* Download report button */}
+                            {filteredRecords.length > 0 && (
+                              <div className="flex justify-end mt-4">
                                 <button
                                   onClick={() => {
-                                    setModalOpen(true);
-                                    setModalTitle(`Attachments${selectedBusName ? ` - ${selectedBusName}` : ""} (${dayAttachments.length})`);
-                                    setModalAttachments(dayAttachments);
+                                    let busToUse = selectedBusName;
+                                    if (!selectedBusName && busNamesOnDate.length === 1) {
+                                      busToUse = busNamesOnDate[0];
+                                    }
+                                    downloadReport(date, busToUse || null);
                                   }}
-                                  className="flex items-center gap-2 px-3 py-1.5 bg-blue-100 hover:bg-blue-200 rounded-lg transition-colors"
+                                  className="flex items-center gap-2 px-4 py-1.5 bg-green-100 hover:bg-green-200 rounded-lg transition-colors text-green-800 font-medium"
                                 >
-                                  <FileText size={16} className="text-blue-600" />
-                                  <span className="text-xs font-medium text-blue-800">
-                                    {dayAttachments.length} file{dayAttachments.length > 1 ? "s" : ""}
-                                  </span>
+                                  <Download size={16} />
+                                  <span className="text-xs">Download Report (PDF)</span>
                                 </button>
-                              )}
-                              <button
-                                onClick={() => {
-                                  let busToUse = selectedBusName;
-                                  if (!selectedBusName && busNamesOnDate.length === 1) {
-                                    busToUse = busNamesOnDate[0];
-                                  }
-                                  downloadReport(date, busToUse || null);
-                                }}
-                                className="flex items-center gap-2 px-4 py-1.5 bg-green-100 hover:bg-green-200 rounded-lg transition-colors text-green-800 font-medium ml-auto"
-                              >
-                                <Download size={16} />
-                                <span className="text-xs">Report (PDF)</span>
-                              </button>
-                            </div>
-
-                            <div className="space-y-2 sm:space-y-3">
-                              {filteredRecords
-                                .filter(r => r.transaction_type === "INCOME")
-                                .map(record => (
-                                  <TransactionItem
-                                    key={record.id}
-                                    record={record}
-                                    isOwner={isOwner}
-                                    onDelete={deleteRecord}
-                                  />
-                                ))}
-                              {filteredRecords
-                                .filter(r => r.transaction_type === "EXPENSE" || r.transaction_type === "MAINTENANCE")
-                                .map(record => (
-                                  <TransactionItem
-                                    key={record.id}
-                                    record={record}
-                                    isOwner={isOwner}
-                                    onDelete={deleteRecord}
-                                  />
-                                ))}
-                            </div>
-
+                              </div>
+                            )}
+                            
                             {filteredRecords.length === 0 && (
                               <div className="text-center py-6 sm:py-8 text-gray-500 text-xs sm:text-black">
                                 No transactions found for selected filter
@@ -1000,13 +950,16 @@ export default function RecordsTab({
               )}
             </>
           )}
-
+          
           {activeTab === "withdrawals" && isOwner && (
             <>
               {withdrawalDates.length === 0 ? (
                 <div className="text-center py-12 sm:py-20">
                   <Wallet className="mx-auto text-gray-300 mb-3 sm:mb-4" size={48} />
                   <p className="text-gray-500 font-medium text-sm sm:text-lg">No withdrawals found</p>
+                  <p className="text-gray-400 text-xs sm:text-sm mt-1 sm:mt-2">
+                    Owner withdrawals will appear here
+                  </p>
                 </div>
               ) : (
                 <div className="space-y-3 sm:space-y-6">
@@ -1017,6 +970,7 @@ export default function RecordsTab({
                       (sum, record) => sum + Number(record.amount || 0),
                       0
                     );
+                    
                     return (
                       <div key={date} className="bg-white rounded-lg sm:rounded-xl border border-gray-200 overflow-hidden">
                         <WithdrawalDateHeader
@@ -1046,22 +1000,14 @@ export default function RecordsTab({
           )}
         </>
       )}
-
+      
       <AttachmentsModal
         isOpen={modalOpen}
         title={modalTitle}
         attachments={modalAttachments}
         onClose={() => setModalOpen(false)}
       />
-
-      <GlobalFilterModal
-        isOpen={filterModalOpen}
-        onClose={() => setFilterModalOpen(false)}
-        buses={ownerBuses}
-        currentFilter={globalFilter}
-        onApplyFilter={setGlobalFilter}
-      />
-
+      
       <CustomRangeReportModal
         isOpen={rangeModalOpen}
         onClose={() => setRangeModalOpen(false)}
