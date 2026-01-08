@@ -315,7 +315,7 @@ export default function StaffManagement() {
               .filter(b => b.is_operational !== false)
               .map(b => ({
                 value: b.id.toString(),
-                label: `${b.bus_name || b.registration_number} (${b.bus_type || 'Standard'})`,
+                label: `${ b.registration_number} (${b.bus_name  || 'Standard'})`,
               })),
             disabled: busLoading,
           },
