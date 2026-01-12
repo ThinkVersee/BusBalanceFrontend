@@ -229,14 +229,15 @@ const AttachmentsButton = ({ attachments, busName, onOpenModal }) => {
 };
 
 const DailyReportDownloadButton = ({ date, buses }) => {
-  const singleBusName = buses.length === 1 ? buses[0].bus_details?.bus_name : null;
+  const singleBus = buses.length === 1 ? buses[0] : null;
+  const singleBusId = singleBus?.bus_details?.id || null;
 
   const downloadDailyReport = async () => {
     try {
       const params = new URLSearchParams({ date });
-      if (singleBusName) params.append("bus", singleBusName);
+      if (singleBusId) params.append("bus_id", singleBusId);
       const response = await axiosInstance.get(`/finance/reports/daily-pdf/?${params}`, { responseType: 'blob' });
-      const filename = `Daily_Report_${date}${singleBusName ? `_${singleBusName.replace(/\s+/g, '_')}` : ''}.pdf`;
+      const filename = `Daily_Report_${date}${singleBus?.bus_details?.bus_name ? `_${singleBus.bus_details.bus_name.replace(/\s+/g, '_')}` : ''}.pdf`;
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const a = document.createElement('a');
       a.href = url;
@@ -314,7 +315,7 @@ const AttachmentsModal = ({ isOpen, title, attachments, onClose }) => {
 const CustomRangeReportModal = ({ isOpen, onClose, onDownload, buses = [] }) => {
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
-  const [selectedBus, setSelectedBus] = useState("");
+  const [selectedBusId, setSelectedBusId] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleDownload = async () => {
@@ -323,7 +324,7 @@ const CustomRangeReportModal = ({ isOpen, onClose, onDownload, buses = [] }) => 
 
     setLoading(true);
     try {
-      await onDownload(fromDate, toDate, selectedBus || null);
+      await onDownload(fromDate, toDate, selectedBusId || null);
       onClose();
     } catch (err) {
       alert("Failed to download report.");
@@ -368,13 +369,13 @@ const CustomRangeReportModal = ({ isOpen, onClose, onDownload, buses = [] }) => 
               <label className="block text-sm font-medium text-gray-700 mb-2">Bus Filter</label>
               <div className="relative">
                 <select
-                  value={selectedBus}
-                  onChange={e => setSelectedBus(e.target.value)}
+                  value={selectedBusId}
+                  onChange={e => setSelectedBusId(e.target.value)}
                   className="w-full px-4 py-3 pr-12 bg-white border-2 border-gray-300 rounded-lg appearance-none cursor-pointer text-gray-900 focus:border-blue-500 focus:outline-none hover:border-gray-400 transition-colors"
                 >
                   <option value="">All Buses ({buses.length})</option>
                   {buses.map(bus => (
-                    <option key={bus.id} value={bus.bus_name}>
+                    <option key={bus.id} value={bus.id}>
                       {bus.bus_name} {bus.registration_number ? `(${bus.registration_number})` : ""}
                     </option>
                   ))}
@@ -431,14 +432,18 @@ export default function RecordsTab({
     setModalOpen(true);
   };
 
-  const downloadRangeReport = async (fromDate, toDate, busName = null) => {
+  const downloadRangeReport = async (fromDate, toDate, busId = null) => {
     try {
       const params = new URLSearchParams({ from_date: fromDate, to_date: toDate });
-      if (busName) params.append("bus", busName);
+      if (busId) params.append("bus_id", busId);
       const response = await axiosInstance.get(`/finance/reports/range-pdf/?${params}`, { responseType: 'blob' });
-      const filename = busName
+      
+      const selectedBus = busId ? ownerBuses.find(bus => bus.id === parseInt(busId)) : null;
+      const busName = selectedBus?.bus_name || "";
+      const filename = busId
         ? `Report_${fromDate}_to_${toDate}_${busName.replace(/\s+/g, '_')}.pdf`
         : `Report_${fromDate}_to_${toDate}_All_Buses.pdf`;
+      
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const a = document.createElement('a');
       a.href = url;
@@ -516,7 +521,7 @@ export default function RecordsTab({
         </div>
       </div>
 
-      {/* Floating Custom Report Button */}
+      {/* Floating Custom Report Button
       {isOwner && (
         <div className="fixed bottom-20 right-4 z-40">
           <button
@@ -526,7 +531,7 @@ export default function RecordsTab({
             <Download size={24} /> <span className="hidden sm:inline">Custom Report</span>
           </button>
         </div>
-      )}
+      )} */}
 
       {/* Transactions Tab */}
       {activeTab === "transactions" && (
@@ -693,12 +698,12 @@ export default function RecordsTab({
         attachments={modalAttachments}
         onClose={() => setModalOpen(false)}
       />
-      <CustomRangeReportModal
+      {/* <CustomRangeReportModal
         isOpen={rangeModalOpen}
         onClose={() => setRangeModalOpen(false)}
         onDownload={downloadRangeReport}
         buses={ownerBuses}
-      />
+      /> */}
     </>
   );
 }
