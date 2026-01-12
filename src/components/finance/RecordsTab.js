@@ -55,25 +55,26 @@ const TransactionItem = ({ record, isOwner, onDelete }) => {
   const showReason = record.transaction_type === "WITHDRAWAL" && record.description?.trim();
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-      <div className="flex items-start gap-3 min-w-0 flex-1">
-        <span className={`px-3 py-1.5 rounded-full text-xs font-bold ${config.bg} ${config.text}`}>
+    <div className="bg-white rounded-xl border border-gray-200 p-4">
+      <div className="flex items-start gap-3">
+        <span className={`px-3 py-1.5 rounded-full text-xs font-bold ${config.bg} ${config.text} shrink-0`}>
           {config.label}
         </span>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between gap-4">
-            <div className="min-w-0">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
               <div className="font-semibold text-gray-900 text-sm truncate">{record.category_name}</div>
               <div className="text-xs text-gray-500 truncate">{displayName}</div>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 shrink-0">
               <span className={`font-bold text-lg whitespace-nowrap ${config.amount}`}>
                 ₹{Number(record.amount).toFixed(0)}
               </span>
               {isOwner && (
                 <button
                   onClick={(e) => { e.stopPropagation(); onDelete(record.id); }}
-                  className="text-red-600 hover:bg-red-50 rounded-lg p-1 transition-colors"
+                  className="text-red-600 hover:bg-red-50 rounded-lg p-1.5 transition-colors"
+                  aria-label="Delete"
                 >
                   <Trash2 size={18} />
                 </button>
@@ -82,11 +83,11 @@ const TransactionItem = ({ record, isOwner, onDelete }) => {
           </div>
           {showReason && (
             <div className="mt-2 flex items-center gap-2 text-xs text-gray-600">
-              <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 text-purple-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                   d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2-2z" />
               </svg>
-              <span>Reason: {record.description.trim()}</span>
+              <span className="break-words">Reason: {record.description.trim()}</span>
             </div>
           )}
         </div>
@@ -121,6 +122,65 @@ const WalletBalance = ({ balance }) => {
       <div className={`text-xs mt-1 ${isPositive ? "text-green-600" : "text-red-600"}`}>
         {isPositive ? "Available funds" : "Outstanding amount"}
       </div>
+    </div>
+  );
+};
+
+const BusSummary = ({ bus }) => {
+  const totalExpense = bus.expense_maintenance_transactions.reduce(
+    (sum, rec) => sum + Number(rec.amount),
+    0
+  );
+  
+  const totalIncome = bus.income_transactions.reduce(
+    (sum, rec) => sum + Number(rec.amount),
+    0
+  );
+  
+  if (totalExpense === 0 && totalIncome === 0) return null;
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+      {totalIncome > 0 && (
+        <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
+                <TrendingUp size={16} className="text-green-600" />
+              </div>
+              <div>
+                <div className="text-xs font-medium text-green-600">Total Income</div>
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="text-xl font-bold text-green-700">
+                ₹{totalIncome.toFixed(0)}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {totalExpense > 0 && (
+        <div className="bg-gradient-to-r from-red-50 to-orange-50 border-2 border-red-200 rounded-xl p-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center">
+                <TrendingUp size={16} className="text-red-600" />
+              </div>
+              <div>
+                <div className="text-xs font-medium text-red-600">Total Expenses</div>
+                <div className="text-[10px] text-gray-600">(Regular + Maintenance)</div>
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="text-xl font-bold text-red-700">
+                ₹{totalExpense.toFixed(0)}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -542,6 +602,7 @@ export default function RecordsTab({
                       {filteredBuses.map(bus => (
                         <div key={bus.bus_details?.bus_name || "no-bus"} className="space-y-4">
                           <BusHeader busDetails={bus.bus_details} />
+                          <BusSummary bus={bus} />
                           <StaffBadgesRow assignments={bus.staff_assignments} />
                           <AttachmentsButton
                             attachments={bus.attachments}
