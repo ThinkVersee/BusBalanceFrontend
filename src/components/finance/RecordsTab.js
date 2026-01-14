@@ -12,6 +12,7 @@ import {
   User,
   Download,
   TrendingUp,
+  AlertCircle,
 } from "lucide-react";
 import axiosInstance from '@/config/axiosInstance';
 
@@ -229,10 +230,12 @@ const AttachmentsButton = ({ attachments, busName, onOpenModal }) => {
 };
 
 const DailyReportDownloadButton = ({ date, buses }) => {
+  const [downloading, setDownloading] = useState(false);
   const singleBus = buses.length === 1 ? buses[0] : null;
   const singleBusId = singleBus?.bus_details?.id || null;
 
   const downloadDailyReport = async () => {
+    setDownloading(true);
     try {
       const params = new URLSearchParams({ date });
       if (singleBusId) params.append("bus_id", singleBusId);
@@ -245,17 +248,30 @@ const DailyReportDownloadButton = ({ date, buses }) => {
       a.click();
       window.URL.revokeObjectURL(url);
     } catch (err) {
+      console.error(err);
       alert("Failed to download daily report");
+    } finally {
+      setDownloading(false);
     }
   };
 
   return (
     <button
       onClick={downloadDailyReport}
-      className="flex items-center gap-2 px-4 py-2 bg-green-100 hover:bg-green-200 rounded-lg text-green-800 font-medium transition-colors"
+      disabled={downloading}
+      className="flex items-center gap-2 px-4 py-2 bg-green-100 hover:bg-green-200 disabled:bg-green-50 rounded-lg text-green-800 font-medium transition-colors"
     >
-      <Download size={18} />
-      <span className="text-sm">Download Report (PDF)</span>
+      {downloading ? (
+        <>
+          <Loader2 size={18} className="animate-spin" />
+          <span className="text-sm">Downloading...</span>
+        </>
+      ) : (
+        <>
+          <Download size={18} />
+          <span className="text-sm">Download Report (PDF)</span>
+        </>
+      )}
     </button>
   );
 };
@@ -312,95 +328,6 @@ const AttachmentsModal = ({ isOpen, title, attachments, onClose }) => {
   );
 };
 
-const CustomRangeReportModal = ({ isOpen, onClose, onDownload, buses = [] }) => {
-  const [fromDate, setFromDate] = useState("");
-  const [toDate, setToDate] = useState("");
-  const [selectedBusId, setSelectedBusId] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  const handleDownload = async () => {
-    if (!fromDate || !toDate) return alert("Please select both dates");
-    if (new Date(toDate) < new Date(fromDate)) return alert("To date cannot be earlier than From date");
-
-    setLoading(true);
-    try {
-      await onDownload(fromDate, toDate, selectedBusId || null);
-      onClose();
-    } catch (err) {
-      alert("Failed to download report.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (!isOpen) return null;
-
-  return (
-    <>
-      <div className="fixed inset-0 bg-black/60 z-50 backdrop-blur-sm" onClick={onClose} />
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl">
-          <div className="flex justify-between items-center p-5 border-b">
-            <h3 className="font-bold text-lg">Download Custom Range Report</h3>
-            <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg"><X size={22} /></button>
-          </div>
-          <div className="p-6 space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">From Date</label>
-              <input
-                type="date"
-                value={fromDate}
-                onChange={e => setFromDate(e.target.value)}
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none"
-                max={new Date().toISOString().split("T")[0]}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">To Date</label>
-              <input
-                type="date"
-                value={toDate}
-                onChange={e => setToDate(e.target.value)}
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none"
-                min={fromDate}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Bus Filter</label>
-              <div className="relative">
-                <select
-                  value={selectedBusId}
-                  onChange={e => setSelectedBusId(e.target.value)}
-                  className="w-full px-4 py-3 pr-12 bg-white border-2 border-gray-300 rounded-lg appearance-none cursor-pointer text-gray-900 focus:border-blue-500 focus:outline-none hover:border-gray-400 transition-colors"
-                >
-                  <option value="">All Buses ({buses.length})</option>
-                  {buses.map(bus => (
-                    <option key={bus.id} value={bus.id}>
-                      {bus.bus_name} {bus.registration_number ? `(${bus.registration_number})` : ""}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown size={20} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 pointer-events-none" />
-              </div>
-            </div>
-            <button
-              onClick={handleDownload}
-              disabled={loading}
-              className="w-full flex items-center justify-center gap-3 py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-bold rounded-xl transition-colors"
-            >
-              {loading ? (
-                <><Loader2 className="animate-spin" size={22} /> Generating...</>
-              ) : (
-                <><Download size={22} /> Download PDF Report</>
-              )}
-            </button>
-          </div>
-        </div>
-      </div>
-    </>
-  );
-};
-
 /* -------------------------------------------------------------------------- */
 /* MAIN COMPONENT */
 /* -------------------------------------------------------------------------- */
@@ -420,11 +347,11 @@ export default function RecordsTab({
   setModalAttachments,
 }) {
   const [activeTab, setActiveTab] = useState("transactions");
-  const [rangeModalOpen, setRangeModalOpen] = useState(false);
-  const [ownerBuses, setOwnerBuses] = useState([]);
   const [dailyGroups, setDailyGroups] = useState([]);
   const [withdrawalsByDate, setWithdrawalsByDate] = useState([]);
-  const [busFilters, setBusFilters] = useState({}); // { date: selectedBusName }
+  const [busFilters, setBusFilters] = useState({});
+  const [dataLoading, setDataLoading] = useState(true);
+  const [dataError, setDataError] = useState(null);
 
   const openAttachmentsModal = (title, attachments) => {
     setModalTitle(title);
@@ -432,45 +359,36 @@ export default function RecordsTab({
     setModalOpen(true);
   };
 
-  const downloadRangeReport = async (fromDate, toDate, busId = null) => {
-    try {
-      const params = new URLSearchParams({ from_date: fromDate, to_date: toDate });
-      if (busId) params.append("bus_id", busId);
-      const response = await axiosInstance.get(`/finance/reports/range-pdf/?${params}`, { responseType: 'blob' });
-      
-      const selectedBus = busId ? ownerBuses.find(bus => bus.id === parseInt(busId)) : null;
-      const busName = selectedBus?.bus_name || "";
-      const filename = busId
-        ? `Report_${fromDate}_to_${toDate}_${busName.replace(/\s+/g, '_')}.pdf`
-        : `Report_${fromDate}_to_${toDate}_All_Buses.pdf`;
-      
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      a.click();
-      window.URL.revokeObjectURL(url);
-    } catch (err) {
-      throw err;
-    }
-  };
-
+  // Load transaction data
   useEffect(() => {
-    axiosInstance.get("/finance/transactions/report/")
-      .then(res => {
-        setDailyGroups(res.data.daily_groups || []);
-        setWithdrawalsByDate(res.data.withdrawals_by_date || []);
-      })
-      .catch(err => console.error("Failed to load grouped records:", err));
+    let isMounted = true;
+    setDataLoading(true);
+    setDataError(null);
+
+    const loadData = async () => {
+      try {
+        const response = await axiosInstance.get("/finance/transactions/report/");
+        
+        if (isMounted) {
+          setDailyGroups(response.data.daily_groups || []);
+          setWithdrawalsByDate(response.data.withdrawals_by_date || []);
+          setDataLoading(false);
+        }
+      } catch (err) {
+        console.error("Failed to load grouped records:", err);
+        if (isMounted) {
+          setDataError(err.message || "Failed to load data");
+          setDataLoading(false);
+        }
+      }
+    };
+
+    loadData();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
-
-  useEffect(() => {
-    if (isOwner) {
-      axiosInstance.get("/finance/buses/")
-        .then(res => setOwnerBuses(res.data))
-        .catch(err => console.error(err));
-    }
-  }, [isOwner]);
 
   const {
     total_income = 0,
@@ -480,8 +398,31 @@ export default function RecordsTab({
     balance = 0,
   } = summary;
 
-  if (loadingRecords) {
-    return <div className="flex justify-center py-20"><Loader2 className="animate-spin text-blue-600" size={40} /></div>;
+  // Show loading state
+  if (loadingRecords || dataLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20">
+        <Loader2 className="animate-spin text-blue-600 mb-4" size={48} />
+        <p className="text-gray-600 font-medium">Loading transactions...</p>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (dataError) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20">
+        <AlertCircle className="text-red-500 mb-4" size={48} />
+        <p className="text-red-600 font-medium mb-2">Failed to load data</p>
+        <p className="text-gray-500 text-sm">{dataError}</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+        >
+          Retry
+        </button>
+      </div>
+    );
   }
 
   return (
@@ -520,18 +461,6 @@ export default function RecordsTab({
           )}
         </div>
       </div>
-
-      {/* Floating Custom Report Button
-      {isOwner && (
-        <div className="fixed bottom-20 right-4 z-40">
-          <button
-            onClick={() => setRangeModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-full shadow-lg transition-colors"
-          >
-            <Download size={24} /> <span className="hidden sm:inline">Custom Report</span>
-          </button>
-        </div>
-      )} */}
 
       {/* Transactions Tab */}
       {activeTab === "transactions" && (
@@ -579,7 +508,6 @@ export default function RecordsTab({
 
                   {isOpen && (
                     <div className="p-4 space-y-6">
-                      {/* Bus Filter Dropdown - only if multiple buses */}
                       {hasMultipleBuses && (
                         <div className="mb-4">
                           <label className="block text-sm font-medium text-gray-700 mb-2">Filter by Bus</label>
@@ -698,12 +626,6 @@ export default function RecordsTab({
         attachments={modalAttachments}
         onClose={() => setModalOpen(false)}
       />
-      {/* <CustomRangeReportModal
-        isOpen={rangeModalOpen}
-        onClose={() => setRangeModalOpen(false)}
-        onDownload={downloadRangeReport}
-        buses={ownerBuses}
-      /> */}
     </>
   );
 }
