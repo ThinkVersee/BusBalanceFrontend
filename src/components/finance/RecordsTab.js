@@ -71,7 +71,7 @@ const TransactionItem = ({ record, isOwner, onDelete }) => {
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <span className={`font-bold text-lg whitespace-nowrap ${config.amount}`}>
-                ₹{Number(record.amount).toFixed(0)}
+                ₹{Number(record.amount || 0).toFixed(0)}
               </span>
               {isOwner && (
                 <button
@@ -111,13 +111,13 @@ const TransactionItem = ({ record, isOwner, onDelete }) => {
 const SummaryCard = ({ label, amount, bgColor, textColor }) => (
   <div className={`${bgColor} rounded-xl p-4 text-center`}>
     <div className={`text-sm font-medium ${textColor}`}>{label}</div>
-    <div className={`text-2xl font-bold ${textColor}`}>₹{Number(amount).toFixed(0)}</div>
+    <div className={`text-2xl font-bold ${textColor}`}>₹{Number(amount || 0).toFixed(0)}</div>
   </div>
 );
 
 const WalletBalance = ({ balance }) => {
   const isPositive = balance >= 0;
-  const displayAmount = Math.abs(balance).toFixed(0);
+  const displayAmount = Math.abs(balance || 0).toFixed(0);
 
   return (
     <div className={`mt-5 rounded-xl p-5 border-2 text-center ${
@@ -139,13 +139,15 @@ const WalletBalance = ({ balance }) => {
 };
 
 const BusSummary = ({ bus }) => {
-  const totalExpense = bus.expense_maintenance_transactions.reduce(
-    (sum, rec) => sum + Number(rec.amount),
+  if (!bus) return null;
+  
+  const totalExpense = (bus.expense_maintenance_transactions || []).reduce(
+    (sum, rec) => sum + Number(rec.amount || 0),
     0
   );
   
-  const totalIncome = bus.income_transactions.reduce(
-    (sum, rec) => sum + Number(rec.amount),
+  const totalIncome = (bus.income_transactions || []).reduce(
+    (sum, rec) => sum + Number(rec.amount || 0),
     0
   );
   
@@ -202,7 +204,7 @@ const BusHeader = ({ busDetails }) => {
   return (
     <div className="text-center py-3 border-b border-gray-200 bg-gray-50 rounded-lg mb-4">
       <div className="text-lg font-semibold text-black">
-        {busDetails.bus_name}{busDetails.route ? ` (${busDetails.route})` : ''}
+        {busDetails.bus_name || "Unnamed Bus"}{busDetails.route ? ` (${busDetails.route})` : ''}
       </div>
       {busDetails.registration_number && (
         <div className="text-base text-black mt-1">{busDetails.registration_number}</div>
@@ -212,7 +214,8 @@ const BusHeader = ({ busDetails }) => {
 };
 
 const StaffBadgesRow = ({ assignments }) => {
-  const { driver, conductor, cleaner } = assignments || {};
+  if (!assignments) return null;
+  const { driver, conductor, cleaner } = assignments;
   if (!driver && !conductor && !cleaner) return null;
 
   return (
@@ -225,7 +228,7 @@ const StaffBadgesRow = ({ assignments }) => {
 };
 
 const AttachmentsButton = ({ attachments, busName, onOpenModal }) => {
-  if (attachments.length === 0) return null;
+  if (!attachments || attachments.length === 0) return null;
 
   return (
     <button
@@ -242,10 +245,15 @@ const AttachmentsButton = ({ attachments, busName, onOpenModal }) => {
 
 const DailyReportDownloadButton = ({ date, buses }) => {
   const [downloading, setDownloading] = useState(false);
-  const singleBus = buses.length === 1 ? buses[0] : null;
+  const singleBus = buses && buses.length === 1 ? buses[0] : null;
   const singleBusId = singleBus?.bus_details?.id || null;
 
   const downloadDailyReport = async () => {
+    if (!date) {
+      alert("Date is required for downloading report");
+      return;
+    }
+    
     setDownloading(true);
     try {
       const params = new URLSearchParams({ date });
@@ -269,7 +277,7 @@ const DailyReportDownloadButton = ({ date, buses }) => {
   return (
     <button
       onClick={downloadDailyReport}
-      disabled={downloading}
+      disabled={downloading || !date}
       className="flex items-center gap-2 px-4 py-2 bg-green-100 hover:bg-green-200 disabled:bg-green-50 rounded-lg text-green-800 font-medium transition-colors"
     >
       {downloading ? (
@@ -288,21 +296,42 @@ const DailyReportDownloadButton = ({ date, buses }) => {
 };
 
 /* -------------------------------------------------------------------------- */
-/* INFINITE SCROLL LOADING INDICATOR */
+/* LOAD MORE BUTTON */
 /* -------------------------------------------------------------------------- */
 
-const InfiniteScrollLoading = () => (
-  <div className="flex flex-col items-center justify-center py-8">
-    <Loader2 className="animate-spin text-blue-600 mb-3" size={32} />
-    <p className="text-gray-600 text-sm">Loading more records...</p>
-  </div>
-);
+const LoadMoreButton = ({ loading, hasMore, onClick, label = "Load More" }) => {
+  if (!hasMore) return null;
+
+  return (
+    <div className="flex justify-center mt-8">
+      <button
+        onClick={onClick}
+        disabled={loading}
+        className="flex items-center gap-3 px-8 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-all duration-200 shadow-md hover:shadow-lg"
+      >
+        {loading ? (
+          <>
+            <Loader2 size={20} className="animate-spin" />
+            <span>Loading...</span>
+          </>
+        ) : (
+          <>
+            <span>{label}</span>
+            <ChevronDown size={20} />
+          </>
+        )}
+      </button>
+    </div>
+  );
+};
 
 /* -------------------------------------------------------------------------- */
 /* MODALS */
 /* -------------------------------------------------------------------------- */
 
 const AttachmentItem = ({ attachment }) => {
+  if (!attachment) return null;
+  
   const isImage = /\.(jpe?g|png|gif|webp)$/i.test(attachment.file_name);
   return (
     <a
@@ -332,16 +361,16 @@ const AttachmentsModal = ({ isOpen, title, attachments, onClose }) => {
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl max-w-sm w-full max-h-[80vh] overflow-hidden shadow-2xl">
           <div className="flex justify-between items-center p-4 border-b sticky top-0 bg-white">
-            <h3 className="font-semibold text-gray-900">{title}</h3>
+            <h3 className="font-semibold text-gray-900">{title || "Attachments"}</h3>
             <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-lg">
               <X size={20} />
             </button>
           </div>
           <div className="p-4 space-y-2 overflow-y-auto max-h-[60vh]">
-            {attachments.length === 0 ? (
+            {!attachments || attachments.length === 0 ? (
               <p className="text-center text-gray-500 py-8">No attachments found</p>
             ) : (
-              attachments.map((att, i) => <AttachmentItem key={att.id || i} attachment={att} />)
+              attachments.map((att, i) => <AttachmentItem key={att?.id || i} attachment={att} />)
             )}
           </div>
         </div>
@@ -351,12 +380,12 @@ const AttachmentsModal = ({ isOpen, title, attachments, onClose }) => {
 };
 
 /* -------------------------------------------------------------------------- */
-/* MAIN COMPONENT - FIXED VERSION */
+/* MAIN COMPONENT - WITH LOAD MORE BUTTON */
 /* -------------------------------------------------------------------------- */
 
 export default function RecordsTab({
   loadingRecords,
-  deleteRecord,
+  deleteRecord: deleteRecordProp,
   isOwner,
   modalOpen,
   setModalOpen,
@@ -373,7 +402,6 @@ export default function RecordsTab({
   const [dataLoading, setDataLoading] = useState(false);
   const [error, setError] = useState(null);
   
-  // Separate states for each tab
   const [transactionsPage, setTransactionsPage] = useState(1);
   const [withdrawalsPage, setWithdrawalsPage] = useState(1);
   const [hasMoreTransactions, setHasMoreTransactions] = useState(true);
@@ -383,22 +411,9 @@ export default function RecordsTab({
   const [transactionsInitialized, setTransactionsInitialized] = useState(false);
   const [withdrawalsInitialized, setWithdrawalsInitialized] = useState(false);
   
-  // Refs for infinite scroll
   const abortControllerRef = useRef(null);
   const isMountedRef = useRef(true);
-  const observerRef = useRef(null);
-  const sentinelRef = useRef(null);
-  
-  // Current tab state refs for observer callback
-  const activeTabRef = useRef(activeTab);
-  const hasMoreTransactionsRef = useRef(hasMoreTransactions);
-  const hasMoreWithdrawalsRef = useRef(hasMoreWithdrawals);
-  const loadingMoreTransactionsRef = useRef(loadingMoreTransactions);
-  const loadingMoreWithdrawalsRef = useRef(loadingMoreWithdrawals);
-  const transactionsPageRef = useRef(transactionsPage);
-  const withdrawalsPageRef = useRef(withdrawalsPage);
 
-  // Summary state
   const [summary, setSummary] = useState({
     total_income: 0,
     total_expense: 0,
@@ -407,55 +422,18 @@ export default function RecordsTab({
     balance: 0,
   });
 
-  // Local state for open dates (expanded/collapsed)
   const [openDates, setOpenDates] = useState({});
 
-  // Update refs when state changes
-  useEffect(() => {
-    activeTabRef.current = activeTab;
-  }, [activeTab]);
-
-  useEffect(() => {
-    hasMoreTransactionsRef.current = hasMoreTransactions;
-  }, [hasMoreTransactions]);
-
-  useEffect(() => {
-    hasMoreWithdrawalsRef.current = hasMoreWithdrawals;
-  }, [hasMoreWithdrawals]);
-
-  useEffect(() => {
-    loadingMoreTransactionsRef.current = loadingMoreTransactions;
-  }, [loadingMoreTransactions]);
-
-  useEffect(() => {
-    loadingMoreWithdrawalsRef.current = loadingMoreWithdrawals;
-  }, [loadingMoreWithdrawals]);
-
-  useEffect(() => {
-    transactionsPageRef.current = transactionsPage;
-  }, [transactionsPage]);
-
-  useEffect(() => {
-    withdrawalsPageRef.current = withdrawalsPage;
-  }, [withdrawalsPage]);
-
-  // Initialize/cleanup
   useEffect(() => {
     isMountedRef.current = true;
     return () => {
       isMountedRef.current = false;
-      // Abort any ongoing requests on unmount
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
-      }
-      // Clean up observer
-      if (observerRef.current && sentinelRef.current) {
-        observerRef.current.unobserve(sentinelRef.current);
       }
     };
   }, []);
 
-  // Toggle date expansion
   const toggleDate = useCallback((date) => {
     setOpenDates(prev => ({
       ...prev,
@@ -463,28 +441,66 @@ export default function RecordsTab({
     }));
   }, []);
 
-  // Open attachments modal
   const openAttachmentsModal = (title, attachments) => {
     setModalTitle(title);
-    setModalAttachments(attachments);
+    setModalAttachments(attachments || []);
     setModalOpen(true);
   };
 
-  // Load data with proper error handling and abort control
+  const handleDeleteRecord = useCallback(async (recordId) => {
+    if (!isOwner) return;
+    
+    try {
+      await deleteRecordProp(recordId);
+      
+      if (activeTab === "transactions") {
+        setDailyGroups(prevGroups => {
+          const updatedGroups = prevGroups.map(group => ({
+            ...group,
+            buses: group.buses
+              ? group.buses.map(bus => ({
+                  ...bus,
+                  income_transactions: (bus.income_transactions || []).filter(rec => rec.id !== recordId),
+                  expense_maintenance_transactions: (bus.expense_maintenance_transactions || []).filter(rec => rec.id !== recordId)
+                })).filter(bus => 
+                  (bus.income_transactions || []).length > 0 || 
+                  (bus.expense_maintenance_transactions || []).length > 0
+                )
+              : []
+          })).filter(group => (group.buses || []).length > 0);
+          
+          return updatedGroups;
+        });
+      } else if (activeTab === "withdrawals") {
+        setWithdrawalsByDate(prevWithdrawals => {
+          const updatedWithdrawals = prevWithdrawals.map(wd => ({
+            ...wd,
+            transactions: (wd.transactions || []).filter(rec => rec.id !== recordId)
+          })).filter(wd => (wd.transactions || []).length > 0);
+          
+          return updatedWithdrawals.map(wd => ({
+            ...wd,
+            total: (wd.transactions || []).reduce((sum, rec) => sum + Number(rec.amount || 0), 0)
+          }));
+        });
+      }
+      
+    } catch (error) {
+      console.error("Failed to delete record:", error);
+    }
+  }, [activeTab, deleteRecordProp, isOwner]);
+
   const loadData = useCallback(async (pageNum = 1, isLoadMore = false, tab = activeTab) => {
-    // Prevent multiple calls
-    if ((isLoadMore && (tab === "transactions" ? loadingMoreTransactionsRef.current : loadingMoreWithdrawalsRef.current)) || 
+    if ((isLoadMore && (tab === "transactions" ? loadingMoreTransactions : loadingMoreWithdrawals)) || 
         (!isLoadMore && dataLoading)) {
       console.log("Preventing duplicate API call");
       return;
     }
 
-    // Abort previous request if any
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
 
-    // Create new abort controller
     abortControllerRef.current = new AbortController();
 
     console.log(`Loading ${tab} page ${pageNum}, isLoadMore: ${isLoadMore}`);
@@ -514,55 +530,51 @@ export default function RecordsTab({
       
       if (!isMountedRef.current) return;
       
-      const pagination = response.data.pagination || {};
+      const data = response.data || {};
+      const pagination = data.pagination || {};
+      const dailyGroupsData = data.daily_groups || [];
+      const withdrawalsData = data.withdrawals_by_date || [];
+      const summaryData = data.summary || {};
       
       if (isLoadMore) {
-        // Append new data for infinite scroll
         if (tab === "transactions") {
-          const newDailyGroups = response.data.daily_groups || [];
           setDailyGroups(prev => {
-            // Avoid duplicates
             const existingDates = new Set(prev.map(g => g.date));
-            const filteredNewGroups = newDailyGroups.filter(g => !existingDates.has(g.date));
+            const filteredNewGroups = dailyGroupsData.filter(g => g && !existingDates.has(g.date));
             return [...prev, ...filteredNewGroups];
           });
           setTransactionsPage(pageNum);
           setHasMoreTransactions(pagination.has_next || false);
         } else if (tab === "withdrawals") {
-          const newWithdrawals = response.data.withdrawals_by_date || [];
           setWithdrawalsByDate(prev => {
-            // Avoid duplicates
             const existingDates = new Set(prev.map(w => w.date));
-            const filteredNewWithdrawals = newWithdrawals.filter(w => !existingDates.has(w.date));
+            const filteredNewWithdrawals = withdrawalsData.filter(w => w && !existingDates.has(w.date));
             return [...prev, ...filteredNewWithdrawals];
           });
           setWithdrawalsPage(pageNum);
           setHasMoreWithdrawals(pagination.has_next || false);
         }
       } else {
-        // Initial load
         if (tab === "transactions") {
-          setDailyGroups(response.data.daily_groups || []);
+          setDailyGroups(dailyGroupsData);
           setTransactionsPage(pageNum);
           setHasMoreTransactions(pagination.has_next || false);
           setTransactionsInitialized(true);
         } else if (tab === "withdrawals") {
-          setWithdrawalsByDate(response.data.withdrawals_by_date || []);
+          setWithdrawalsByDate(withdrawalsData);
           setWithdrawalsPage(pageNum);
           setHasMoreWithdrawals(pagination.has_next || false);
           setWithdrawalsInitialized(true);
         }
         
-        // Always update summary if available
-        if (response.data.summary) {
-          setSummary(response.data.summary);
+        if (summaryData) {
+          setSummary(summaryData);
         }
       }
       
       console.log(`Successfully loaded ${tab} page ${pageNum}, hasMore: ${pagination.has_next}`);
       
     } catch (err) {
-      // Ignore abort errors
       if (err.name === 'AbortError' || err.name === 'CanceledError') {
         console.log('Request was aborted');
         return;
@@ -573,7 +585,6 @@ export default function RecordsTab({
       console.error(`Failed to load ${tab}:`, err);
       setError(err.message || `Failed to load ${tab} data`);
       
-      // Update hasMore to false on error to prevent infinite retries
       if (tab === "transactions") {
         setHasMoreTransactions(false);
       } else {
@@ -593,62 +604,36 @@ export default function RecordsTab({
         }
       }
     }
-  }, [activeTab, dataLoading]);
+  }, [activeTab, dataLoading, loadingMoreTransactions, loadingMoreWithdrawals]);
 
-  // Setup Intersection Observer for infinite scroll
-  useEffect(() => {
-    // Clean up previous observer
-    if (observerRef.current && sentinelRef.current) {
-      observerRef.current.unobserve(sentinelRef.current);
-      observerRef.current.disconnect();
-    }
-
-    const handleIntersection = (entries) => {
-      const [entry] = entries;
-      if (entry.isIntersecting && isMountedRef.current) {
-        const currentTab = activeTabRef.current;
-        
-        if (currentTab === "transactions") {
-          if (hasMoreTransactionsRef.current && !loadingMoreTransactionsRef.current && transactionsInitialized) {
-            console.log("Loading more transactions...");
-            loadData(transactionsPageRef.current + 1, true, "transactions");
-          }
-        } else if (currentTab === "withdrawals") {
-          if (hasMoreWithdrawalsRef.current && !loadingMoreWithdrawalsRef.current && withdrawalsInitialized) {
-            console.log("Loading more withdrawals...");
-            loadData(withdrawalsPageRef.current + 1, true, "withdrawals");
-          }
-        }
+  const handleLoadMore = useCallback(async () => {
+    if (activeTab === "transactions") {
+      if (hasMoreTransactions && !loadingMoreTransactions && transactionsInitialized) {
+        await loadData(transactionsPage + 1, true, "transactions");
       }
-    };
-
-    observerRef.current = new IntersectionObserver(handleIntersection, {
-      root: null,
-      rootMargin: "100px",
-      threshold: 0.1,
-    });
-
-    // Find the sentinel element
-    const sentinel = document.getElementById('infinite-scroll-sentinel');
-    if (sentinel) {
-      sentinelRef.current = sentinel;
-      observerRef.current.observe(sentinel);
-    }
-
-    return () => {
-      if (observerRef.current) {
-        observerRef.current.disconnect();
+    } else if (activeTab === "withdrawals") {
+      if (hasMoreWithdrawals && !loadingMoreWithdrawals && withdrawalsInitialized) {
+        await loadData(withdrawalsPage + 1, true, "withdrawals");
       }
-    };
-  }, [transactionsInitialized, withdrawalsInitialized, loadData]);
+    }
+  }, [
+    activeTab, 
+    hasMoreTransactions, 
+    hasMoreWithdrawals, 
+    loadingMoreTransactions, 
+    loadingMoreWithdrawals, 
+    transactionsPage, 
+    withdrawalsPage, 
+    transactionsInitialized, 
+    withdrawalsInitialized, 
+    loadData
+  ]);
 
-  // Reset tab data when switching tabs
   const handleTabChange = useCallback(async (tab) => {
     if (tab === activeTab) return;
     
     console.log(`Switching tab from ${activeTab} to ${tab}`);
     
-    // Abort any ongoing requests
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
@@ -658,14 +643,12 @@ export default function RecordsTab({
     setBusFilters({});
     setError(null);
     
-    // Only load data if not already initialized for this tab
     if ((tab === "transactions" && !transactionsInitialized) || 
         (tab === "withdrawals" && !withdrawalsInitialized)) {
       await loadData(1, false, tab);
     }
   }, [activeTab, transactionsInitialized, withdrawalsInitialized, loadData]);
 
-  // Handle refresh trigger from parent
   useEffect(() => {
     if (refreshTrigger > 0 && isMountedRef.current) {
       console.log("Refresh triggered from parent, reloading data...");
@@ -673,11 +656,9 @@ export default function RecordsTab({
     }
   }, [refreshTrigger]);
 
-  // Function to refresh all data
   const refreshAllData = useCallback(async () => {
     console.log("Refreshing all data...");
     
-    // Abort any ongoing requests
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
@@ -686,7 +667,6 @@ export default function RecordsTab({
     setBusFilters({});
     setError(null);
     
-    // Reset pagination for current tab
     if (activeTab === "transactions") {
       setDailyGroups([]);
       setTransactionsPage(1);
@@ -699,28 +679,24 @@ export default function RecordsTab({
       setWithdrawalsInitialized(false);
     }
     
-    // Load fresh data
     await loadData(1, false, activeTab);
   }, [activeTab, loadData]);
 
-  // Manual refresh button handler
   const handleManualRefresh = () => {
     refreshAllData();
   };
 
-  // Load initial data on mount
   useEffect(() => {
     if (isMountedRef.current && !transactionsInitialized) {
       loadData(1, false, "transactions");
     }
     
     return () => {
-      // Cleanup on unmount
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
     };
-  }, []); // Empty dependency array - only run on mount
+  }, []);
 
   const {
     total_income = 0,
@@ -730,7 +706,6 @@ export default function RecordsTab({
     balance = 0,
   } = summary;
 
-  // Show loading state for initial load
   if (loadingRecords || (dataLoading && activeTab === "transactions" && !transactionsInitialized)) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
@@ -740,7 +715,6 @@ export default function RecordsTab({
     );
   }
 
-  // Show loading state for withdrawals initial load
   if (dataLoading && activeTab === "withdrawals" && !withdrawalsInitialized) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
@@ -752,7 +726,6 @@ export default function RecordsTab({
 
   return (
     <>
-      {/* Header with refresh button */}
       <div className="flex justify-between items-center mb-4">
         <div className="text-lg font-semibold text-gray-900">
           {activeTab === "transactions" ? "Daily Transactions" : "Owner Withdrawals"}
@@ -768,7 +741,6 @@ export default function RecordsTab({
         </button>
       </div>
 
-      {/* Summary Cards */}
       <div className="bg-white rounded-xl border border-gray-200 p-5 mb-6">
         <div className={`grid grid-cols-2 ${isOwner ? "lg:grid-cols-4" : "sm:grid-cols-3"} gap-4`}>
           <SummaryCard label="Total Income" amount={total_income} bgColor="bg-gradient-to-br from-green-50 to-green-100" textColor="text-green-700" />
@@ -779,7 +751,6 @@ export default function RecordsTab({
         {isOwner && <WalletBalance balance={balance} />}
       </div>
 
-      {/* Error Display */}
       {error && (
         <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
           <div className="flex items-center gap-3">
@@ -799,7 +770,6 @@ export default function RecordsTab({
         </div>
       )}
 
-      {/* Tabs */}
       <div className="bg-white rounded-xl border border-gray-200 p-2 mb-6">
         <div className="flex gap-2">
           <button
@@ -825,7 +795,6 @@ export default function RecordsTab({
         </div>
       </div>
 
-      {/* Transactions Tab */}
       {activeTab === "transactions" && (
         <>
           {dailyGroups.length === 0 && !dataLoading && transactionsInitialized ? (
@@ -844,13 +813,16 @@ export default function RecordsTab({
             <>
               <div className="space-y-6">
                 {dailyGroups.map((group, index) => {
+                  if (!group) return null;
+                  
                   const isOpen = openDates[group.date];
                   const selectedBus = busFilters[group.date] || "";
                   const filteredBuses = selectedBus
-                    ? group.buses.filter(bus => bus.bus_details?.bus_name === selectedBus)
-                    : group.buses;
+                    ? (group.buses || []).filter(bus => bus?.bus_details?.bus_name === selectedBus)
+                    : (group.buses || []);
 
-                  const hasMultipleBuses = group.buses.length > 1;
+                  const hasMultipleBuses = (group.buses || []).length > 1;
+                  const netCollection = Number(group.day_totals?.net_collection || 0);
 
                   return (
                     <div key={`${group.date}-${index}`} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
@@ -862,18 +834,18 @@ export default function RecordsTab({
                           {isOpen ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
                           <Calendar size={18} className="text-blue-600" />
                           <div className="font-bold text-gray-900">
-                            {new Date(group.date).toLocaleDateString("en-IN", {
+                            {group.date ? new Date(group.date).toLocaleDateString("en-IN", {
                               weekday: "short",
                               year: "numeric",
                               month: "short",
                               day: "numeric"
-                            })}
+                            }) : "Unknown Date"}
                           </div>
                         </div>
                         <div className="text-right">
                           <div className="text-xs text-gray-500">Net</div>
-                          <div className={`font-bold text-xl ${group.net_collection >= 0 ? "text-green-600" : "text-red-600"}`}>
-                            ₹{group.net_collection.toFixed(0)}
+                          <div className={`font-bold text-xl ${netCollection >= 0 ? "text-green-600" : "text-red-600"}`}>
+                            ₹{netCollection.toFixed(0)}
                           </div>
                         </div>
                       </div>
@@ -892,10 +864,10 @@ export default function RecordsTab({
                                   }}
                                   className="w-full px-4 py-3 pr-12 bg-white border-2 border-gray-300 rounded-lg appearance-none cursor-pointer text-gray-900 focus:border-blue-500 focus:outline-none hover:border-gray-400 transition-colors"
                                 >
-                                  <option value="">All Buses ({group.buses.length})</option>
-                                  {group.buses.map(bus => (
-                                    <option key={bus.bus_details?.bus_name} value={bus.bus_details?.bus_name}>
-                                      {bus.bus_details?.bus_name} {bus.bus_details?.registration_number ? `(${bus.bus_details.registration_number})` : ""}
+                                  <option value="">All Buses ({(group.buses || []).length})</option>
+                                  {(group.buses || []).map(bus => (
+                                    <option key={bus?.bus_details?.bus_name || `bus-${index}`} value={bus?.bus_details?.bus_name}>
+                                      {bus?.bus_details?.bus_name || "Unnamed Bus"} {bus?.bus_details?.registration_number ? `(${bus.bus_details.registration_number})` : ""}
                                     </option>
                                   ))}
                                 </select>
@@ -904,22 +876,32 @@ export default function RecordsTab({
                             </div>
                           )}
 
-                          {filteredBuses.map(bus => (
-                            <div key={bus.bus_details?.bus_name || "no-bus"} className="space-y-4">
-                              <BusHeader busDetails={bus.bus_details} />
+                          {filteredBuses.map((bus, busIndex) => (
+                            <div key={bus?.bus_details?.bus_name || `bus-${busIndex}`} className="space-y-4">
+                              <BusHeader busDetails={bus?.bus_details} />
                               <BusSummary bus={bus} />
-                              <StaffBadgesRow assignments={bus.staff_assignments} />
+                              <StaffBadgesRow assignments={bus?.staff_assignments} />
                               <AttachmentsButton
-                                attachments={bus.attachments}
-                                busName={bus.bus_details?.bus_name}
+                                attachments={bus?.attachments}
+                                busName={bus?.bus_details?.bus_name}
                                 onOpenModal={openAttachmentsModal}
                               />
                               <div className="space-y-3">
-                                {bus.income_transactions.map(rec => (
-                                  <TransactionItem key={rec.id} record={rec} isOwner={isOwner} onDelete={deleteRecord} />
+                                {(bus?.income_transactions || []).map(rec => (
+                                  <TransactionItem 
+                                    key={rec.id} 
+                                    record={rec} 
+                                    isOwner={isOwner} 
+                                    onDelete={handleDeleteRecord} 
+                                  />
                                 ))}
-                                {bus.expense_maintenance_transactions.map(rec => (
-                                  <TransactionItem key={rec.id} record={rec} isOwner={isOwner} onDelete={deleteRecord} />
+                                {(bus?.expense_maintenance_transactions || []).map(rec => (
+                                  <TransactionItem 
+                                    key={rec.id} 
+                                    record={rec} 
+                                    isOwner={isOwner} 
+                                    onDelete={handleDeleteRecord} 
+                                  />
                                 ))}
                               </div>
                             </div>
@@ -932,7 +914,7 @@ export default function RecordsTab({
                           )}
 
                           <div className="flex justify-end pt-4">
-                            <DailyReportDownloadButton date={group.date} buses={group.buses} />
+                            <DailyReportDownloadButton date={group.date} buses={group.buses || []} />
                           </div>
                         </div>
                       )}
@@ -941,12 +923,13 @@ export default function RecordsTab({
                 })}
               </div>
               
-              {/* Infinite scroll sentinel */}
-              <div id="infinite-scroll-sentinel">
-                {loadingMoreTransactions && <InfiniteScrollLoading />}
-              </div>
+              <LoadMoreButton
+                loading={loadingMoreTransactions}
+                hasMore={hasMoreTransactions}
+                onClick={handleLoadMore}
+                label="Load More Transactions"
+              />
               
-              {/* Show "no more data" message when all data is loaded */}
               {!hasMoreTransactions && dailyGroups.length > 0 && !loadingMoreTransactions && (
                 <div className="text-center py-8 text-gray-500 border-t border-gray-200 mt-6">
                   No more transactions to load
@@ -957,7 +940,6 @@ export default function RecordsTab({
         </>
       )}
 
-      {/* Withdrawals Tab */}
       {activeTab === "withdrawals" && isOwner && (
         withdrawalsByDate.length === 0 && !dataLoading && withdrawalsInitialized ? (
           <div className="text-center py-20">
@@ -972,56 +954,68 @@ export default function RecordsTab({
             </button>
           </div>
         ) : (
-          <div className="space-y-6">
-            {withdrawalsByDate.map((wd, index) => {
-              const isOpen = openDates[wd.date];
-              return (
-                <div key={`${wd.date}-${index}`} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-                  <div
-                    onClick={() => toggleDate(wd.date)}
-                    className="px-4 py-4 bg-gray-100 flex items-center justify-between cursor-pointer hover:bg-gray-200 transition-colors"
-                  >
-                    <div className="flex items-center gap-3 flex-1">
-                      {isOpen ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
-                      <Calendar size={18} className="text-blue-600" />
-                      <div className="font-bold text-gray-900">
-                        {new Date(wd.date).toLocaleDateString("en-IN", {
-                          weekday: "short",
-                          year: "numeric",
-                          month: "short",
-                          day: "numeric"
-                        })}
+          <>
+            <div className="space-y-6">
+              {withdrawalsByDate.map((wd, index) => {
+                if (!wd) return null;
+                
+                const isOpen = openDates[wd.date];
+                const total = Number(wd.total || 0);
+                
+                return (
+                  <div key={`${wd.date}-${index}`} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                    <div
+                      onClick={() => toggleDate(wd.date)}
+                      className="px-4 py-4 bg-gray-100 flex items-center justify-between cursor-pointer hover:bg-gray-200 transition-colors"
+                    >
+                      <div className="flex items-center gap-3 flex-1">
+                        {isOpen ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
+                        <Calendar size={18} className="text-blue-600" />
+                        <div className="font-bold text-gray-900">
+                          {wd.date ? new Date(wd.date).toLocaleDateString("en-IN", {
+                            weekday: "short",
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric"
+                          }) : "Unknown Date"}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-xs text-gray-600">Total</div>
+                        <div className="font-bold text-xl text-purple-700">-₹{total.toFixed(0)}</div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className="text-xs text-gray-600">Total</div>
-                      <div className="font-bold text-xl text-purple-700">-₹{wd.total.toFixed(0)}</div>
-                    </div>
-                  </div>
 
-                  {isOpen && (
-                    <div className="p-4 space-y-3 bg-gray-50">
-                      {wd.transactions.map(rec => (
-                        <TransactionItem key={rec.id} record={rec} isOwner={isOwner} onDelete={deleteRecord} />
-                      ))}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-            
-            {/* Infinite scroll sentinel */}
-            <div id="infinite-scroll-sentinel">
-              {loadingMoreWithdrawals && <InfiniteScrollLoading />}
+                    {isOpen && (
+                      <div className="p-4 space-y-3 bg-gray-50">
+                        {(wd.transactions || []).map(rec => (
+                          <TransactionItem 
+                            key={rec.id} 
+                            record={rec} 
+                            isOwner={isOwner} 
+                            onDelete={handleDeleteRecord} 
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
             
-            {/* Show "no more data" message when all data is loaded */}
+            <LoadMoreButton
+              loading={loadingMoreWithdrawals}
+              hasMore={hasMoreWithdrawals}
+              onClick={handleLoadMore}
+              label="Load More Withdrawals"
+            />
+            
             {!hasMoreWithdrawals && withdrawalsByDate.length > 0 && !loadingMoreWithdrawals && (
               <div className="text-center py-8 text-gray-500 border-t border-gray-200 mt-6">
                 No more withdrawals to load
               </div>
             )}
-          </div>
+          </>
         )
       )}
 
