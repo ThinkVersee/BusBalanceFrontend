@@ -359,13 +359,18 @@ export default function RecordsTab({
   const [withdrawalsByDate, setWithdrawalsByDate] = useState([]);
   const [busFilters, setBusFilters] = useState({});
   const [dataLoading, setDataLoading] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [dataError, setDataError] = useState(null);
   
-  // Infinite scroll states
-  const [hasMore, setHasMore] = useState(true);
-  const [page, setPage] = useState(1);
-  const observerTarget = useRef(null);
+  // Separate infinite scroll states for each tab
+  const [transactionsPage, setTransactionsPage] = useState(1);
+  const [withdrawalsPage, setWithdrawalsPage] = useState(1);
+  const [hasMoreTransactions, setHasMoreTransactions] = useState(true);
+  const [hasMoreWithdrawals, setHasMoreWithdrawals] = useState(true);
+  const [loadingMoreTransactions, setLoadingMoreTransactions] = useState(false);
+  const [loadingMoreWithdrawals, setLoadingMoreWithdrawals] = useState(false);
+  
+  // Separate observer refs for each tab
+  const transactionsObserverTarget = useRef(null);
+  const withdrawalsObserverTarget = useRef(null);
   
   // Summary state
   const [summary, setSummary] = useState({
@@ -379,8 +384,9 @@ export default function RecordsTab({
   // Local state for open dates (expanded/collapsed)
   const [openDates, setOpenDates] = useState({});
 
-  // Track if we've made the initial API call
-  const initialLoadRef = useRef(false);
+  // Track if we've made the initial API call for each tab
+  const initialTransactionsLoad = useRef(false);
+  const initialWithdrawalsLoad = useRef(false);
 
   // Toggle date expansion
   const toggleDate = useCallback((date) => {
@@ -397,23 +403,27 @@ export default function RecordsTab({
     setModalOpen(true);
   };
 
+  // Reset tab data when switching tabs
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    // Reset open dates and filters when switching tabs
+    setOpenDates({});
+    setBusFilters({});
+  };
+
   // Load transaction data with infinite scroll
-  const loadData = useCallback(async (pageNum = 1, isLoadMore = false) => {
-    // Prevent multiple calls
-    if (dataLoading || loadingMore) {
-      return;
-    }
+  const loadTransactions = useCallback(async (pageNum = 1, isLoadMore = false) => {
+    if (isLoadMore && (!hasMoreTransactions || loadingMoreTransactions)) return;
+    if (!isLoadMore && dataLoading) return;
 
     if (isLoadMore) {
-      setLoadingMore(true);
+      setLoadingMoreTransactions(true);
     } else {
       setDataLoading(true);
     }
-    
-    setDataError(null);
 
     try {
-      console.log('Loading data for page:', pageNum, 'isLoadMore:', isLoadMore);
+      console.log('Loading transactions for page:', pageNum, 'isLoadMore:', isLoadMore);
       const response = await axiosInstance.get("/finance/transactions/report/", {
         params: {
           page: pageNum,
@@ -429,17 +439,14 @@ export default function RecordsTab({
       });
       
       const newDailyGroups = response.data.daily_groups || [];
-      const newWithdrawals = response.data.withdrawals_by_date || [];
       const pagination = response.data.pagination || {};
       
       if (isLoadMore) {
         // Append new data for infinite scroll
         setDailyGroups(prev => [...prev, ...newDailyGroups]);
-        setWithdrawalsByDate(prev => [...prev, ...newWithdrawals]);
       } else {
         // Initial load
         setDailyGroups(newDailyGroups);
-        setWithdrawalsByDate(newWithdrawals);
         setSummary(response.data.summary || {
           total_income: 0,
           total_expense: 0,
@@ -450,59 +457,161 @@ export default function RecordsTab({
       }
       
       // Update hasMore based on pagination info
-      setHasMore(pagination.has_next || false);
-      setPage(pageNum);
-      
-      // Reset open dates for new data
-      if (!isLoadMore) {
-        setOpenDates({});
-        setBusFilters({});
-      }
-      
-      if (isLoadMore) {
-        setLoadingMore(false);
-      } else {
-        setDataLoading(false);
-      }
+      setHasMoreTransactions(pagination.has_next || false);
+      setTransactionsPage(pageNum);
       
     } catch (err) {
       console.error("Failed to load grouped records:", err);
-      setDataError(err.message || "Failed to load data");
-      setDataLoading(false);
-      setLoadingMore(false);
+    } finally {
+      if (isLoadMore) {
+        setLoadingMoreTransactions(false);
+      } else {
+        setDataLoading(false);
+      }
     }
-  }, [dataLoading, loadingMore]);
+  }, [hasMoreTransactions, loadingMoreTransactions, dataLoading]);
 
-  // Initial load - ONLY ONCE
-  useEffect(() => {
-    if (!initialLoadRef.current) {
-      initialLoadRef.current = true;
-      loadData(1);
+  // Load withdrawals data with infinite scroll
+  const loadWithdrawals = useCallback(async (pageNum = 1, isLoadMore = false) => {
+    if (isLoadMore && (!hasMoreWithdrawals || loadingMoreWithdrawals)) return;
+    if (!isLoadMore && dataLoading) return;
+
+    if (isLoadMore) {
+      setLoadingMoreWithdrawals(true);
+    } else {
+      setDataLoading(true);
     }
-  }, [loadData]);
 
-  // Infinite scroll observer effect
+    try {
+      console.log('Loading withdrawals for page:', pageNum, 'isLoadMore:', isLoadMore);
+      const response = await axiosInstance.get("/finance/transactions/withdrawals/", {
+        params: {
+          page: pageNum,
+          page_size: 10
+        },
+        paramsSerializer: params => {
+          const searchParams = new URLSearchParams();
+          Object.keys(params).forEach(key => {
+            searchParams.append(key, params[key]);
+          });
+          return searchParams.toString();
+        }
+      });
+      
+      const newWithdrawals = response.data.withdrawals_by_date || [];
+      const pagination = response.data.pagination || {};
+      
+      if (isLoadMore) {
+        // Append new data for infinite scroll
+        setWithdrawalsByDate(prev => [...prev, ...newWithdrawals]);
+      } else {
+        // Initial load
+        setWithdrawalsByDate(newWithdrawals);
+      }
+      
+      // Update hasMore based on pagination info
+      setHasMoreWithdrawals(pagination.has_next || false);
+      setWithdrawalsPage(pageNum);
+      
+    } catch (err) {
+      console.error("Failed to load withdrawals:", err);
+    } finally {
+      if (isLoadMore) {
+        setLoadingMoreWithdrawals(false);
+      } else {
+        setDataLoading(false);
+      }
+    }
+  }, [hasMoreWithdrawals, loadingMoreWithdrawals, dataLoading]);
+
+  // Load initial data for active tab
   useEffect(() => {
-    if (!observerTarget.current || loadingMore || !hasMore || dataLoading) return;
+    if (activeTab === "transactions" && !initialTransactionsLoad.current) {
+      initialTransactionsLoad.current = true;
+      loadTransactions(1);
+    }
+    
+    if (activeTab === "withdrawals" && !initialWithdrawalsLoad.current && isOwner) {
+      initialWithdrawalsLoad.current = true;
+      loadWithdrawals(1);
+    }
+  }, [activeTab, loadTransactions, loadWithdrawals, isOwner]);
+
+  // Setup infinite scroll observer for transactions tab
+  useEffect(() => {
+    if (activeTab !== "transactions" || !transactionsObserverTarget.current || 
+        loadingMoreTransactions || !hasMoreTransactions) return;
 
     const observer = new IntersectionObserver(
       entries => {
-        if (entries[0].isIntersecting && hasMore && !loadingMore) {
-          console.log('Loading more data, current page:', page);
-          loadData(page + 1, true);
+        if (entries[0].isIntersecting && hasMoreTransactions && !loadingMoreTransactions) {
+          console.log('Loading more transactions, current page:', transactionsPage);
+          loadTransactions(transactionsPage + 1, true);
         }
       },
       { threshold: 0.5 }
     );
 
-    observer.observe(observerTarget.current);
+    observer.observe(transactionsObserverTarget.current);
 
     return () => {
-      if (observerTarget.current) {
-        observer.unobserve(observerTarget.current);
+      if (transactionsObserverTarget.current) {
+        observer.unobserve(transactionsObserverTarget.current);
       }
     };
-  }, [loadData, hasMore, loadingMore, page, dataLoading]);
+  }, [loadTransactions, hasMoreTransactions, loadingMoreTransactions, transactionsPage, activeTab]);
+
+  // Setup infinite scroll observer for withdrawals tab
+  useEffect(() => {
+    if (activeTab !== "withdrawals" || !withdrawalsObserverTarget.current || 
+        loadingMoreWithdrawals || !hasMoreWithdrawals) return;
+
+    const observer = new IntersectionObserver(
+      entries => {
+        if (entries[0].isIntersecting && hasMoreWithdrawals && !loadingMoreWithdrawals) {
+          console.log('Loading more withdrawals, current page:', withdrawalsPage);
+          loadWithdrawals(withdrawalsPage + 1, true);
+        }
+      },
+      { threshold: 0.5 }
+    );
+
+    observer.observe(withdrawalsObserverTarget.current);
+
+    return () => {
+      if (withdrawalsObserverTarget.current) {
+        observer.unobserve(withdrawalsObserverTarget.current);
+      }
+    };
+  }, [loadWithdrawals, hasMoreWithdrawals, loadingMoreWithdrawals, withdrawalsPage, activeTab]);
+
+  // Function to refresh data when new entry is added
+  const refreshData = useCallback(() => {
+    if (activeTab === "transactions") {
+      initialTransactionsLoad.current = false;
+      setTransactionsPage(1);
+      setHasMoreTransactions(true);
+      setDailyGroups([]);
+      loadTransactions(1);
+    } else if (activeTab === "withdrawals" && isOwner) {
+      initialWithdrawalsLoad.current = false;
+      setWithdrawalsPage(1);
+      setHasMoreWithdrawals(true);
+      setWithdrawalsByDate([]);
+      loadWithdrawals(1);
+    }
+  }, [activeTab, loadTransactions, loadWithdrawals, isOwner]);
+
+  // You can call refreshData() when you know new data has been added
+  // For example, when the parent component adds a new record:
+  useEffect(() => {
+    // This would be triggered by a prop change when new data is added
+    // For now, we'll just listen to loadingRecords prop
+    if (!loadingRecords && (dailyGroups.length > 0 || withdrawalsByDate.length > 0)) {
+      // Data was just loaded, you might want to refresh if needed
+      // But we don't want to refresh on every load, only when we know new data was added
+    }
+  }, [loadingRecords, dailyGroups.length, withdrawalsByDate.length]);
 
   const {
     total_income = 0,
@@ -513,28 +622,11 @@ export default function RecordsTab({
   } = summary;
 
   // Show loading state
-  if (loadingRecords || (dataLoading && !initialLoadRef.current)) {
+  if (loadingRecords || (dataLoading && activeTab === "transactions" && !initialTransactionsLoad.current)) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
         <Loader2 className="animate-spin text-blue-600 mb-4" size={48} />
         <p className="text-gray-600 font-medium">Loading transactions...</p>
-      </div>
-    );
-  }
-
-  // Show error state
-  if (dataError) {
-    return (
-      <div className="flex flex-col items-center justify-center py-20">
-        <AlertCircle className="text-red-500 mb-4" size={48} />
-        <p className="text-red-600 font-medium mb-2">Failed to load data</p>
-        <p className="text-gray-500 text-sm">{dataError}</p>
-        <button
-          onClick={() => loadData(1)}
-          className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-        >
-          Retry
-        </button>
       </div>
     );
   }
@@ -556,7 +648,7 @@ export default function RecordsTab({
       <div className="bg-white rounded-xl border border-gray-200 p-2 mb-6">
         <div className="flex gap-2">
           <button
-            onClick={() => setActiveTab("transactions")}
+            onClick={() => handleTabChange("transactions")}
             className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-xs transition-all ${
               activeTab === "transactions" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
             }`}
@@ -565,7 +657,7 @@ export default function RecordsTab({
           </button>
           {isOwner && (
             <button
-              onClick={() => setActiveTab("withdrawals")}
+              onClick={() => handleTabChange("withdrawals")}
               className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-xs transition-all ${
                 activeTab === "withdrawals" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
               }`}
@@ -579,7 +671,7 @@ export default function RecordsTab({
       {/* Transactions Tab */}
       {activeTab === "transactions" && (
         <>
-          {dailyGroups.length === 0 ? (
+          {dailyGroups.length === 0 && !dataLoading ? (
             <div className="text-center py-20">
               <FileText className="mx-auto text-gray-300 mb-4" size={48} />
               <p className="text-gray-500 font-medium text-lg">No daily transactions found</p>
@@ -685,15 +777,15 @@ export default function RecordsTab({
                 })}
               </div>
               
-              {/* Infinite scroll loading indicator and target */}
-              <div ref={observerTarget}>
-                {loadingMore && <InfiniteScrollLoading />}
+              {/* Infinite scroll loading indicator and target for transactions */}
+              <div ref={transactionsObserverTarget}>
+                {loadingMoreTransactions && <InfiniteScrollLoading />}
               </div>
               
               {/* Show "no more data" message when all data is loaded */}
-              {!hasMore && dailyGroups.length > 0 && (
+              {!hasMoreTransactions && dailyGroups.length > 0 && (
                 <div className="text-center py-8 text-gray-500 border-t border-gray-200 mt-6">
-                  No more records to load
+                  No more transactions to load
                 </div>
               )}
             </>
@@ -703,7 +795,7 @@ export default function RecordsTab({
 
       {/* Withdrawals Tab */}
       {activeTab === "withdrawals" && isOwner && (
-        withdrawalsByDate.length === 0 ? (
+        withdrawalsByDate.length === 0 && !dataLoading ? (
           <div className="text-center py-20">
             <Wallet className="mx-auto text-gray-300 mb-4" size={48} />
             <p className="text-gray-500 font-medium text-lg">No withdrawals found</p>
@@ -748,12 +840,12 @@ export default function RecordsTab({
             })}
             
             {/* Infinite scroll target for withdrawals */}
-            <div ref={observerTarget}>
-              {loadingMore && <InfiniteScrollLoading />}
+            <div ref={withdrawalsObserverTarget}>
+              {loadingMoreWithdrawals && <InfiniteScrollLoading />}
             </div>
             
             {/* Show "no more data" message when all data is loaded */}
-            {!hasMore && withdrawalsByDate.length > 0 && (
+            {!hasMoreWithdrawals && withdrawalsByDate.length > 0 && (
               <div className="text-center py-8 text-gray-500 border-t border-gray-200 mt-6">
                 No more withdrawals to load
               </div>
