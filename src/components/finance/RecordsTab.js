@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   Calendar,
   ChevronDown,
@@ -277,6 +277,17 @@ const DailyReportDownloadButton = ({ date, buses }) => {
 };
 
 /* -------------------------------------------------------------------------- */
+/* INFINITE SCROLL LOADING INDICATOR */
+/* -------------------------------------------------------------------------- */
+
+const InfiniteScrollLoading = () => (
+  <div className="flex flex-col items-center justify-center py-8">
+    <Loader2 className="animate-spin text-blue-600 mb-3" size={32} />
+    <p className="text-gray-600 text-sm">Loading more records...</p>
+  </div>
+);
+
+/* -------------------------------------------------------------------------- */
 /* MODALS */
 /* -------------------------------------------------------------------------- */
 
@@ -329,14 +340,11 @@ const AttachmentsModal = ({ isOpen, title, attachments, onClose }) => {
 };
 
 /* -------------------------------------------------------------------------- */
-/* MAIN COMPONENT */
+/* MAIN COMPONENT - INFINITE SCROLL VERSION */
 /* -------------------------------------------------------------------------- */
 
 export default function RecordsTab({
   loadingRecords,
-  summary = {},
-  openDates,
-  toggleDate,
   deleteRecord,
   isOwner,
   modalOpen,
@@ -350,45 +358,151 @@ export default function RecordsTab({
   const [dailyGroups, setDailyGroups] = useState([]);
   const [withdrawalsByDate, setWithdrawalsByDate] = useState([]);
   const [busFilters, setBusFilters] = useState({});
-  const [dataLoading, setDataLoading] = useState(true);
+  const [dataLoading, setDataLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [dataError, setDataError] = useState(null);
+  
+  // Infinite scroll states
+  const [hasMore, setHasMore] = useState(true);
+  const [page, setPage] = useState(1);
+  const observerTarget = useRef(null);
+  
+  // Summary state
+  const [summary, setSummary] = useState({
+    total_income: 0,
+    total_expense: 0,
+    total_maintenance: 0,
+    total_withdrawal: 0,
+    balance: 0,
+  });
 
+  // Local state for open dates (expanded/collapsed)
+  const [openDates, setOpenDates] = useState({});
+
+  // Track if we've made the initial API call
+  const initialLoadRef = useRef(false);
+
+  // Toggle date expansion
+  const toggleDate = useCallback((date) => {
+    setOpenDates(prev => ({
+      ...prev,
+      [date]: !prev[date]
+    }));
+  }, []);
+
+  // Open attachments modal
   const openAttachmentsModal = (title, attachments) => {
     setModalTitle(title);
     setModalAttachments(attachments);
     setModalOpen(true);
   };
 
-  // Load transaction data
-  useEffect(() => {
-    let isMounted = true;
-    setDataLoading(true);
+  // Load transaction data with infinite scroll
+  const loadData = useCallback(async (pageNum = 1, isLoadMore = false) => {
+    // Prevent multiple calls
+    if (dataLoading || loadingMore) {
+      return;
+    }
+
+    if (isLoadMore) {
+      setLoadingMore(true);
+    } else {
+      setDataLoading(true);
+    }
+    
     setDataError(null);
 
-    const loadData = async () => {
-      try {
-        const response = await axiosInstance.get("/finance/transactions/report/");
-        
-        if (isMounted) {
-          setDailyGroups(response.data.daily_groups || []);
-          setWithdrawalsByDate(response.data.withdrawals_by_date || []);
-          setDataLoading(false);
+    try {
+      console.log('Loading data for page:', pageNum, 'isLoadMore:', isLoadMore);
+      const response = await axiosInstance.get("/finance/transactions/report/", {
+        params: {
+          page: pageNum,
+          page_size: 10
+        },
+        paramsSerializer: params => {
+          const searchParams = new URLSearchParams();
+          Object.keys(params).forEach(key => {
+            searchParams.append(key, params[key]);
+          });
+          return searchParams.toString();
         }
-      } catch (err) {
-        console.error("Failed to load grouped records:", err);
-        if (isMounted) {
-          setDataError(err.message || "Failed to load data");
-          setDataLoading(false);
-        }
+      });
+      
+      const newDailyGroups = response.data.daily_groups || [];
+      const newWithdrawals = response.data.withdrawals_by_date || [];
+      const pagination = response.data.pagination || {};
+      
+      if (isLoadMore) {
+        // Append new data for infinite scroll
+        setDailyGroups(prev => [...prev, ...newDailyGroups]);
+        setWithdrawalsByDate(prev => [...prev, ...newWithdrawals]);
+      } else {
+        // Initial load
+        setDailyGroups(newDailyGroups);
+        setWithdrawalsByDate(newWithdrawals);
+        setSummary(response.data.summary || {
+          total_income: 0,
+          total_expense: 0,
+          total_maintenance: 0,
+          total_withdrawal: 0,
+          balance: 0,
+        });
       }
-    };
+      
+      // Update hasMore based on pagination info
+      setHasMore(pagination.has_next || false);
+      setPage(pageNum);
+      
+      // Reset open dates for new data
+      if (!isLoadMore) {
+        setOpenDates({});
+        setBusFilters({});
+      }
+      
+      if (isLoadMore) {
+        setLoadingMore(false);
+      } else {
+        setDataLoading(false);
+      }
+      
+    } catch (err) {
+      console.error("Failed to load grouped records:", err);
+      setDataError(err.message || "Failed to load data");
+      setDataLoading(false);
+      setLoadingMore(false);
+    }
+  }, [dataLoading, loadingMore]);
 
-    loadData();
+  // Initial load - ONLY ONCE
+  useEffect(() => {
+    if (!initialLoadRef.current) {
+      initialLoadRef.current = true;
+      loadData(1);
+    }
+  }, [loadData]);
+
+  // Infinite scroll observer effect
+  useEffect(() => {
+    if (!observerTarget.current || loadingMore || !hasMore || dataLoading) return;
+
+    const observer = new IntersectionObserver(
+      entries => {
+        if (entries[0].isIntersecting && hasMore && !loadingMore) {
+          console.log('Loading more data, current page:', page);
+          loadData(page + 1, true);
+        }
+      },
+      { threshold: 0.5 }
+    );
+
+    observer.observe(observerTarget.current);
 
     return () => {
-      isMounted = false;
+      if (observerTarget.current) {
+        observer.unobserve(observerTarget.current);
+      }
     };
-  }, []);
+  }, [loadData, hasMore, loadingMore, page, dataLoading]);
 
   const {
     total_income = 0,
@@ -399,7 +513,7 @@ export default function RecordsTab({
   } = summary;
 
   // Show loading state
-  if (loadingRecords || dataLoading) {
+  if (loadingRecords || (dataLoading && !initialLoadRef.current)) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
         <Loader2 className="animate-spin text-blue-600 mb-4" size={48} />
@@ -416,7 +530,7 @@ export default function RecordsTab({
         <p className="text-red-600 font-medium mb-2">Failed to load data</p>
         <p className="text-gray-500 text-sm">{dataError}</p>
         <button
-          onClick={() => window.location.reload()}
+          onClick={() => loadData(1)}
           className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
         >
           Retry
@@ -464,111 +578,127 @@ export default function RecordsTab({
 
       {/* Transactions Tab */}
       {activeTab === "transactions" && (
-        dailyGroups.length === 0 ? (
-          <div className="text-center py-20">
-            <FileText className="mx-auto text-gray-300 mb-4" size={48} />
-            <p className="text-gray-500 font-medium text-lg">No daily transactions found</p>
-          </div>
-        ) : (
-          <div className="space-y-6">
-            {dailyGroups.map(group => {
-              const isOpen = openDates[group.date];
-              const selectedBus = busFilters[group.date] || "";
-              const filteredBuses = selectedBus
-                ? group.buses.filter(bus => bus.bus_details?.bus_name === selectedBus)
-                : group.buses;
+        <>
+          {dailyGroups.length === 0 ? (
+            <div className="text-center py-20">
+              <FileText className="mx-auto text-gray-300 mb-4" size={48} />
+              <p className="text-gray-500 font-medium text-lg">No daily transactions found</p>
+            </div>
+          ) : (
+            <>
+              <div className="space-y-6">
+                {dailyGroups.map((group, index) => {
+                  const isOpen = openDates[group.date];
+                  const selectedBus = busFilters[group.date] || "";
+                  const filteredBuses = selectedBus
+                    ? group.buses.filter(bus => bus.bus_details?.bus_name === selectedBus)
+                    : group.buses;
 
-              const hasMultipleBuses = group.buses.length > 1;
+                  const hasMultipleBuses = group.buses.length > 1;
 
-              return (
-                <div key={group.date} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-                  <div
-                    onClick={() => toggleDate(group.date)}
-                    className="px-4 py-4 bg-gray-100 flex items-center justify-between cursor-pointer hover:bg-gray-200 transition-colors"
-                  >
-                    <div className="flex items-center gap-3 flex-1">
-                      {isOpen ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
-                      <Calendar size={18} className="text-blue-600" />
-                      <div className="font-bold text-gray-900">
-                        {new Date(group.date).toLocaleDateString("en-IN", {
-                          weekday: "short",
-                          year: "numeric",
-                          month: "short",
-                          day: "numeric"
-                        })}
+                  return (
+                    <div key={`${group.date}-${index}`} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                      <div
+                        onClick={() => toggleDate(group.date)}
+                        className="px-4 py-4 bg-gray-100 flex items-center justify-between cursor-pointer hover:bg-gray-200 transition-colors"
+                      >
+                        <div className="flex items-center gap-3 flex-1">
+                          {isOpen ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
+                          <Calendar size={18} className="text-blue-600" />
+                          <div className="font-bold text-gray-900">
+                            {new Date(group.date).toLocaleDateString("en-IN", {
+                              weekday: "short",
+                              year: "numeric",
+                              month: "short",
+                              day: "numeric"
+                            })}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-xs text-gray-500">Net</div>
+                          <div className={`font-bold text-xl ${group.net_collection >= 0 ? "text-green-600" : "text-red-600"}`}>
+                            ₹{group.net_collection.toFixed(0)}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-xs text-gray-500">Net</div>
-                      <div className={`font-bold text-xl ${group.net_collection >= 0 ? "text-green-600" : "text-red-600"}`}>
-                        ₹{group.net_collection.toFixed(0)}
-                      </div>
-                    </div>
-                  </div>
 
-                  {isOpen && (
-                    <div className="p-4 space-y-6">
-                      {hasMultipleBuses && (
-                        <div className="mb-4">
-                          <label className="block text-sm font-medium text-gray-700 mb-2">Filter by Bus</label>
-                          <div className="relative">
-                            <select
-                              value={selectedBus}
-                              onChange={(e) => {
-                                e.stopPropagation();
-                                setBusFilters(prev => ({ ...prev, [group.date]: e.target.value }));
-                              }}
-                              className="w-full px-4 py-3 pr-12 bg-white border-2 border-gray-300 rounded-lg appearance-none cursor-pointer text-gray-900 focus:border-blue-500 focus:outline-none hover:border-gray-400 transition-colors"
-                            >
-                              <option value="">All Buses ({group.buses.length})</option>
-                              {group.buses.map(bus => (
-                                <option key={bus.bus_details?.bus_name} value={bus.bus_details?.bus_name}>
-                                  {bus.bus_details?.bus_name} {bus.bus_details?.registration_number ? `(${bus.bus_details.registration_number})` : ""}
-                                </option>
-                              ))}
-                            </select>
-                            <ChevronDown size={20} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 pointer-events-none" />
+                      {isOpen && (
+                        <div className="p-4 space-y-6">
+                          {hasMultipleBuses && (
+                            <div className="mb-4">
+                              <label className="block text-sm font-medium text-gray-700 mb-2">Filter by Bus</label>
+                              <div className="relative">
+                                <select
+                                  value={selectedBus}
+                                  onChange={(e) => {
+                                    e.stopPropagation();
+                                    setBusFilters(prev => ({ ...prev, [group.date]: e.target.value }));
+                                  }}
+                                  className="w-full px-4 py-3 pr-12 bg-white border-2 border-gray-300 rounded-lg appearance-none cursor-pointer text-gray-900 focus:border-blue-500 focus:outline-none hover:border-gray-400 transition-colors"
+                                >
+                                  <option value="">All Buses ({group.buses.length})</option>
+                                  {group.buses.map(bus => (
+                                    <option key={bus.bus_details?.bus_name} value={bus.bus_details?.bus_name}>
+                                      {bus.bus_details?.bus_name} {bus.bus_details?.registration_number ? `(${bus.bus_details.registration_number})` : ""}
+                                    </option>
+                                  ))}
+                                </select>
+                                <ChevronDown size={20} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 pointer-events-none" />
+                              </div>
+                            </div>
+                          )}
+
+                          {filteredBuses.map(bus => (
+                            <div key={bus.bus_details?.bus_name || "no-bus"} className="space-y-4">
+                              <BusHeader busDetails={bus.bus_details} />
+                              <BusSummary bus={bus} />
+                              <StaffBadgesRow assignments={bus.staff_assignments} />
+                              <AttachmentsButton
+                                attachments={bus.attachments}
+                                busName={bus.bus_details?.bus_name}
+                                onOpenModal={openAttachmentsModal}
+                              />
+                              <div className="space-y-3">
+                                {bus.income_transactions.map(rec => (
+                                  <TransactionItem key={rec.id} record={rec} isOwner={isOwner} onDelete={deleteRecord} />
+                                ))}
+                                {bus.expense_maintenance_transactions.map(rec => (
+                                  <TransactionItem key={rec.id} record={rec} isOwner={isOwner} onDelete={deleteRecord} />
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+
+                          {filteredBuses.length === 0 && (
+                            <div className="text-center py-8 text-gray-500">
+                              No transactions for the selected bus filter.
+                            </div>
+                          )}
+
+                          <div className="flex justify-end pt-4">
+                            <DailyReportDownloadButton date={group.date} buses={group.buses} />
                           </div>
                         </div>
                       )}
-
-                      {filteredBuses.map(bus => (
-                        <div key={bus.bus_details?.bus_name || "no-bus"} className="space-y-4">
-                          <BusHeader busDetails={bus.bus_details} />
-                          <BusSummary bus={bus} />
-                          <StaffBadgesRow assignments={bus.staff_assignments} />
-                          <AttachmentsButton
-                            attachments={bus.attachments}
-                            busName={bus.bus_details?.bus_name}
-                            onOpenModal={openAttachmentsModal}
-                          />
-                          <div className="space-y-3">
-                            {bus.income_transactions.map(rec => (
-                              <TransactionItem key={rec.id} record={rec} isOwner={isOwner} onDelete={deleteRecord} />
-                            ))}
-                            {bus.expense_maintenance_transactions.map(rec => (
-                              <TransactionItem key={rec.id} record={rec} isOwner={isOwner} onDelete={deleteRecord} />
-                            ))}
-                          </div>
-                        </div>
-                      ))}
-
-                      {filteredBuses.length === 0 && (
-                        <div className="text-center py-8 text-gray-500">
-                          No transactions for the selected bus filter.
-                        </div>
-                      )}
-
-                      <div className="flex justify-end pt-4">
-                        <DailyReportDownloadButton date={group.date} buses={group.buses} />
-                      </div>
                     </div>
-                  )}
+                  );
+                })}
+              </div>
+              
+              {/* Infinite scroll loading indicator and target */}
+              <div ref={observerTarget}>
+                {loadingMore && <InfiniteScrollLoading />}
+              </div>
+              
+              {/* Show "no more data" message when all data is loaded */}
+              {!hasMore && dailyGroups.length > 0 && (
+                <div className="text-center py-8 text-gray-500 border-t border-gray-200 mt-6">
+                  No more records to load
                 </div>
-              );
-            })}
-          </div>
-        )
+              )}
+            </>
+          )}
+        </>
       )}
 
       {/* Withdrawals Tab */}
@@ -580,10 +710,10 @@ export default function RecordsTab({
           </div>
         ) : (
           <div className="space-y-6">
-            {withdrawalsByDate.map(wd => {
+            {withdrawalsByDate.map((wd, index) => {
               const isOpen = openDates[wd.date];
               return (
-                <div key={wd.date} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                <div key={`${wd.date}-${index}`} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
                   <div
                     onClick={() => toggleDate(wd.date)}
                     className="px-4 py-4 bg-gray-100 flex items-center justify-between cursor-pointer hover:bg-gray-200 transition-colors"
@@ -616,6 +746,18 @@ export default function RecordsTab({
                 </div>
               );
             })}
+            
+            {/* Infinite scroll target for withdrawals */}
+            <div ref={observerTarget}>
+              {loadingMore && <InfiniteScrollLoading />}
+            </div>
+            
+            {/* Show "no more data" message when all data is loaded */}
+            {!hasMore && withdrawalsByDate.length > 0 && (
+              <div className="text-center py-8 text-gray-500 border-t border-gray-200 mt-6">
+                No more withdrawals to load
+              </div>
+            )}
           </div>
         )
       )}
