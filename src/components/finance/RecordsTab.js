@@ -13,6 +13,8 @@ import {
   Download,
   TrendingUp,
   AlertCircle,
+  RefreshCw,
+  CreditCard,
 } from "lucide-react";
 import axiosInstance from '@/config/axiosInstance';
 
@@ -84,11 +86,20 @@ const TransactionItem = ({ record, isOwner, onDelete }) => {
           </div>
           {showReason && (
             <div className="mt-2 flex items-center gap-2 text-xs text-gray-600">
+              <CreditCard size={14} className="text-purple-600 shrink-0" />
+              <span className="break-words">Reason: {record.description.trim()}</span>
+            </div>
+          )}
+          {record.withdrawal_method && (
+            <div className="mt-1 flex items-center gap-2 text-xs text-gray-600">
               <svg className="w-4 h-4 text-purple-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2-2z" />
+                  d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
               </svg>
-              <span className="break-words">Reason: {record.description.trim()}</span>
+              <span className="break-words">Method: {record.withdrawal_method}</span>
+              {record.withdrawal_reference && (
+                <span className="ml-2">Ref: {record.withdrawal_reference}</span>
+              )}
             </div>
           )}
         </div>
@@ -340,7 +351,7 @@ const AttachmentsModal = ({ isOpen, title, attachments, onClose }) => {
 };
 
 /* -------------------------------------------------------------------------- */
-/* MAIN COMPONENT - INFINITE SCROLL VERSION */
+/* MAIN COMPONENT - FIXED VERSION */
 /* -------------------------------------------------------------------------- */
 
 export default function RecordsTab({
@@ -353,25 +364,40 @@ export default function RecordsTab({
   setModalTitle,
   modalAttachments,
   setModalAttachments,
+  refreshTrigger = 0,
 }) {
   const [activeTab, setActiveTab] = useState("transactions");
   const [dailyGroups, setDailyGroups] = useState([]);
   const [withdrawalsByDate, setWithdrawalsByDate] = useState([]);
   const [busFilters, setBusFilters] = useState({});
   const [dataLoading, setDataLoading] = useState(false);
+  const [error, setError] = useState(null);
   
-  // Separate infinite scroll states for each tab
+  // Separate states for each tab
   const [transactionsPage, setTransactionsPage] = useState(1);
   const [withdrawalsPage, setWithdrawalsPage] = useState(1);
   const [hasMoreTransactions, setHasMoreTransactions] = useState(true);
   const [hasMoreWithdrawals, setHasMoreWithdrawals] = useState(true);
   const [loadingMoreTransactions, setLoadingMoreTransactions] = useState(false);
   const [loadingMoreWithdrawals, setLoadingMoreWithdrawals] = useState(false);
+  const [transactionsInitialized, setTransactionsInitialized] = useState(false);
+  const [withdrawalsInitialized, setWithdrawalsInitialized] = useState(false);
   
-  // Separate observer refs for each tab
-  const transactionsObserverTarget = useRef(null);
-  const withdrawalsObserverTarget = useRef(null);
+  // Refs for infinite scroll
+  const abortControllerRef = useRef(null);
+  const isMountedRef = useRef(true);
+  const observerRef = useRef(null);
+  const sentinelRef = useRef(null);
   
+  // Current tab state refs for observer callback
+  const activeTabRef = useRef(activeTab);
+  const hasMoreTransactionsRef = useRef(hasMoreTransactions);
+  const hasMoreWithdrawalsRef = useRef(hasMoreWithdrawals);
+  const loadingMoreTransactionsRef = useRef(loadingMoreTransactions);
+  const loadingMoreWithdrawalsRef = useRef(loadingMoreWithdrawals);
+  const transactionsPageRef = useRef(transactionsPage);
+  const withdrawalsPageRef = useRef(withdrawalsPage);
+
   // Summary state
   const [summary, setSummary] = useState({
     total_income: 0,
@@ -384,9 +410,50 @@ export default function RecordsTab({
   // Local state for open dates (expanded/collapsed)
   const [openDates, setOpenDates] = useState({});
 
-  // Track if we've made the initial API call for each tab
-  const initialTransactionsLoad = useRef(false);
-  const initialWithdrawalsLoad = useRef(false);
+  // Update refs when state changes
+  useEffect(() => {
+    activeTabRef.current = activeTab;
+  }, [activeTab]);
+
+  useEffect(() => {
+    hasMoreTransactionsRef.current = hasMoreTransactions;
+  }, [hasMoreTransactions]);
+
+  useEffect(() => {
+    hasMoreWithdrawalsRef.current = hasMoreWithdrawals;
+  }, [hasMoreWithdrawals]);
+
+  useEffect(() => {
+    loadingMoreTransactionsRef.current = loadingMoreTransactions;
+  }, [loadingMoreTransactions]);
+
+  useEffect(() => {
+    loadingMoreWithdrawalsRef.current = loadingMoreWithdrawals;
+  }, [loadingMoreWithdrawals]);
+
+  useEffect(() => {
+    transactionsPageRef.current = transactionsPage;
+  }, [transactionsPage]);
+
+  useEffect(() => {
+    withdrawalsPageRef.current = withdrawalsPage;
+  }, [withdrawalsPage]);
+
+  // Initialize/cleanup
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      // Abort any ongoing requests on unmount
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+      // Clean up observer
+      if (observerRef.current && sentinelRef.current) {
+        observerRef.current.unobserve(sentinelRef.current);
+      }
+    };
+  }, []);
 
   // Toggle date expansion
   const toggleDate = useCallback((date) => {
@@ -403,215 +470,257 @@ export default function RecordsTab({
     setModalOpen(true);
   };
 
-  // Reset tab data when switching tabs
-  const handleTabChange = (tab) => {
-    setActiveTab(tab);
-    // Reset open dates and filters when switching tabs
-    setOpenDates({});
-    setBusFilters({});
-  };
+  // Load data with proper error handling and abort control
+  const loadData = useCallback(async (pageNum = 1, isLoadMore = false, tab = activeTab) => {
+    // Prevent multiple calls
+    if ((isLoadMore && (tab === "transactions" ? loadingMoreTransactionsRef.current : loadingMoreWithdrawalsRef.current)) || 
+        (!isLoadMore && dataLoading)) {
+      console.log("Preventing duplicate API call");
+      return;
+    }
 
-  // Load transaction data with infinite scroll
-  const loadTransactions = useCallback(async (pageNum = 1, isLoadMore = false) => {
-    if (isLoadMore && (!hasMoreTransactions || loadingMoreTransactions)) return;
-    if (!isLoadMore && dataLoading) return;
+    // Abort previous request if any
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
 
+    // Create new abort controller
+    abortControllerRef.current = new AbortController();
+
+    console.log(`Loading ${tab} page ${pageNum}, isLoadMore: ${isLoadMore}`);
+    
     if (isLoadMore) {
-      setLoadingMoreTransactions(true);
+      if (tab === "transactions") {
+        setLoadingMoreTransactions(true);
+      } else {
+        setLoadingMoreWithdrawals(true);
+      }
     } else {
       setDataLoading(true);
     }
 
+    setError(null);
+
     try {
-      console.log('Loading transactions for page:', pageNum, 'isLoadMore:', isLoadMore);
+      const signal = abortControllerRef.current.signal;
       const response = await axiosInstance.get("/finance/transactions/report/", {
         params: {
           page: pageNum,
-          page_size: 10
+          page_size: 10,
+          report_type: tab === "withdrawals" ? "withdrawals" : "transactions"
         },
-        paramsSerializer: params => {
-          const searchParams = new URLSearchParams();
-          Object.keys(params).forEach(key => {
-            searchParams.append(key, params[key]);
-          });
-          return searchParams.toString();
-        }
+        signal
       });
       
-      const newDailyGroups = response.data.daily_groups || [];
+      if (!isMountedRef.current) return;
+      
       const pagination = response.data.pagination || {};
       
       if (isLoadMore) {
         // Append new data for infinite scroll
-        setDailyGroups(prev => [...prev, ...newDailyGroups]);
-      } else {
-        // Initial load
-        setDailyGroups(newDailyGroups);
-        setSummary(response.data.summary || {
-          total_income: 0,
-          total_expense: 0,
-          total_maintenance: 0,
-          total_withdrawal: 0,
-          balance: 0,
-        });
-      }
-      
-      // Update hasMore based on pagination info
-      setHasMoreTransactions(pagination.has_next || false);
-      setTransactionsPage(pageNum);
-      
-    } catch (err) {
-      console.error("Failed to load grouped records:", err);
-    } finally {
-      if (isLoadMore) {
-        setLoadingMoreTransactions(false);
-      } else {
-        setDataLoading(false);
-      }
-    }
-  }, [hasMoreTransactions, loadingMoreTransactions, dataLoading]);
-
-  // Load withdrawals data with infinite scroll
-  const loadWithdrawals = useCallback(async (pageNum = 1, isLoadMore = false) => {
-    if (isLoadMore && (!hasMoreWithdrawals || loadingMoreWithdrawals)) return;
-    if (!isLoadMore && dataLoading) return;
-
-    if (isLoadMore) {
-      setLoadingMoreWithdrawals(true);
-    } else {
-      setDataLoading(true);
-    }
-
-    try {
-      console.log('Loading withdrawals for page:', pageNum, 'isLoadMore:', isLoadMore);
-      const response = await axiosInstance.get("/finance/transactions/withdrawals/", {
-        params: {
-          page: pageNum,
-          page_size: 10
-        },
-        paramsSerializer: params => {
-          const searchParams = new URLSearchParams();
-          Object.keys(params).forEach(key => {
-            searchParams.append(key, params[key]);
+        if (tab === "transactions") {
+          const newDailyGroups = response.data.daily_groups || [];
+          setDailyGroups(prev => {
+            // Avoid duplicates
+            const existingDates = new Set(prev.map(g => g.date));
+            const filteredNewGroups = newDailyGroups.filter(g => !existingDates.has(g.date));
+            return [...prev, ...filteredNewGroups];
           });
-          return searchParams.toString();
+          setTransactionsPage(pageNum);
+          setHasMoreTransactions(pagination.has_next || false);
+        } else if (tab === "withdrawals") {
+          const newWithdrawals = response.data.withdrawals_by_date || [];
+          setWithdrawalsByDate(prev => {
+            // Avoid duplicates
+            const existingDates = new Set(prev.map(w => w.date));
+            const filteredNewWithdrawals = newWithdrawals.filter(w => !existingDates.has(w.date));
+            return [...prev, ...filteredNewWithdrawals];
+          });
+          setWithdrawalsPage(pageNum);
+          setHasMoreWithdrawals(pagination.has_next || false);
         }
-      });
-      
-      const newWithdrawals = response.data.withdrawals_by_date || [];
-      const pagination = response.data.pagination || {};
-      
-      if (isLoadMore) {
-        // Append new data for infinite scroll
-        setWithdrawalsByDate(prev => [...prev, ...newWithdrawals]);
       } else {
         // Initial load
-        setWithdrawalsByDate(newWithdrawals);
+        if (tab === "transactions") {
+          setDailyGroups(response.data.daily_groups || []);
+          setTransactionsPage(pageNum);
+          setHasMoreTransactions(pagination.has_next || false);
+          setTransactionsInitialized(true);
+        } else if (tab === "withdrawals") {
+          setWithdrawalsByDate(response.data.withdrawals_by_date || []);
+          setWithdrawalsPage(pageNum);
+          setHasMoreWithdrawals(pagination.has_next || false);
+          setWithdrawalsInitialized(true);
+        }
+        
+        // Always update summary if available
+        if (response.data.summary) {
+          setSummary(response.data.summary);
+        }
       }
       
-      // Update hasMore based on pagination info
-      setHasMoreWithdrawals(pagination.has_next || false);
-      setWithdrawalsPage(pageNum);
+      console.log(`Successfully loaded ${tab} page ${pageNum}, hasMore: ${pagination.has_next}`);
       
     } catch (err) {
-      console.error("Failed to load withdrawals:", err);
-    } finally {
-      if (isLoadMore) {
-        setLoadingMoreWithdrawals(false);
+      // Ignore abort errors
+      if (err.name === 'AbortError' || err.name === 'CanceledError') {
+        console.log('Request was aborted');
+        return;
+      }
+      
+      if (!isMountedRef.current) return;
+      
+      console.error(`Failed to load ${tab}:`, err);
+      setError(err.message || `Failed to load ${tab} data`);
+      
+      // Update hasMore to false on error to prevent infinite retries
+      if (tab === "transactions") {
+        setHasMoreTransactions(false);
       } else {
-        setDataLoading(false);
+        setHasMoreWithdrawals(false);
+      }
+      
+    } finally {
+      if (isMountedRef.current) {
+        if (isLoadMore) {
+          if (tab === "transactions") {
+            setLoadingMoreTransactions(false);
+          } else {
+            setLoadingMoreWithdrawals(false);
+          }
+        } else {
+          setDataLoading(false);
+        }
       }
     }
-  }, [hasMoreWithdrawals, loadingMoreWithdrawals, dataLoading]);
+  }, [activeTab, dataLoading]);
 
-  // Load initial data for active tab
+  // Setup Intersection Observer for infinite scroll
   useEffect(() => {
-    if (activeTab === "transactions" && !initialTransactionsLoad.current) {
-      initialTransactionsLoad.current = true;
-      loadTransactions(1);
+    // Clean up previous observer
+    if (observerRef.current && sentinelRef.current) {
+      observerRef.current.unobserve(sentinelRef.current);
+      observerRef.current.disconnect();
+    }
+
+    const handleIntersection = (entries) => {
+      const [entry] = entries;
+      if (entry.isIntersecting && isMountedRef.current) {
+        const currentTab = activeTabRef.current;
+        
+        if (currentTab === "transactions") {
+          if (hasMoreTransactionsRef.current && !loadingMoreTransactionsRef.current && transactionsInitialized) {
+            console.log("Loading more transactions...");
+            loadData(transactionsPageRef.current + 1, true, "transactions");
+          }
+        } else if (currentTab === "withdrawals") {
+          if (hasMoreWithdrawalsRef.current && !loadingMoreWithdrawalsRef.current && withdrawalsInitialized) {
+            console.log("Loading more withdrawals...");
+            loadData(withdrawalsPageRef.current + 1, true, "withdrawals");
+          }
+        }
+      }
+    };
+
+    observerRef.current = new IntersectionObserver(handleIntersection, {
+      root: null,
+      rootMargin: "100px",
+      threshold: 0.1,
+    });
+
+    // Find the sentinel element
+    const sentinel = document.getElementById('infinite-scroll-sentinel');
+    if (sentinel) {
+      sentinelRef.current = sentinel;
+      observerRef.current.observe(sentinel);
+    }
+
+    return () => {
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+      }
+    };
+  }, [transactionsInitialized, withdrawalsInitialized, loadData]);
+
+  // Reset tab data when switching tabs
+  const handleTabChange = useCallback(async (tab) => {
+    if (tab === activeTab) return;
+    
+    console.log(`Switching tab from ${activeTab} to ${tab}`);
+    
+    // Abort any ongoing requests
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
     }
     
-    if (activeTab === "withdrawals" && !initialWithdrawalsLoad.current && isOwner) {
-      initialWithdrawalsLoad.current = true;
-      loadWithdrawals(1);
+    setActiveTab(tab);
+    setOpenDates({});
+    setBusFilters({});
+    setError(null);
+    
+    // Only load data if not already initialized for this tab
+    if ((tab === "transactions" && !transactionsInitialized) || 
+        (tab === "withdrawals" && !withdrawalsInitialized)) {
+      await loadData(1, false, tab);
     }
-  }, [activeTab, loadTransactions, loadWithdrawals, isOwner]);
+  }, [activeTab, transactionsInitialized, withdrawalsInitialized, loadData]);
 
-  // Setup infinite scroll observer for transactions tab
+  // Handle refresh trigger from parent
   useEffect(() => {
-    if (activeTab !== "transactions" || !transactionsObserverTarget.current || 
-        loadingMoreTransactions || !hasMoreTransactions) return;
+    if (refreshTrigger > 0 && isMountedRef.current) {
+      console.log("Refresh triggered from parent, reloading data...");
+      refreshAllData();
+    }
+  }, [refreshTrigger]);
 
-    const observer = new IntersectionObserver(
-      entries => {
-        if (entries[0].isIntersecting && hasMoreTransactions && !loadingMoreTransactions) {
-          console.log('Loading more transactions, current page:', transactionsPage);
-          loadTransactions(transactionsPage + 1, true);
-        }
-      },
-      { threshold: 0.5 }
-    );
-
-    observer.observe(transactionsObserverTarget.current);
-
-    return () => {
-      if (transactionsObserverTarget.current) {
-        observer.unobserve(transactionsObserverTarget.current);
-      }
-    };
-  }, [loadTransactions, hasMoreTransactions, loadingMoreTransactions, transactionsPage, activeTab]);
-
-  // Setup infinite scroll observer for withdrawals tab
-  useEffect(() => {
-    if (activeTab !== "withdrawals" || !withdrawalsObserverTarget.current || 
-        loadingMoreWithdrawals || !hasMoreWithdrawals) return;
-
-    const observer = new IntersectionObserver(
-      entries => {
-        if (entries[0].isIntersecting && hasMoreWithdrawals && !loadingMoreWithdrawals) {
-          console.log('Loading more withdrawals, current page:', withdrawalsPage);
-          loadWithdrawals(withdrawalsPage + 1, true);
-        }
-      },
-      { threshold: 0.5 }
-    );
-
-    observer.observe(withdrawalsObserverTarget.current);
-
-    return () => {
-      if (withdrawalsObserverTarget.current) {
-        observer.unobserve(withdrawalsObserverTarget.current);
-      }
-    };
-  }, [loadWithdrawals, hasMoreWithdrawals, loadingMoreWithdrawals, withdrawalsPage, activeTab]);
-
-  // Function to refresh data when new entry is added
-  const refreshData = useCallback(() => {
+  // Function to refresh all data
+  const refreshAllData = useCallback(async () => {
+    console.log("Refreshing all data...");
+    
+    // Abort any ongoing requests
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    
+    setOpenDates({});
+    setBusFilters({});
+    setError(null);
+    
+    // Reset pagination for current tab
     if (activeTab === "transactions") {
-      initialTransactionsLoad.current = false;
+      setDailyGroups([]);
       setTransactionsPage(1);
       setHasMoreTransactions(true);
-      setDailyGroups([]);
-      loadTransactions(1);
-    } else if (activeTab === "withdrawals" && isOwner) {
-      initialWithdrawalsLoad.current = false;
+      setTransactionsInitialized(false);
+    } else if (activeTab === "withdrawals") {
+      setWithdrawalsByDate([]);
       setWithdrawalsPage(1);
       setHasMoreWithdrawals(true);
-      setWithdrawalsByDate([]);
-      loadWithdrawals(1);
+      setWithdrawalsInitialized(false);
     }
-  }, [activeTab, loadTransactions, loadWithdrawals, isOwner]);
+    
+    // Load fresh data
+    await loadData(1, false, activeTab);
+  }, [activeTab, loadData]);
 
-  // You can call refreshData() when you know new data has been added
-  // For example, when the parent component adds a new record:
+  // Manual refresh button handler
+  const handleManualRefresh = () => {
+    refreshAllData();
+  };
+
+  // Load initial data on mount
   useEffect(() => {
-    // This would be triggered by a prop change when new data is added
-    // For now, we'll just listen to loadingRecords prop
-    if (!loadingRecords && (dailyGroups.length > 0 || withdrawalsByDate.length > 0)) {
-      // Data was just loaded, you might want to refresh if needed
-      // But we don't want to refresh on every load, only when we know new data was added
+    if (isMountedRef.current && !transactionsInitialized) {
+      loadData(1, false, "transactions");
     }
-  }, [loadingRecords, dailyGroups.length, withdrawalsByDate.length]);
+    
+    return () => {
+      // Cleanup on unmount
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []); // Empty dependency array - only run on mount
 
   const {
     total_income = 0,
@@ -621,8 +730,8 @@ export default function RecordsTab({
     balance = 0,
   } = summary;
 
-  // Show loading state
-  if (loadingRecords || (dataLoading && activeTab === "transactions" && !initialTransactionsLoad.current)) {
+  // Show loading state for initial load
+  if (loadingRecords || (dataLoading && activeTab === "transactions" && !transactionsInitialized)) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
         <Loader2 className="animate-spin text-blue-600 mb-4" size={48} />
@@ -631,8 +740,34 @@ export default function RecordsTab({
     );
   }
 
+  // Show loading state for withdrawals initial load
+  if (dataLoading && activeTab === "withdrawals" && !withdrawalsInitialized) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20">
+        <Loader2 className="animate-spin text-blue-600 mb-4" size={48} />
+        <p className="text-gray-600 font-medium">Loading withdrawals...</p>
+      </div>
+    );
+  }
+
   return (
     <>
+      {/* Header with refresh button */}
+      <div className="flex justify-between items-center mb-4">
+        <div className="text-lg font-semibold text-gray-900">
+          {activeTab === "transactions" ? "Daily Transactions" : "Owner Withdrawals"}
+        </div>
+        <button
+          onClick={handleManualRefresh}
+          disabled={dataLoading || (activeTab === "transactions" ? loadingMoreTransactions : loadingMoreWithdrawals)}
+          className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-100 disabled:cursor-not-allowed rounded-lg text-gray-700 font-medium transition-colors"
+          title="Refresh data"
+        >
+          <RefreshCw size={18} className={dataLoading ? "animate-spin" : ""} />
+          <span className="text-sm">Refresh</span>
+        </button>
+      </div>
+
       {/* Summary Cards */}
       <div className="bg-white rounded-xl border border-gray-200 p-5 mb-6">
         <div className={`grid grid-cols-2 ${isOwner ? "lg:grid-cols-4" : "sm:grid-cols-3"} gap-4`}>
@@ -644,23 +779,45 @@ export default function RecordsTab({
         {isOwner && <WalletBalance balance={balance} />}
       </div>
 
+      {/* Error Display */}
+      {error && (
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="text-red-500" size={24} />
+            <div className="flex-1">
+              <p className="text-red-700 font-medium">Failed to load data</p>
+              <p className="text-red-600 text-sm">{error}</p>
+            </div>
+            <button
+              onClick={handleManualRefresh}
+              disabled={dataLoading}
+              className="px-4 py-2 bg-red-100 hover:bg-red-200 disabled:bg-red-50 disabled:cursor-not-allowed text-red-700 rounded-lg font-medium"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Tabs */}
       <div className="bg-white rounded-xl border border-gray-200 p-2 mb-6">
         <div className="flex gap-2">
           <button
             onClick={() => handleTabChange("transactions")}
+            disabled={dataLoading}
             className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-xs transition-all ${
-              activeTab === "transactions" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-            }`}
+              activeTab === "transactions" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200 disabled:hover:bg-gray-100"
+            } ${dataLoading ? "disabled:cursor-not-allowed" : ""}`}
           >
             <TrendingUp size={18} /> <span className="hidden sm:inline">Daily Transactions</span><span className="sm:hidden">Transactions</span>
           </button>
           {isOwner && (
             <button
               onClick={() => handleTabChange("withdrawals")}
+              disabled={dataLoading}
               className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-xs transition-all ${
-                activeTab === "withdrawals" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-              }`}
+                activeTab === "withdrawals" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200 disabled:hover:bg-gray-100"
+              } ${dataLoading ? "disabled:cursor-not-allowed" : ""}`}
             >
               <Wallet size={18} /> Withdrawals
             </button>
@@ -671,10 +828,17 @@ export default function RecordsTab({
       {/* Transactions Tab */}
       {activeTab === "transactions" && (
         <>
-          {dailyGroups.length === 0 && !dataLoading ? (
+          {dailyGroups.length === 0 && !dataLoading && transactionsInitialized ? (
             <div className="text-center py-20">
               <FileText className="mx-auto text-gray-300 mb-4" size={48} />
               <p className="text-gray-500 font-medium text-lg">No daily transactions found</p>
+              <button
+                onClick={handleManualRefresh}
+                disabled={dataLoading}
+                className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed font-medium"
+              >
+                Refresh
+              </button>
             </div>
           ) : (
             <>
@@ -777,13 +941,13 @@ export default function RecordsTab({
                 })}
               </div>
               
-              {/* Infinite scroll loading indicator and target for transactions */}
-              <div ref={transactionsObserverTarget}>
+              {/* Infinite scroll sentinel */}
+              <div id="infinite-scroll-sentinel">
                 {loadingMoreTransactions && <InfiniteScrollLoading />}
               </div>
               
               {/* Show "no more data" message when all data is loaded */}
-              {!hasMoreTransactions && dailyGroups.length > 0 && (
+              {!hasMoreTransactions && dailyGroups.length > 0 && !loadingMoreTransactions && (
                 <div className="text-center py-8 text-gray-500 border-t border-gray-200 mt-6">
                   No more transactions to load
                 </div>
@@ -795,10 +959,17 @@ export default function RecordsTab({
 
       {/* Withdrawals Tab */}
       {activeTab === "withdrawals" && isOwner && (
-        withdrawalsByDate.length === 0 && !dataLoading ? (
+        withdrawalsByDate.length === 0 && !dataLoading && withdrawalsInitialized ? (
           <div className="text-center py-20">
             <Wallet className="mx-auto text-gray-300 mb-4" size={48} />
             <p className="text-gray-500 font-medium text-lg">No withdrawals found</p>
+            <button
+              onClick={handleManualRefresh}
+              disabled={dataLoading}
+              className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed font-medium"
+            >
+              Refresh
+            </button>
           </div>
         ) : (
           <div className="space-y-6">
@@ -839,13 +1010,13 @@ export default function RecordsTab({
               );
             })}
             
-            {/* Infinite scroll target for withdrawals */}
-            <div ref={withdrawalsObserverTarget}>
+            {/* Infinite scroll sentinel */}
+            <div id="infinite-scroll-sentinel">
               {loadingMoreWithdrawals && <InfiniteScrollLoading />}
             </div>
             
             {/* Show "no more data" message when all data is loaded */}
-            {!hasMoreWithdrawals && withdrawalsByDate.length > 0 && (
+            {!hasMoreWithdrawals && withdrawalsByDate.length > 0 && !loadingMoreWithdrawals && (
               <div className="text-center py-8 text-gray-500 border-t border-gray-200 mt-6">
                 No more withdrawals to load
               </div>
