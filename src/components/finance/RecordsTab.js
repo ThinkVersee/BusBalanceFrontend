@@ -15,6 +15,7 @@ import {
   AlertCircle,
   RefreshCw,
   CreditCard,
+  ChevronUp
 } from "lucide-react";
 import axiosInstance from '@/config/axiosInstance';
 
@@ -57,53 +58,113 @@ const TransactionItem = ({ record, isOwner, onDelete }) => {
   const displayName = record.bus_name || (record.transaction_type === "WITHDRAWAL" ? "Owner Wallet" : "No bus");
   const showReason = record.transaction_type === "WITHDRAWAL" && record.description?.trim();
 
+  const [expanded, setExpanded] = useState(false); // change to true if you want all expanded by default
+
+  const hasItems = record.items && record.items.length > 0;
+  const itemCount = hasItems ? record.items.length : 1;
+
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-4">
-      <div className="flex items-start gap-3">
-        <span className={`px-3 py-1.5 rounded-full text-xs font-bold ${config.bg} ${config.text} shrink-0`}>
-          {config.label}
-        </span>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0 flex-1">
-              <div className="font-semibold text-gray-900 text-sm truncate">{record.category_name}</div>
-              <div className="text-xs text-gray-500 truncate">{displayName}</div>
+    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+      {/* Header row */}
+      <div className="p-4 flex items-start justify-between gap-4">
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          <span className={`px-3 py-1.5 rounded-full text-xs font-bold shrink-0 ${config.bg} ${config.text}`}>
+            {config.label}
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="font-semibold text-gray-900 text-sm truncate">
+              {record.category_name || (hasItems ? `${itemCount} items` : "Unknown")}
             </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <span className={`font-bold text-lg whitespace-nowrap ${config.amount}`}>
-                ₹{Number(record.amount || 0).toFixed(0)}
-              </span>
-              {isOwner && (
-                <button
-                  onClick={(e) => { e.stopPropagation(); onDelete(record.id); }}
-                  className="text-red-600 hover:bg-red-50 rounded-lg p-1.5 transition-colors"
-                  aria-label="Delete"
-                >
-                  <Trash2 size={18} />
-                </button>
-              )}
-            </div>
+            <div className="text-xs text-gray-500 truncate mt-0.5">{displayName}</div>
           </div>
-          {showReason && (
-            <div className="mt-2 flex items-center gap-2 text-xs text-gray-600">
-              <CreditCard size={14} className="text-purple-600 shrink-0" />
-              <span className="break-words">Reason: {record.description.trim()}</span>
-            </div>
-          )}
-          {record.withdrawal_method && (
-            <div className="mt-1 flex items-center gap-2 text-xs text-gray-600">
-              <svg className="w-4 h-4 text-purple-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-              </svg>
-              <span className="break-words">Method: {record.withdrawal_method}</span>
-              {record.withdrawal_reference && (
-                <span className="ml-2">Ref: {record.withdrawal_reference}</span>
-              )}
-            </div>
+        </div>
+
+        <div className="flex items-center gap-4 shrink-0">
+          <span className={`font-bold text-lg whitespace-nowrap ${config.amount}`}>
+            ₹{Number(record.total_amount || 0).toLocaleString('en-IN')}
+          </span>
+
+          {isOwner && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(record.id);
+              }}
+              className="text-red-600 hover:text-red-800 p-1 rounded hover:bg-red-50 transition-colors"
+              title="Delete this entry"
+            >
+              <Trash2 size={18} />
+            </button>
           )}
         </div>
       </div>
+
+      {/* Withdrawal reason/method */}
+      {showReason && (
+        <div className="px-4 pb-3 text-xs text-gray-600 border-t border-gray-100 pt-3 bg-gray-50">
+          <div className="flex items-center gap-2">
+            <CreditCard size={14} className="text-purple-600" />
+            <span>Reason: {record.description.trim()}</span>
+          </div>
+          {record.withdrawal_method && (
+            <div className="mt-1 flex items-center gap-2">
+              Method: <strong>{record.withdrawal_method}</strong>
+              {record.withdrawal_reference && <> • Ref: {record.withdrawal_reference}</>}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Expand/Collapse button */}
+      {hasItems && itemCount > 1 && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            setExpanded(!expanded);
+          }}
+          className="w-full flex items-center justify-between px-4 py-2.5 bg-gray-50 hover:bg-gray-100 border-t border-gray-100 text-sm font-medium text-gray-700 transition-colors"
+        >
+          <span>
+            {expanded ? "Hide" : "Show"} {itemCount} item{itemCount > 1 ? 's' : ''}
+          </span>
+          {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+        </button>
+      )}
+
+      {/* Items breakdown (only when expanded) */}
+      {expanded && hasItems && (
+        <div className="px-4 pb-4 pt-2 bg-white">
+          <div className="space-y-2.5 divide-y divide-gray-100">
+            {record.items.map((item, idx) => (
+              <div
+                key={idx}
+                className="flex justify-between items-start py-2.5 first:pt-0 last:pb-0"
+              >
+                <div className="flex-1 pr-4">
+                  <div className="font-medium text-gray-900">
+                    {item.category_name}
+                  </div>
+                  {item.description && item.description.trim() !== item.category_name && (
+                    <div className="text-xs text-gray-600 mt-0.5">
+                      {item.description.trim()}
+                    </div>
+                  )}
+                </div>
+                <div className="font-medium text-gray-900 whitespace-nowrap">
+                  ₹{Number(item.amount || 0).toLocaleString('en-IN')}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Fallback if no items */}
+      {!hasItems && record.total_amount && (
+        <div className="px-4 pb-4 pt-1 text-sm text-gray-700 border-t border-gray-100 bg-gray-50">
+          Amount: ₹{Number(record.total_amount).toLocaleString('en-IN')}
+        </div>
+      )}
     </div>
   );
 };
@@ -141,15 +202,15 @@ const WalletBalance = ({ balance }) => {
 const BusSummary = ({ bus }) => {
   if (!bus) return null;
   
-  const totalExpense = (bus.expense_maintenance_transactions || []).reduce(
-    (sum, rec) => sum + Number(rec.amount || 0),
-    0
-  );
+const totalExpense = (bus.expense_maintenance_transactions || []).reduce(
+  (sum, rec) => sum + Number(rec.total_amount || 0),
+  0
+);
   
-  const totalIncome = (bus.income_transactions || []).reduce(
-    (sum, rec) => sum + Number(rec.amount || 0),
-    0
-  );
+const totalIncome = (bus.income_transactions || []).reduce(
+  (sum, rec) => sum + Number(rec.total_amount || 0),
+  0
+);
   
   if (totalExpense === 0 && totalIncome === 0) return null;
 
