@@ -53,60 +53,73 @@ const StaffBadge = ({ role, name }) => {
   );
 };
 
-const TransactionItem = ({ record, isOwner, onDelete,onOpenAttachments }) => {
+const TransactionItem = ({ record, isOwner, onDelete, onOpenAttachments }) => {
   const config = TRANSACTION_CONFIG[record.transaction_type] || TRANSACTION_CONFIG.EXPENSE;
   const displayName = record.bus_name || (record.transaction_type === "WITHDRAWAL" ? "Owner Wallet" : "No bus");
   const showReason = record.transaction_type === "WITHDRAWAL" && record.description?.trim();
 
-  const [expanded, setExpanded] = useState(false); 
+  const [expanded, setExpanded] = useState(false);
 
   const hasItems = record.items && record.items.length > 0;
   const itemCount = hasItems ? record.items.length : 1;
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-      {/* Header row */}
-      <div className="p-4 flex items-start justify-between gap-4">
-        <div className="flex items-center gap-3 flex-1 min-w-0">
-          <span className={`px-3 py-1.5 rounded-full text-xs font-bold shrink-0 ${config.bg} ${config.text}`}>
-            {config.label}
-          </span>
-          <div className="min-w-0 flex-1">
-            <div className="font-semibold text-gray-900 text-sm truncate">
-              {record.category_name || (hasItems ? `${itemCount} items` : "Unknown")}
+      {/* Header row - Mobile optimized */}
+      <div className="p-3 sm:p-4">
+        {/* Top section - Badge, Title, and Amount */}
+        <div className="flex items-start justify-between gap-2 mb-2">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <span className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs font-bold shrink-0 ${config.bg} ${config.text}`}>
+              {config.label}
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="font-semibold text-gray-900 text-sm truncate">
+                {record.category_name || (hasItems ? `${itemCount} items` : "Unknown")}
+              </div>
+              <div className="text-xs text-gray-500 truncate mt-0.5 sm:hidden">{displayName}</div>
             </div>
-            <div className="text-xs text-gray-500 truncate mt-0.5">{displayName}</div>
           </div>
+
+          <span className={`font-bold text-base sm:text-lg whitespace-nowrap ${config.amount}`}>
+            ₹{Number(record.total_amount || 0).toLocaleString("en-IN")}
+          </span>
         </div>
 
-  <div className="flex items-center gap-3 shrink-0">
-  {record.attachments?.length > 0 && (
-    <button
-      onClick={(e) => {
-        e.stopPropagation();
-        onOpenAttachments(
-          `Attachments - ${record.bus_name || "Transaction"}`,
-          record.attachments
-        );
-      }}
-      className="flex items-center gap-1 px-2 py-1 bg-blue-100 hover:bg-blue-200 rounded-lg text-blue-700 text-xs font-semibold"
-    >
-      <FileText size={14} />
-      Attachments - {record.attachments.length}
-    </button>
-  )}
+        {/* Bottom section - Bus name (desktop), Attachments, Delete */}
+        <div className="flex items-center justify-between gap-2 mt-2">
+          <div className="text-xs text-gray-500 truncate hidden sm:block flex-1">
+            {displayName}
+          </div>
 
-  <span className={`font-bold text-lg whitespace-nowrap ${config.amount}`}>
-    ₹{Number(record.total_amount || 0).toLocaleString("en-IN")}
-  </span>
+          <div className="flex items-center gap-2 ml-auto">
+            {record.attachments?.length > 0 && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenAttachments(
+                    `Attachments - ${record.bus_name || "Transaction"}`,
+                    record.attachments
+                  );
+                }}
+                className="flex items-center gap-1 px-2 py-1 bg-blue-100 hover:bg-blue-200 rounded-lg text-blue-700 text-xs font-semibold"
+              >
+                <FileText size={14} />
+                <span className="hidden xs:inline">Attachments - </span>
+                {record.attachments.length}
+              </button>
+            )}
 
-  {isOwner && (
-    <button onClick={() => onDelete(record.id)}>
-      <Trash2 size={18} />
-    </button>
-  )}
-</div>
-
+            {isOwner && (
+              <button
+                onClick={() => onDelete(record.id)}
+                className="p-1.5 hover:bg-red-50 rounded-lg transition-colors text-red-600"
+              >
+                <Trash2 size={16} className="sm:w-[18px] sm:h-[18px]" />
+              </button>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Withdrawal reason/method */}
@@ -180,48 +193,87 @@ const TransactionItem = ({ record, isOwner, onDelete,onOpenAttachments }) => {
 };
 
 const SummaryCard = ({ label, amount, bgColor, textColor }) => (
-  <div className={`${bgColor} rounded-xl p-4 text-center`}>
-    <div className={`text-sm font-medium ${textColor}`}>{label}</div>
-    <div className={`text-2xl font-bold ${textColor}`}>₹{Number(amount || 0).toFixed(0)}</div>
+  <div className={`${bgColor} rounded-lg sm:rounded-xl p-2 sm:p-4 text-center`}>
+    
+    {/* Label */}
+    <div className={`text-[11px] sm:text-sm font-medium ${textColor}`}>
+      {label}
+    </div>
+
+    {/* Amount */}
+    <div className={`text-lg sm:text-2xl font-bold mt-1 sm:mt-2 ${textColor}`}>
+      ₹{Number(amount || 0).toFixed(0)}
+    </div>
+
   </div>
 );
+
 
 const WalletBalance = ({ balance }) => {
   const isPositive = balance >= 0;
   const displayAmount = Math.abs(balance || 0).toFixed(0);
 
   return (
-    <div className={`mt-5 rounded-xl p-5 border-2 text-center ${
-      isPositive
-        ? "bg-gradient-to-br from-green-50 to-green-100 border-green-300"
-        : "bg-gradient-to-br from-red-50 to-red-100 border-red-300"
-    }`}>
-      <div className={`text-lg font-semibold ${isPositive ? "text-green-800" : "text-red-800"}`}>
-        Wallet Balance
-      </div>
-      <div className={`text-4xl font-extrabold mt-2 ${isPositive ? "text-green-700" : "text-red-700"}`}>
-        {isPositive ? "+" : "-"}₹{displayAmount}
-      </div>
-      <div className={`text-xs mt-1 ${isPositive ? "text-green-600" : "text-red-600"}`}>
-        {isPositive ? "Available funds" : "Outstanding amount"}
-      </div>
-    </div>
+<div
+  className={`
+    mt-2 sm:mt-5
+    rounded-lg sm:rounded-xl
+    p-3 sm:p-5
+    border sm:border-2
+    text-center
+    ${isPositive
+      ? "bg-gradient-to-br from-green-50 to-green-100 border-green-300"
+      : "bg-gradient-to-br from-red-50 to-red-100 border-red-300"}
+  `}
+>
+  <div
+    className={`
+      text-sm sm:text-lg
+      font-medium sm:font-semibold
+      ${isPositive ? "text-green-800" : "text-red-800"}
+    `}
+  >
+    Wallet Balance
+  </div>
+
+  <div
+    className={`
+      text-2xl sm:text-4xl
+      font-bold sm:font-extrabold
+      mt-1 sm:mt-2
+      ${isPositive ? "text-green-700" : "text-red-700"}
+    `}
+  >
+    {isPositive ? "+" : "-"}₹{displayAmount}
+  </div>
+
+  <div
+    className={`
+      text-[10px] sm:text-xs
+      mt-0.5 sm:mt-1
+      ${isPositive ? "text-green-600" : "text-red-600"}
+    `}
+  >
+    {isPositive ? "Available funds" : "Outstanding amount"}
+  </div>
+</div>
+
   );
 };
 
 const BusSummary = ({ bus }) => {
   if (!bus) return null;
-  
-const totalExpense = (bus.expense_maintenance_transactions || []).reduce(
-  (sum, rec) => sum + Number(rec.total_amount || 0),
-  0
-);
-  
-const totalIncome = (bus.income_transactions || []).reduce(
-  (sum, rec) => sum + Number(rec.total_amount || 0),
-  0
-);
-  
+
+  const totalExpense = (bus.expense_maintenance_transactions || []).reduce(
+    (sum, rec) => sum + Number(rec.total_amount || 0),
+    0
+  );
+
+  const totalIncome = (bus.income_transactions || []).reduce(
+    (sum, rec) => sum + Number(rec.total_amount || 0),
+    0
+  );
+
   if (totalExpense === 0 && totalIncome === 0) return null;
 
   return (
@@ -245,7 +297,7 @@ const totalIncome = (bus.income_transactions || []).reduce(
           </div>
         </div>
       )}
-      
+
       {totalExpense > 0 && (
         <div className="bg-gradient-to-r from-red-50 to-orange-50 border-2 border-red-200 rounded-xl p-3">
           <div className="flex items-center justify-between">
@@ -324,7 +376,7 @@ const DailyReportDownloadButton = ({ date, buses }) => {
       alert("Date is required for downloading report");
       return;
     }
-    
+
     setDownloading(true);
     try {
       const params = new URLSearchParams({ date });
@@ -402,7 +454,7 @@ const LoadMoreButton = ({ loading, hasMore, onClick, label = "Load More" }) => {
 
 const AttachmentItem = ({ attachment }) => {
   if (!attachment) return null;
-  
+
   const isImage = /\.(jpe?g|png|gif|webp)$/i.test(attachment.file_name);
   return (
     <a
@@ -472,7 +524,7 @@ export default function RecordsTab({
   const [busFilters, setBusFilters] = useState({});
   const [dataLoading, setDataLoading] = useState(false);
   const [error, setError] = useState(null);
-  
+
   const [transactionsPage, setTransactionsPage] = useState(1);
   const [withdrawalsPage, setWithdrawalsPage] = useState(1);
   const [hasMoreTransactions, setHasMoreTransactions] = useState(true);
@@ -481,7 +533,7 @@ export default function RecordsTab({
   const [loadingMoreWithdrawals, setLoadingMoreWithdrawals] = useState(false);
   const [transactionsInitialized, setTransactionsInitialized] = useState(false);
   const [withdrawalsInitialized, setWithdrawalsInitialized] = useState(false);
-  
+
   const abortControllerRef = useRef(null);
   const isMountedRef = useRef(true);
 
@@ -520,26 +572,26 @@ export default function RecordsTab({
 
   const handleDeleteRecord = useCallback(async (recordId) => {
     if (!isOwner) return;
-    
+
     try {
       await deleteRecordProp(recordId);
-      
+
       if (activeTab === "transactions") {
         setDailyGroups(prevGroups => {
           const updatedGroups = prevGroups.map(group => ({
             ...group,
             buses: group.buses
               ? group.buses.map(bus => ({
-                  ...bus,
-                  income_transactions: (bus.income_transactions || []).filter(rec => rec.id !== recordId),
-                  expense_maintenance_transactions: (bus.expense_maintenance_transactions || []).filter(rec => rec.id !== recordId)
-                })).filter(bus => 
-                  (bus.income_transactions || []).length > 0 || 
-                  (bus.expense_maintenance_transactions || []).length > 0
-                )
+                ...bus,
+                income_transactions: (bus.income_transactions || []).filter(rec => rec.id !== recordId),
+                expense_maintenance_transactions: (bus.expense_maintenance_transactions || []).filter(rec => rec.id !== recordId)
+              })).filter(bus =>
+                (bus.income_transactions || []).length > 0 ||
+                (bus.expense_maintenance_transactions || []).length > 0
+              )
               : []
           })).filter(group => (group.buses || []).length > 0);
-          
+
           return updatedGroups;
         });
       } else if (activeTab === "withdrawals") {
@@ -548,22 +600,22 @@ export default function RecordsTab({
             ...wd,
             transactions: (wd.transactions || []).filter(rec => rec.id !== recordId)
           })).filter(wd => (wd.transactions || []).length > 0);
-          
+
           return updatedWithdrawals.map(wd => ({
             ...wd,
             total: (wd.transactions || []).reduce((sum, rec) => sum + Number(rec.amount || 0), 0)
           }));
         });
       }
-      
+
     } catch (error) {
       console.error("Failed to delete record:", error);
     }
   }, [activeTab, deleteRecordProp, isOwner]);
 
   const loadData = useCallback(async (pageNum = 1, isLoadMore = false, tab = activeTab) => {
-    if ((isLoadMore && (tab === "transactions" ? loadingMoreTransactions : loadingMoreWithdrawals)) || 
-        (!isLoadMore && dataLoading)) {
+    if ((isLoadMore && (tab === "transactions" ? loadingMoreTransactions : loadingMoreWithdrawals)) ||
+      (!isLoadMore && dataLoading)) {
       console.log("Preventing duplicate API call");
       return;
     }
@@ -575,7 +627,7 @@ export default function RecordsTab({
     abortControllerRef.current = new AbortController();
 
     console.log(`Loading ${tab} page ${pageNum}, isLoadMore: ${isLoadMore}`);
-    
+
     if (isLoadMore) {
       if (tab === "transactions") {
         setLoadingMoreTransactions(true);
@@ -598,15 +650,15 @@ export default function RecordsTab({
         },
         signal
       });
-      
+
       if (!isMountedRef.current) return;
-      
+
       const data = response.data || {};
       const pagination = data.pagination || {};
       const dailyGroupsData = data.daily_groups || [];
       const withdrawalsData = data.withdrawals_by_date || [];
       const summaryData = data.summary || {};
-      
+
       if (isLoadMore) {
         if (tab === "transactions") {
           setDailyGroups(prev => {
@@ -637,31 +689,31 @@ export default function RecordsTab({
           setHasMoreWithdrawals(pagination.has_next || false);
           setWithdrawalsInitialized(true);
         }
-        
+
         if (summaryData) {
           setSummary(summaryData);
         }
       }
-      
+
       console.log(`Successfully loaded ${tab} page ${pageNum}, hasMore: ${pagination.has_next}`);
-      
+
     } catch (err) {
       if (err.name === 'AbortError' || err.name === 'CanceledError') {
         console.log('Request was aborted');
         return;
       }
-      
+
       if (!isMountedRef.current) return;
-      
+
       console.error(`Failed to load ${tab}:`, err);
       setError(err.message || `Failed to load ${tab} data`);
-      
+
       if (tab === "transactions") {
         setHasMoreTransactions(false);
       } else {
         setHasMoreWithdrawals(false);
       }
-      
+
     } finally {
       if (isMountedRef.current) {
         if (isLoadMore) {
@@ -688,34 +740,34 @@ export default function RecordsTab({
       }
     }
   }, [
-    activeTab, 
-    hasMoreTransactions, 
-    hasMoreWithdrawals, 
-    loadingMoreTransactions, 
-    loadingMoreWithdrawals, 
-    transactionsPage, 
-    withdrawalsPage, 
-    transactionsInitialized, 
-    withdrawalsInitialized, 
+    activeTab,
+    hasMoreTransactions,
+    hasMoreWithdrawals,
+    loadingMoreTransactions,
+    loadingMoreWithdrawals,
+    transactionsPage,
+    withdrawalsPage,
+    transactionsInitialized,
+    withdrawalsInitialized,
     loadData
   ]);
 
   const handleTabChange = useCallback(async (tab) => {
     if (tab === activeTab) return;
-    
+
     console.log(`Switching tab from ${activeTab} to ${tab}`);
-    
+
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
-    
+
     setActiveTab(tab);
     setOpenDates({});
     setBusFilters({});
     setError(null);
-    
-    if ((tab === "transactions" && !transactionsInitialized) || 
-        (tab === "withdrawals" && !withdrawalsInitialized)) {
+
+    if ((tab === "transactions" && !transactionsInitialized) ||
+      (tab === "withdrawals" && !withdrawalsInitialized)) {
       await loadData(1, false, tab);
     }
   }, [activeTab, transactionsInitialized, withdrawalsInitialized, loadData]);
@@ -729,15 +781,15 @@ export default function RecordsTab({
 
   const refreshAllData = useCallback(async () => {
     console.log("Refreshing all data...");
-    
+
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
-    
+
     setOpenDates({});
     setBusFilters({});
     setError(null);
-    
+
     if (activeTab === "transactions") {
       setDailyGroups([]);
       setTransactionsPage(1);
@@ -749,7 +801,7 @@ export default function RecordsTab({
       setHasMoreWithdrawals(true);
       setWithdrawalsInitialized(false);
     }
-    
+
     await loadData(1, false, activeTab);
   }, [activeTab, loadData]);
 
@@ -761,7 +813,7 @@ export default function RecordsTab({
     if (isMountedRef.current && !transactionsInitialized) {
       loadData(1, false, "transactions");
     }
-    
+
     return () => {
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
@@ -812,15 +864,53 @@ export default function RecordsTab({
         </button>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 p-5 mb-6">
-        <div className={`grid grid-cols-2 ${isOwner ? "lg:grid-cols-4" : "sm:grid-cols-3"} gap-4`}>
-          <SummaryCard label="Total Income" amount={total_income} bgColor="bg-gradient-to-br from-green-50 to-green-100" textColor="text-green-700" />
-          <SummaryCard label="Regular Expense" amount={total_expense} bgColor="bg-gradient-to-br from-red-50 to-red-100" textColor="text-red-700" />
-          <SummaryCard label="Maintenance" amount={total_maintenance} bgColor="bg-gradient-to-br from-orange-50 to-orange-100" textColor="text-orange-700" />
-          {isOwner && <SummaryCard label="Owner Withdrawal" amount={total_withdrawal} bgColor="bg-gradient-to-br from-purple-50 to-purple-100" textColor="text-purple-700" />}
-        </div>
-        {isOwner && <WalletBalance balance={balance} />}
-      </div>
+  <div className="bg-white rounded-lg sm:rounded-xl border border-gray-200 p-3 sm:p-5 mb-3 sm:mb-6">
+  <div
+    className={`
+      grid
+      grid-cols-2
+      ${isOwner ? "lg:grid-cols-4" : "sm:grid-cols-3"}
+      gap-2 sm:gap-4
+    `}
+  >
+    <SummaryCard
+      label="Total Income"
+      amount={total_income}
+      bgColor="bg-gradient-to-br from-green-50 to-green-100"
+      textColor="text-green-700"
+    />
+
+    <SummaryCard
+      label="Regular Expense"
+      amount={total_expense}
+      bgColor="bg-gradient-to-br from-red-50 to-red-100"
+      textColor="text-red-700"
+    />
+
+    <SummaryCard
+      label="Maintenance"
+      amount={total_maintenance}
+      bgColor="bg-gradient-to-br from-orange-50 to-orange-100"
+      textColor="text-orange-700"
+    />
+
+    {isOwner && (
+      <SummaryCard
+        label="Owner Withdrawal"
+        amount={total_withdrawal}
+        bgColor="bg-gradient-to-br from-purple-50 to-purple-100"
+        textColor="text-purple-700"
+      />
+    )}
+  </div>
+
+  {isOwner && (
+    <div className="mt-2 sm:mt-5">
+      <WalletBalance balance={balance} />
+    </div>
+  )}
+</div>
+
 
       {error && (
         <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
@@ -846,9 +936,8 @@ export default function RecordsTab({
           <button
             onClick={() => handleTabChange("transactions")}
             disabled={dataLoading}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-xs transition-all ${
-              activeTab === "transactions" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200 disabled:hover:bg-gray-100"
-            } ${dataLoading ? "disabled:cursor-not-allowed" : ""}`}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-xs transition-all ${activeTab === "transactions" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200 disabled:hover:bg-gray-100"
+              } ${dataLoading ? "disabled:cursor-not-allowed" : ""}`}
           >
             <TrendingUp size={18} /> <span className="hidden sm:inline">Daily Transactions</span><span className="sm:hidden">Transactions</span>
           </button>
@@ -856,9 +945,8 @@ export default function RecordsTab({
             <button
               onClick={() => handleTabChange("withdrawals")}
               disabled={dataLoading}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-xs transition-all ${
-                activeTab === "withdrawals" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200 disabled:hover:bg-gray-100"
-              } ${dataLoading ? "disabled:cursor-not-allowed" : ""}`}
+              className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-xs transition-all ${activeTab === "withdrawals" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200 disabled:hover:bg-gray-100"
+                } ${dataLoading ? "disabled:cursor-not-allowed" : ""}`}
             >
               <Wallet size={18} /> Withdrawals
             </button>
@@ -882,10 +970,10 @@ export default function RecordsTab({
             </div>
           ) : (
             <>
-              <div className="space-y-6">
+              <div className="space-y-3">
                 {dailyGroups.map((group, index) => {
                   if (!group) return null;
-                  
+
                   const isOpen = openDates[group.date];
                   const selectedBus = busFilters[group.date] || "";
                   const filteredBuses = selectedBus
@@ -899,154 +987,145 @@ export default function RecordsTab({
                     <div key={`${group.date}-${index}`} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
                       <div
                         onClick={() => toggleDate(group.date)}
-                        className="px-4 py-4 bg-gray-100 flex items-center justify-between cursor-pointer hover:bg-gray-200 transition-colors"
+                        className="
+    px-2 py-2              /* mobile padding */
+    sm:px-4 sm:py-4        /* desktop padding */
+    bg-gray-100
+    flex items-center justify-between
+    cursor-pointer
+    hover:bg-gray-200
+    transition-colors
+  "
                       >
-                        <div className="flex items-center gap-3 flex-1">
-                          {isOpen ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
-                          <Calendar size={18} className="text-blue-600" />
-                          <div className="font-bold text-gray-900">
-                            {group.date ? new Date(group.date).toLocaleDateString("en-IN", {
-                              weekday: "short",
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric"
-                            }) : "Unknown Date"}
+                        <div className="flex items-center gap-2 sm:gap-3 flex-1">
+                          {isOpen ? (
+                            <ChevronDown size={16} className="sm:size-[20]" />
+                          ) : (
+                            <ChevronRight size={16} className="sm:size-[20]" />
+                          )}
+
+                          <Calendar size={14} className="text-blue-600 sm:size-[18]" />
+
+                          <div className="font-semibold text-sm sm:text-base text-gray-900">
+                            {group.date
+                              ? new Date(group.date).toLocaleDateString("en-IN", {
+                                weekday: "short",
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                              })
+                              : "Unknown Date"}
                           </div>
                         </div>
+
                         <div className="text-right">
-                          <div className="text-xs text-gray-500">Net</div>
-                          <div className={`font-bold text-xl ${netCollection >= 0 ? "text-green-600" : "text-red-600"}`}>
+                          <div className="text-[10px] sm:text-xs text-gray-500">Net</div>
+                          <div
+                            className={`
+        font-bold
+        text-base sm:text-xl
+        ${netCollection >= 0 ? "text-green-600" : "text-red-600"}
+      `}
+                          >
                             ₹{netCollection.toFixed(0)}
                           </div>
                         </div>
                       </div>
 
-                      {isOpen && (
-                        <div className="p-4 space-y-6">
-                          {hasMultipleBuses && (
-                            <div className="mb-4">
-                              <label className="block text-sm font-medium text-gray-700 mb-2">Filter by Bus</label>
-                              <div className="relative">
-                                <select
-                                  value={selectedBus}
-                                  onChange={(e) => {
-                                    e.stopPropagation();
-                                    setBusFilters(prev => ({ ...prev, [group.date]: e.target.value }));
-                                  }}
-                                  className="w-full px-4 py-3 pr-12 bg-white border-2 border-gray-300 rounded-lg appearance-none cursor-pointer text-gray-900 focus:border-blue-500 focus:outline-none hover:border-gray-400 transition-colors"
-                                >
-                                  <option value="">All Buses ({(group.buses || []).length})</option>
-                                  {(group.buses || []).map(bus => (
-                                    <option key={bus?.bus_details?.bus_name || `bus-${index}`} value={bus?.bus_details?.bus_name}>
-                                      {bus?.bus_details?.bus_name || "Unnamed Bus"} {bus?.bus_details?.registration_number ? `(${bus.bus_details.registration_number})` : ""}
-                                    </option>
-                                  ))}
-                                </select>
-                                <ChevronDown size={20} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 pointer-events-none" />
-                              </div>
-                            </div>
-                          )}
 
-                       {filteredBuses.map((bus, busIndex) => {
-  // Optional: Log entire bus structure once (helpful for debugging grouping)
-  console.log(`Bus: ${bus?.bus_details?.bus_name || "Unnamed"} (index ${busIndex})`, {
-    bus_name: bus?.bus_details?.bus_name,
-    staff: bus?.staff_assignments,
-    income_count: bus?.income_transactions?.length || 0,
-    expense_count: bus?.expense_maintenance_transactions?.length || 0,
-    bus_attachments_count: bus?.attachments?.length || 0  // should be 0 or very few after fix
-  });
+                   {isOpen && (
+  <div className="p-2 sm:p-4 space-y-3 sm:space-y-6">
 
-  return (
-    <div key={bus?.bus_details?.bus_name || `bus-${busIndex}`} className="space-y-4">
-      <BusHeader busDetails={bus?.bus_details} />
-      <BusSummary bus={bus} />
-      <StaffBadgesRow assignments={bus?.staff_assignments} />
+    {/* FILTER BY BUS */}
+    {hasMultipleBuses && (
+      <div className="mb-2 sm:mb-4">
+        <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+          Filter by Bus
+        </label>
 
-      {/* NO bus-level attachments button anymore */}
+        <div className="relative">
+          <select
+            value={selectedBus}
+            onChange={(e) => {
+              e.stopPropagation();
+              setBusFilters(prev => ({ ...prev, [group.date]: e.target.value }));
+            }}
+            className="
+              w-full
+              px-2 py-2 sm:px-4 sm:py-3
+              pr-8 sm:pr-12
+              bg-white
+              border border-gray-300 sm:border-2
+              rounded-md sm:rounded-lg
+              text-xs sm:text-sm
+              cursor-pointer
+              text-gray-900
+              focus:border-blue-500 focus:outline-none
+              hover:border-gray-400
+              transition-colors
+            "
+          >
+            <option value="">
+              All Buses ({(group.buses || []).length})
+            </option>
 
-      <div className="space-y-4 divide-y divide-gray-200">
-        {/* INCOME TRANSACTIONS */}
-        {(bus?.income_transactions || []).map((rec) => {
-          // Log full transaction data (including attachments!)
-          console.log(`Income Transaction ID: ${rec.id}`, {
-            id: rec.id,
-            date: rec.date,
-            total_amount: rec.total_amount,
-            category_name: rec.category_name,
-            transaction_type: rec.transaction_type,
-            description: rec.description?.substring(0, 100) + (rec.description?.length > 100 ? '...' : ''),
-            bus_name: rec.bus_name,
-            created_at: rec.created_at,
-            attachments: rec.attachments || [],                  // ← THIS is what we want to see!
-            attachments_count: rec.attachments?.length || 0,
-            items: rec.items?.map(i => ({
-              category: i.category_name,
-              amount: i.amount
-            })) || []
-          });
+            {(group.buses || []).map((bus, index) => (
+              <option
+                key={bus?.bus_details?.bus_name || `bus-${index}`}
+                value={bus?.bus_details?.bus_name}
+              >
+                {bus?.bus_details?.bus_name || "Unnamed Bus"}
+                {bus?.bus_details?.registration_number
+                  ? ` (${bus.bus_details.registration_number})`
+                  : ""}
+              </option>
+            ))}
+          </select>
 
-          return (
-            <div key={rec.id} className="pt-4 first:pt-0">
-              <TransactionItem 
-  record={rec}
-  isOwner={isOwner}
-  onDelete={handleDeleteRecord}
-  onOpenAttachments={openAttachmentsModal}
-/>
+          {/* <ChevronDown
+            size={14}
+            className=""
+          /> */}
+        </div>
+      </div>
+    )}
 
-        
-{/* {rec.attachments?.length > 0 && (
-  <div className="px-2 py-1 border-t border-gray-100 bg-gray-50 flex justify-start">
-    <button
-      onClick={(e) => {
-        e.stopPropagation();
-        openAttachmentsModal(
-          `Attachments - ${rec.bus_name || "Unknown"}`,
-          rec.attachments
-        );
-      }}
-      className="flex items-center gap-2 px-2 py-1 bg-blue-100 hover:bg-blue-200 rounded-lg"
-    >
-      Attachments ({rec.attachments.length})
-    </button>
-  </div>
-)} */}
+    {/* BUS LIST */}
+    {filteredBuses.map((bus, busIndex) => (
+      <div
+        key={bus?.bus_details?.bus_name || `bus-${busIndex}`}
+        className="space-y-2 sm:space-y-4"
+      >
+        <BusHeader busDetails={bus?.bus_details} />
+        <BusSummary bus={bus} />
+        <StaffBadgesRow assignments={bus?.staff_assignments} />
 
+        {/* TRANSACTIONS */}
+        <div className="space-y-2 sm:space-y-4 divide-y divide-gray-200">
 
-            </div>
-          );
-        })}
-
-        {/* EXPENSE & MAINTENANCE TRANSACTIONS */}
-        {(bus?.expense_maintenance_transactions || []).map((rec) => {
-          // Same log for expense/maintenance
-          console.log(`Expense/Maint Transaction ID: ${rec.id}`, {
-            id: rec.id,
-            date: rec.date,
-            total_amount: rec.total_amount,
-            category_name: rec.category_name,
-            transaction_type: rec.transaction_type,
-            description: rec.description?.substring(0, 100) + (rec.description?.length > 100 ? '...' : ''),
-            bus_name: rec.bus_name,
-            created_at: rec.created_at,
-            attachments: rec.attachments || [],
-            attachments_count: rec.attachments?.length || 0,
-            items: rec.items?.map(i => ({
-              category: i.category_name,
-              amount: i.amount
-            })) || []
-          });
-
-          return (
-            <div key={rec.id} className="pt-4 first:pt-0">
-              <TransactionItem 
-                record={rec} 
-                isOwner={isOwner} 
-                onDelete={handleDeleteRecord} 
+          {/* INCOME */}
+          {(bus?.income_transactions || []).map((rec) => (
+            <div key={rec.id} className="pt-2 sm:pt-4 first:pt-0">
+              <TransactionItem
+                record={rec}
+                isOwner={isOwner}
+                onDelete={handleDeleteRecord}
+                onOpenAttachments={openAttachmentsModal}
               />
+            </div>
+          ))}
+
+          {/* EXPENSE / MAINTENANCE */}
+          {(bus?.expense_maintenance_transactions || []).map((rec) => (
+            <div key={rec.id} className="pt-2 sm:pt-4 first:pt-0">
+              <TransactionItem
+                record={rec}
+                isOwner={isOwner}
+                onDelete={handleDeleteRecord}
+              />
+
               {rec.attachments?.length > 0 && (
-                <div className="mt-2 pl-4">
+                <div className="mt-1 sm:mt-2 pl-2 sm:pl-4">
                   <AttachmentsButton
                     attachments={rec.attachments}
                     busName={bus?.bus_details?.bus_name}
@@ -1055,36 +1134,41 @@ export default function RecordsTab({
                 </div>
               )}
             </div>
-          );
-        })}
+          ))}
+        </div>
       </div>
+    ))}
+
+    {/* EMPTY STATE */}
+    {filteredBuses.length === 0 && (
+      <div className="text-center py-4 sm:py-8 text-xs sm:text-sm text-gray-500">
+        No transactions for the selected bus filter.
+      </div>
+    )}
+
+    {/* DOWNLOAD BUTTON */}
+    <div className="flex justify-end pt-2 sm:pt-4">
+      <DailyReportDownloadButton
+        date={group.date}
+        buses={group.buses || []}
+      />
     </div>
-  );
-})}
 
-                          {filteredBuses.length === 0 && (
-                            <div className="text-center py-8 text-gray-500">
-                              No transactions for the selected bus filter.
-                            </div>
-                          )}
+  </div>
+)}
 
-                          <div className="flex justify-end pt-4">
-                            <DailyReportDownloadButton date={group.date} buses={group.buses || []} />
-                          </div>
-                        </div>
-                      )}
                     </div>
                   );
                 })}
               </div>
-              
+
               <LoadMoreButton
                 loading={loadingMoreTransactions}
                 hasMore={hasMoreTransactions}
                 onClick={handleLoadMore}
                 label="Load More Transactions"
               />
-              
+
               {!hasMoreTransactions && dailyGroups.length > 0 && !loadingMoreTransactions && (
                 <div className="text-center py-8 text-gray-500 border-t border-gray-200 mt-6">
                   No more transactions to load
@@ -1110,61 +1194,72 @@ export default function RecordsTab({
           </div>
         ) : (
           <>
-            <div className="space-y-6">
+            <div className="space-y-1">
               {withdrawalsByDate.map((wd, index) => {
                 if (!wd) return null;
-                
+
                 const isOpen = openDates[wd.date];
                 const total = Number(wd.total || 0);
-                
-                return (
-                  <div key={`${wd.date}-${index}`} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-                    <div
-                      onClick={() => toggleDate(wd.date)}
-                      className="px-4 py-4 bg-gray-100 flex items-center justify-between cursor-pointer hover:bg-gray-200 transition-colors"
-                    >
-                      <div className="flex items-center gap-3 flex-1">
-                        {isOpen ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
-                        <Calendar size={18} className="text-blue-600" />
-                        <div className="font-bold text-gray-900">
-                          {wd.date ? new Date(wd.date).toLocaleDateString("en-IN", {
-                            weekday: "short",
-                            year: "numeric",
-                            month: "short",
-                            day: "numeric"
-                          }) : "Unknown Date"}
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-xs text-gray-600">Total</div>
-                        <div className="font-bold text-xl text-purple-700">-₹{total.toFixed(0)}</div>
-                      </div>
-                    </div>
 
-                    {isOpen && (
-                      <div className="p-4 space-y-3 bg-gray-50">
-                        {(wd.transactions || []).map(rec => (
-                          <TransactionItem 
-                            key={rec.id} 
-                            record={rec} 
-                            isOwner={isOwner} 
-                            onDelete={handleDeleteRecord} 
-                          />
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                return (
+               <div
+  key={`${wd.date}-${index}`}
+  className="bg-white rounded-lg sm:rounded-xl border border-gray-200 overflow-hidden"
+>
+  {/* HEADER */}
+  <div
+    onClick={() => toggleDate(wd.date)}
+    className="px-2 sm:px-4 py-2 sm:py-4 bg-gray-100 flex items-center justify-between cursor-pointer hover:bg-gray-200 transition-colors"
+  >
+    <div className="flex items-center gap-2 sm:gap-3 flex-1">
+      {isOpen ? <ChevronDown size={16} className="sm:size-[20]" /> : <ChevronRight size={16} className="sm:size-[20]" />}
+      <Calendar size={14} className="text-blue-600 sm:size-[18]" />
+      <div className="font-bold text-sm sm:text-base text-gray-900">
+        {wd.date
+          ? new Date(wd.date).toLocaleDateString("en-IN", {
+              weekday: "short",
+              year: "numeric",
+              month: "short",
+              day: "numeric",
+            })
+          : "Unknown Date"}
+      </div>
+    </div>
+
+    <div className="text-right">
+      <div className="text-[10px] sm:text-xs text-gray-600">Total</div>
+      <div className="font-bold text-lg sm:text-xl text-purple-700">
+        -₹{total.toFixed(0)}
+      </div>
+    </div>
+  </div>
+
+  {/* TRANSACTIONS */}
+  {isOpen && (
+    <div className="p-2 sm:p-4 space-y-2 sm:space-y-3 bg-gray-50">
+      {(wd.transactions || []).map((rec) => (
+        <TransactionItem
+          key={rec.id}
+          record={rec}
+          isOwner={isOwner}
+          onDelete={handleDeleteRecord}
+        />
+      ))}
+    </div>
+  )}
+</div>
+
                 );
               })}
             </div>
-            
+
             <LoadMoreButton
               loading={loadingMoreWithdrawals}
               hasMore={hasMoreWithdrawals}
               onClick={handleLoadMore}
               label="Load More Withdrawals"
             />
-            
+
             {!hasMoreWithdrawals && withdrawalsByDate.length > 0 && !loadingMoreWithdrawals && (
               <div className="text-center py-8 text-gray-500 border-t border-gray-200 mt-6">
                 No more withdrawals to load
