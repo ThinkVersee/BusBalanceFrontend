@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import AuthLoadingScreen from '@/components/auth/AuthLoadingScreen';
 import { finishInitialization, forceLogout } from '@/store/slices/authSlice';
 import { useDispatch } from 'react-redux';
+import Cookies from "js-cookie";
 
 const PUBLIC_ROUTES = ['/', '/login', '/register', '/admin/login'];
 const ADMIN_ROUTES = '/admin';

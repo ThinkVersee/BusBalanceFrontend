@@ -53,12 +53,12 @@ const StaffBadge = ({ role, name }) => {
   );
 };
 
-const TransactionItem = ({ record, isOwner, onDelete }) => {
+const TransactionItem = ({ record, isOwner, onDelete,onOpenAttachments }) => {
   const config = TRANSACTION_CONFIG[record.transaction_type] || TRANSACTION_CONFIG.EXPENSE;
   const displayName = record.bus_name || (record.transaction_type === "WITHDRAWAL" ? "Owner Wallet" : "No bus");
   const showReason = record.transaction_type === "WITHDRAWAL" && record.description?.trim();
 
-  const [expanded, setExpanded] = useState(false); // change to true if you want all expanded by default
+  const [expanded, setExpanded] = useState(false); 
 
   const hasItems = record.items && record.items.length > 0;
   const itemCount = hasItems ? record.items.length : 1;
@@ -79,24 +79,34 @@ const TransactionItem = ({ record, isOwner, onDelete }) => {
           </div>
         </div>
 
-        <div className="flex items-center gap-4 shrink-0">
-          <span className={`font-bold text-lg whitespace-nowrap ${config.amount}`}>
-            ₹{Number(record.total_amount || 0).toLocaleString('en-IN')}
-          </span>
+  <div className="flex items-center gap-3 shrink-0">
+  {record.attachments?.length > 0 && (
+    <button
+      onClick={(e) => {
+        e.stopPropagation();
+        onOpenAttachments(
+          `Attachments - ${record.bus_name || "Transaction"}`,
+          record.attachments
+        );
+      }}
+      className="flex items-center gap-1 px-2 py-1 bg-blue-100 hover:bg-blue-200 rounded-lg text-blue-700 text-xs font-semibold"
+    >
+      <FileText size={14} />
+      Attachments - {record.attachments.length}
+    </button>
+  )}
 
-          {isOwner && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete(record.id);
-              }}
-              className="text-red-600 hover:text-red-800 p-1 rounded hover:bg-red-50 transition-colors"
-              title="Delete this entry"
-            >
-              <Trash2 size={18} />
-            </button>
-          )}
-        </div>
+  <span className={`font-bold text-lg whitespace-nowrap ${config.amount}`}>
+    ₹{Number(record.total_amount || 0).toLocaleString("en-IN")}
+  </span>
+
+  {isOwner && (
+    <button onClick={() => onDelete(record.id)}>
+      <Trash2 size={18} />
+    </button>
+  )}
+</div>
+
       </div>
 
       {/* Withdrawal reason/method */}
@@ -937,36 +947,120 @@ export default function RecordsTab({
                             </div>
                           )}
 
-                          {filteredBuses.map((bus, busIndex) => (
-                            <div key={bus?.bus_details?.bus_name || `bus-${busIndex}`} className="space-y-4">
-                              <BusHeader busDetails={bus?.bus_details} />
-                              <BusSummary bus={bus} />
-                              <StaffBadgesRow assignments={bus?.staff_assignments} />
-                              <AttachmentsButton
-                                attachments={bus?.attachments}
-                                busName={bus?.bus_details?.bus_name}
-                                onOpenModal={openAttachmentsModal}
-                              />
-                              <div className="space-y-3">
-                                {(bus?.income_transactions || []).map(rec => (
-                                  <TransactionItem 
-                                    key={rec.id} 
-                                    record={rec} 
-                                    isOwner={isOwner} 
-                                    onDelete={handleDeleteRecord} 
-                                  />
-                                ))}
-                                {(bus?.expense_maintenance_transactions || []).map(rec => (
-                                  <TransactionItem 
-                                    key={rec.id} 
-                                    record={rec} 
-                                    isOwner={isOwner} 
-                                    onDelete={handleDeleteRecord} 
-                                  />
-                                ))}
-                              </div>
-                            </div>
-                          ))}
+                       {filteredBuses.map((bus, busIndex) => {
+  // Optional: Log entire bus structure once (helpful for debugging grouping)
+  console.log(`Bus: ${bus?.bus_details?.bus_name || "Unnamed"} (index ${busIndex})`, {
+    bus_name: bus?.bus_details?.bus_name,
+    staff: bus?.staff_assignments,
+    income_count: bus?.income_transactions?.length || 0,
+    expense_count: bus?.expense_maintenance_transactions?.length || 0,
+    bus_attachments_count: bus?.attachments?.length || 0  // should be 0 or very few after fix
+  });
+
+  return (
+    <div key={bus?.bus_details?.bus_name || `bus-${busIndex}`} className="space-y-4">
+      <BusHeader busDetails={bus?.bus_details} />
+      <BusSummary bus={bus} />
+      <StaffBadgesRow assignments={bus?.staff_assignments} />
+
+      {/* NO bus-level attachments button anymore */}
+
+      <div className="space-y-4 divide-y divide-gray-200">
+        {/* INCOME TRANSACTIONS */}
+        {(bus?.income_transactions || []).map((rec) => {
+          // Log full transaction data (including attachments!)
+          console.log(`Income Transaction ID: ${rec.id}`, {
+            id: rec.id,
+            date: rec.date,
+            total_amount: rec.total_amount,
+            category_name: rec.category_name,
+            transaction_type: rec.transaction_type,
+            description: rec.description?.substring(0, 100) + (rec.description?.length > 100 ? '...' : ''),
+            bus_name: rec.bus_name,
+            created_at: rec.created_at,
+            attachments: rec.attachments || [],                  // ← THIS is what we want to see!
+            attachments_count: rec.attachments?.length || 0,
+            items: rec.items?.map(i => ({
+              category: i.category_name,
+              amount: i.amount
+            })) || []
+          });
+
+          return (
+            <div key={rec.id} className="pt-4 first:pt-0">
+              <TransactionItem 
+  record={rec}
+  isOwner={isOwner}
+  onDelete={handleDeleteRecord}
+  onOpenAttachments={openAttachmentsModal}
+/>
+
+        
+{/* {rec.attachments?.length > 0 && (
+  <div className="px-2 py-1 border-t border-gray-100 bg-gray-50 flex justify-start">
+    <button
+      onClick={(e) => {
+        e.stopPropagation();
+        openAttachmentsModal(
+          `Attachments - ${rec.bus_name || "Unknown"}`,
+          rec.attachments
+        );
+      }}
+      className="flex items-center gap-2 px-2 py-1 bg-blue-100 hover:bg-blue-200 rounded-lg"
+    >
+      Attachments ({rec.attachments.length})
+    </button>
+  </div>
+)} */}
+
+
+            </div>
+          );
+        })}
+
+        {/* EXPENSE & MAINTENANCE TRANSACTIONS */}
+        {(bus?.expense_maintenance_transactions || []).map((rec) => {
+          // Same log for expense/maintenance
+          console.log(`Expense/Maint Transaction ID: ${rec.id}`, {
+            id: rec.id,
+            date: rec.date,
+            total_amount: rec.total_amount,
+            category_name: rec.category_name,
+            transaction_type: rec.transaction_type,
+            description: rec.description?.substring(0, 100) + (rec.description?.length > 100 ? '...' : ''),
+            bus_name: rec.bus_name,
+            created_at: rec.created_at,
+            attachments: rec.attachments || [],
+            attachments_count: rec.attachments?.length || 0,
+            items: rec.items?.map(i => ({
+              category: i.category_name,
+              amount: i.amount
+            })) || []
+          });
+
+          return (
+            <div key={rec.id} className="pt-4 first:pt-0">
+              <TransactionItem 
+                record={rec} 
+                isOwner={isOwner} 
+                onDelete={handleDeleteRecord} 
+              />
+              {rec.attachments?.length > 0 && (
+                <div className="mt-2 pl-4">
+                  <AttachmentsButton
+                    attachments={rec.attachments}
+                    busName={bus?.bus_details?.bus_name}
+                    onOpenModal={openAttachmentsModal}
+                  />
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+})}
 
                           {filteredBuses.length === 0 && (
                             <div className="text-center py-8 text-gray-500">
