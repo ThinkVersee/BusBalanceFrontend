@@ -1,14 +1,11 @@
 "use client";
 import React, { useRef, useState, useEffect, useCallback } from "react";
-
-
 import {
   TrendingUp,
   TrendingDown,
   Plus,
   Save,
   Loader2,
-
   Upload,
   X,
   IndianRupee,
@@ -139,7 +136,6 @@ export default function NewEntryForm({
   saving,
   isOwner,
   duplicateWarnings,
-  // Receive staffDetails and setStaffDetails from parent
   staffDetails,
   setStaffDetails,
   dailyCollection,
@@ -147,6 +143,9 @@ export default function NewEntryForm({
 }) {
   const [currentStep, setCurrentStep] = useState(1);
   const [maintenanceOpen, setMaintenanceOpen] = useState(true);
+  const [withdrawalMethod, setWithdrawalMethod] = useState("");
+  const [withdrawalReference, setWithdrawalReference] = useState("");
+  const [transactionDescription, setTransactionDescription] = useState("");
 
   // Battha calculation state
   const [batthaLoading, setBatthaLoading] = useState(false);
@@ -189,7 +188,6 @@ export default function NewEntryForm({
         };
       }
 
-      // Using axiosInstance to calculate battha
       const response = await axiosInstance.post('/buses/battha/calculate/', {
         bus_id: formData.bus,
         daily_collection: dailyCollection,
@@ -198,7 +196,6 @@ export default function NewEntryForm({
 
       const data = response.data;
 
-      // If no battha configuration exists
       if (!data.has_battha_config) {
         setBatthaCalculations({
           hasConfig: false,
@@ -216,7 +213,6 @@ export default function NewEntryForm({
         };
       }
 
-      // Format the data
       const calculations = {
         hasConfig: true,
         driver: data.driver || { percentage: 0, amount: 0, isCalculated: false },
@@ -224,7 +220,6 @@ export default function NewEntryForm({
         cleaner: data.cleaner || { percentage: 0, amount: 0, isCalculated: false }
       };
 
-      // Mark as calculated
       if (calculations.driver && calculations.driver.amount > 0) {
         calculations.driver.isCalculated = true;
       }
@@ -259,7 +254,6 @@ export default function NewEntryForm({
   const applyCalculatedSalaries = useCallback((calculations) => {
     if (!calculations.hasConfig) return;
 
-    // Update driver salary if calculated
     if (staffDetails.driverName && calculations.driver.isCalculated) {
       const driverCat = expenseCategories.find(c => c.name === "Driver Salary");
       if (driverCat && calculations.driver.amount > 0) {
@@ -267,7 +261,6 @@ export default function NewEntryForm({
       }
     }
 
-    // Update conductor salary if calculated
     if (staffDetails.conductorName && calculations.conductor.isCalculated) {
       const conductorCat = expenseCategories.find(c => c.name === "Conductor Salary");
       if (conductorCat && calculations.conductor.amount > 0) {
@@ -275,7 +268,6 @@ export default function NewEntryForm({
       }
     }
 
-    // Update cleaner salary if calculated
     if (staffDetails.cleanerName && calculations.cleaner.isCalculated) {
       const cleanerCat = expenseCategories.find(c => c.name === "Cleaner Salary");
       if (cleanerCat && calculations.cleaner.amount > 0) {
@@ -296,7 +288,6 @@ export default function NewEntryForm({
   }, [currentStep, formData.bus, dailyCollection]);
 
   // Update daily collection in income categories
-  // Update daily collection in income categories
   useEffect(() => {
     if (dailyCollection && incomeCategories.length > 0) {
       const dailyCollectionCat = incomeCategories.find(c => c.name === "Daily Collection");
@@ -305,6 +296,7 @@ export default function NewEntryForm({
       }
     }
   }, [dailyCollection]);
+
   const validateStep = (step) => {
     if (step === 1) {
       if (!formData.date || !formData.bus) {
@@ -380,7 +372,6 @@ export default function NewEntryForm({
     if (salaryCat) {
       updateExpenseAmount(salaryCat.id, value);
 
-      // If user manually changes value, mark as not calculated
       if (categoryName === "Driver Salary" && batthaCalculations.driver.isCalculated) {
         setBatthaCalculations(prev => ({
           ...prev,
@@ -402,11 +393,9 @@ export default function NewEntryForm({
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-      {/* Step Indicator */}
       <div className="px-3 sm:px-6 py-3 sm:py-6 pt-10 sm:pt-12 bg-gradient-to-r from-blue-50 to-indigo-50">
         <StepIndicator />
       </div>
-
 
       {/* Step 1: Daily Collection */}
       {currentStep === 1 && (
@@ -422,7 +411,6 @@ export default function NewEntryForm({
           </div>
 
           <div className="space-y-3 sm:space-y-4">
-            {/* Transaction Date */}
             <div>
               <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                 Transaction Date <span className="text-red-600">*</span>
@@ -435,7 +423,6 @@ export default function NewEntryForm({
               />
             </div>
 
-            {/* Bus Number */}
             <div>
               <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                 Bus Number <span className="text-red-600">*</span>
@@ -454,7 +441,6 @@ export default function NewEntryForm({
               </select>
             </div>
 
-            {/* Daily Collection Amount */}
             <div>
               <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                 Daily Collection Amount <span className="text-red-600">*</span>
@@ -473,7 +459,6 @@ export default function NewEntryForm({
                   placeholder="0.00"
                   className="w-full pl-10 pr-3 py-2 sm:py-2.5 text-sm sm:text-black font-medium border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white text-gray-900"
                 />
-
               </div>
               {dailyCollection && (
                 <p className="mt-1 text-xs sm:text-sm text-green-600 font-medium">
@@ -483,7 +468,6 @@ export default function NewEntryForm({
             </div>
           </div>
 
-          {/* Next Button */}
           <div className="mt-4 sm:mt-6 flex justify-end">
             <button
               onClick={nextStep}
@@ -496,11 +480,9 @@ export default function NewEntryForm({
         </div>
       )}
 
-
-      {/* Step 2: Staff Names (ONLY names, no salaries) */}
+      {/* Step 2: Staff Names */}
       {currentStep === 2 && (
         <div className="p-4 sm:p-6">
-          {/* Header */}
           <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
             <div className="p-2 rounded-lg bg-purple-100">
               <Users className="text-purple-600" size={20} />
@@ -511,10 +493,7 @@ export default function NewEntryForm({
             </div>
           </div>
 
-          {/* Staff Input Fields */}
           <div className="space-y-3 sm:space-y-4">
-
-            {/* Driver */}
             <div className="p-3 sm:p-4 border border-gray-200 rounded-md">
               <div className="flex items-center gap-2 mb-2 sm:mb-3">
                 <User size={16} className="text-blue-600" />
@@ -536,7 +515,6 @@ export default function NewEntryForm({
               </p>
             </div>
 
-            {/* Conductor */}
             <div className="p-3 sm:p-4 border border-gray-200 rounded-md">
               <div className="flex items-center gap-2 mb-2 sm:mb-3">
                 <User size={16} className="text-green-600" />
@@ -558,7 +536,6 @@ export default function NewEntryForm({
               </p>
             </div>
 
-            {/* Cleaner */}
             <div className="p-3 sm:p-4 border border-gray-200 rounded-md">
               <div className="flex items-center gap-2 mb-2 sm:mb-3">
                 <User size={16} className="text-orange-600" />
@@ -579,10 +556,8 @@ export default function NewEntryForm({
                 This will be saved as today's cleaner assignment
               </p>
             </div>
-
           </div>
 
-          {/* Navigation Buttons */}
           <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row justify-between gap-2 sm:gap-0">
             <button
               onClick={prevStep}
@@ -602,12 +577,9 @@ export default function NewEntryForm({
         </div>
       )}
 
-
-      {/* Step 3: Expenses (with salary categories) */}
+      {/* Step 3: Expenses */}
       {currentStep === 3 && (
         <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
-
-          {/* Header */}
           <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
             <div className="p-2 rounded-lg bg-red-100">
               <TrendingDown className="text-red-600" size={20} />
@@ -618,7 +590,8 @@ export default function NewEntryForm({
             </div>
           </div>
 
-          {/* Battha Warning */}
+
+
           {showBatthaWarning && (
             <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-yellow-50 border border-yellow-200 rounded-md">
               <div className="flex items-center gap-2 sm:gap-3">
@@ -646,8 +619,6 @@ export default function NewEntryForm({
             </div>
           )}
 
-
-          {/* Battha Error */}
           {batthaError && (
             <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-red-50 border border-red-200 rounded-md">
               <div className="flex items-center gap-2 sm:gap-3">
@@ -659,7 +630,6 @@ export default function NewEntryForm({
               </div>
             </div>
           )}
-
 
           {/* Staff Salaries Section */}
           <div className="space-y-3 sm:space-y-4">
@@ -690,35 +660,6 @@ export default function NewEntryForm({
               )}
             </div>
 
-            {/* Staff Assignments */}
-            {/* <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
-        {staffDetails.driverName && (
-          <div className="bg-white p-2 sm:p-3 rounded-md border">
-            <div className="text-xs sm:text-sm text-blue-700 font-medium flex items-center gap-1">
-              <User size={12} /> Driver
-            </div>
-            <div className="text-sm sm:text-black text-gray-900 mt-1">{staffDetails.driverName}</div>
-          </div>
-        )}
-        {staffDetails.conductorName && (
-          <div className="bg-white p-2 sm:p-3 rounded-md border">
-            <div className="text-xs sm:text-sm text-green-700 font-medium flex items-center gap-1">
-              <User size={12} /> Conductor
-            </div>
-            <div className="text-sm sm:text-black text-gray-900 mt-1">{staffDetails.conductorName}</div>
-          </div>
-        )}
-        {staffDetails.cleanerName && (
-          <div className="bg-white p-2 sm:p-3 rounded-md border">
-            <div className="text-xs sm:text-sm text-orange-700 font-medium flex items-center gap-1">
-              <User size={12} /> Cleaner
-            </div>
-            <div className="text-sm sm:text-black text-gray-900 mt-1">{staffDetails.cleanerName}</div>
-          </div>
-        )}
-      </div> */}
-
-            {/* Salary Inputs */}
             <section className="p-2 sm:p-5 bg-gray-50 border border-gray-200 rounded-lg w-full">
               <div className="space-y-2.5 sm:space-y-5 max-w-5xl mx-auto">
                 {[
@@ -728,9 +669,6 @@ export default function NewEntryForm({
                 ].map(([key, label, color], index, arr) =>
                   staffDetails[key] ? (
                     <div key={key} className="pb-2 sm:pb-3">
-
-                      {/* Heading with User Icon */}
-                      {/* Heading with User Icon before text */}
                       <div className="flex items-center gap-1 font-semibold text-xs sm:text-lg">
                         <User
                           size={16}
@@ -742,21 +680,11 @@ export default function NewEntryForm({
                                 : "text-orange-600"
                           }
                         />
-                        <span
-                          className={
-                            color === "blue"
-                              ? "text-black"
-                              : color === "black"
-                                ? "text-black"
-                                : "text-black"
-                          }
-                        >
+                        <span className="text-black">
                           {label} Salary
                         </span>
                       </div>
 
-
-                      {/* NAME + SALARY (FIXED POSITION) */}
                       <div className="grid grid-cols-[1fr_96px] sm:grid-cols-[1fr_128px] items-center gap-2 sm:gap-2.5 mt-1 sm:mt-1.5">
                         <div className="min-w-0 truncate text-gray-700 text-sm sm:text-black">
                           {staffDetails[key]}
@@ -775,7 +703,6 @@ export default function NewEntryForm({
                         />
                       </div>
 
-                      {/* Divider */}
                       {index !== arr.length - 1 && (
                         <div className="mt-1.5 sm:mt-2.5 h-px bg-gray-200" />
                       )}
@@ -784,17 +711,10 @@ export default function NewEntryForm({
                 )}
               </div>
             </section>
-
-
-
-
-
-
           </div>
 
           {/* Other Expenses */}
           <div className="space-y-2">
-            {/* Header */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Receipt size={16} className="text-red-700" />
@@ -811,10 +731,8 @@ export default function NewEntryForm({
               </button>
             </div>
 
-            {/* Add Expense Form */}
             {showAddExpense && (
               <div className="mb-2 sm:mb-3 p-2 sm:p-3 bg-gray-50 rounded-md max-w-sm">
-                {/* Input + Close button */}
                 <div className="flex items-center gap-2 mb-2">
                   <input
                     type="text"
@@ -834,7 +752,6 @@ export default function NewEntryForm({
                   </button>
                 </div>
 
-                {/* Add Category button */}
                 <button
                   onClick={() => addNewCategory("EXPENSE")}
                   className="w-full px-2 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
@@ -844,9 +761,6 @@ export default function NewEntryForm({
               </div>
             )}
 
-
-
-            {/* Expense Categories List */}
             <div className="space-y-1">
               {expenseCategories
                 .filter(
@@ -879,11 +793,8 @@ export default function NewEntryForm({
             </div>
           </div>
 
-
           {/* Maintenance Section */}
           <div className="mt-3 sm:mt-6 border-t-2 border-dashed border-gray-600 pt-2 sm:pt-4">
-            {/* Header + Add Button */}
-            {/* Header + Add Button */}
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 <Wrench size={16} className="text-orange-700" />
@@ -902,11 +813,8 @@ export default function NewEntryForm({
               )}
             </div>
 
-
-            {/* Add Maintenance Form */}
             {showAddMaintenance && (
               <div className="mt-2 mb-2 sm:mb-3 p-2 sm:p-3 bg-gray-50 rounded-md max-w-sm">
-                {/* Input + Close button */}
                 <div className="flex items-center gap-2 mb-2">
                   <input
                     type="text"
@@ -926,7 +834,6 @@ export default function NewEntryForm({
                   </button>
                 </div>
 
-                {/* Add Maintenance Item button */}
                 <button
                   onClick={() => addNewCategory("MAINTENANCE")}
                   className="w-full px-2 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-gray-700"
@@ -936,16 +843,12 @@ export default function NewEntryForm({
               </div>
             )}
 
-
-
-            {/* Maintenance Categories List */}
             <div className="mt-2 space-y-1 sm:space-y-1  ">
               {maintenanceCategories?.map((cat) => (
                 <div
                   key={cat.id}
                   className="flex flex-row items-center gap-1 sm:gap-3"
                 >
-                  {/* <Wrench size={16} className="text-orange-600" /> */}
                   <div className="flex-1 text-sm truncate text-gray-700 font-medium">
                     {cat.name}
                   </div>
@@ -966,7 +869,6 @@ export default function NewEntryForm({
               ))}
             </div>
           </div>
-
 
           {/* File Input Section */}
           <FileInputSection files={expenseFiles} setFiles={setExpenseFiles} />
@@ -994,11 +896,8 @@ export default function NewEntryForm({
                 </div>
               </div>
             </div>
-
-
           </div>
 
-          {/* Navigation Buttons */}
           <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row justify-between gap-2 sm:gap-4">
             <button
               onClick={prevStep}
@@ -1024,7 +923,6 @@ export default function NewEntryForm({
           </div>
         </div>
       )}
-
     </div>
   );
 }
