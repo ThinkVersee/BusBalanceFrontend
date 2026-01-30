@@ -125,7 +125,7 @@ export const ConfirmModal = ({
               disabled={loading}
               className={`
                 flex-1 order-1 sm:order-2 flex items-center justify-center gap-2
-                px-5 py-3 rounded-xl text-white font-medium text-sm sm:text-black
+                px-5 py-3 rounded-xl text-white font-medium text-sm sm:text-white
                 transition-all duration-200 
                 ${v.button} focus:ring-4 focus:ring-offset-2
                 disabled:opacity-60 disabled:cursor-not-allowed
