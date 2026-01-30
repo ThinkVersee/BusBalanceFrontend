@@ -54,7 +54,10 @@ const StaffBadge = ({ role, name }) => {
 
 const TransactionItem = ({ record, isOwner, onDelete }) => {
   const config = TRANSACTION_CONFIG[record.transaction_type] || TRANSACTION_CONFIG.EXPENSE;
-  const displayName = record.bus_details?.bus_name || (record.transaction_type === "WITHDRAWAL" ? "Owner Wallet" : "No bus");
+  const displayName = 
+  record.bus_details?.bus_name || 
+  record.bus_name || 
+  (record.transaction_type === "WITHDRAWAL" ? "Owner Wallet" : "No bus");
   const showReason = record.transaction_type === "WITHDRAWAL" && record.description?.trim();
 
   return (
@@ -67,7 +70,7 @@ const TransactionItem = ({ record, isOwner, onDelete }) => {
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
               <div className="font-semibold text-gray-900 text-sm truncate">{record.category}</div>
-              <div className="text-xs text-gray-500 truncate">{displayName}</div>
+              {/* <div className="text-xs text-gray-500 truncate">{displayName}</div> */}
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <span className={`font-bold text-lg whitespace-nowrap ${config.amount}`}>
@@ -305,10 +308,15 @@ const AttachmentsButton = ({ attachments, busName, onOpenModal }) => {
   );
 };
 
-const DailyReportDownloadButton = ({ date, buses }) => {
+const DailyReportDownloadButton = ({ date, buses, selectedBusName }) => {
   const [downloading, setDownloading] = useState(false);
-  const singleBus = buses && buses.length === 1 ? buses[0] : null;
-  const singleBusId = singleBus?.bus_details?.id || null;
+
+  // Find the selected bus object from the buses array
+  const selectedBus = buses?.find(
+    b => b?.bus_details?.bus_name === selectedBusName
+  );
+
+  const busIdToSend = selectedBus?.bus_details?.id || null;
 
   const downloadDailyReport = async () => {
     if (!date) {
@@ -319,9 +327,23 @@ const DailyReportDownloadButton = ({ date, buses }) => {
     setDownloading(true);
     try {
       const params = new URLSearchParams({ date });
-      if (singleBusId) params.append("bus_id", singleBusId);
-      const response = await axiosInstance.get(`/finance/reports/daily-pdf/?${params}`, { responseType: 'blob' });
-      const filename = `Daily_Report_${date}${singleBus?.bus_details?.bus_name ? `_${singleBus.bus_details.bus_name.replace(/\s+/g, '_')}` : ''}.pdf`;
+
+      // Send bus_id ONLY when a specific bus is selected
+      if (busIdToSend) {
+        params.append("bus_id", busIdToSend);
+      }
+
+      const response = await axiosInstance.get(`/finance/reports/daily-pdf/?${params}`, {
+        responseType: 'blob'
+      });
+
+      // Better filename
+      let filename = `Daily_Report_${date}`;
+      if (selectedBus?.bus_details?.bus_name) {
+        filename += `_${selectedBus.bus_details.bus_name.replace(/\s+/g, '_')}`;
+      }
+      filename += ".pdf";
+
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const a = document.createElement('a');
       a.href = url;
@@ -329,8 +351,8 @@ const DailyReportDownloadButton = ({ date, buses }) => {
       a.click();
       window.URL.revokeObjectURL(url);
     } catch (err) {
-      console.error(err);
-      alert("Failed to download daily report");
+      console.error("Report download failed:", err);
+      alert("Failed to download daily report. Please try again.");
     } finally {
       setDownloading(false);
     }
@@ -350,7 +372,11 @@ const DailyReportDownloadButton = ({ date, buses }) => {
       ) : (
         <>
           <Download size={18} />
-          <span className="text-sm">Download Report (PDF)</span>
+          <span className="text-sm">
+            {selectedBusName 
+              ? `Download ${selectedBusName} Report` 
+              : "Download Report (PDF)"}
+          </span>
         </>
       )}
     </button>
@@ -653,7 +679,7 @@ export default function RecordsTab({
         },
         signal
       });
-      
+      console.log("sssss",response.data)
       if (!isMountedRef.current) return;
       
       const data = response.data || {};
@@ -1151,9 +1177,13 @@ export default function RecordsTab({
                             </div>
                           )}
 
-                          <div className="flex justify-end pt-4">
-                            <DailyReportDownloadButton date={group.date} buses={group.buses || []} />
-                          </div>
+                        <div className="flex justify-end pt-4">
+  <DailyReportDownloadButton 
+    date={group.date} 
+    buses={group.buses || []}
+    selectedBusName={selectedBus}           // ← ADD THIS LINE
+  />
+</div>
                         </div>
                       )}
                     </div>
