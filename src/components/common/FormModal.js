@@ -326,7 +326,7 @@ export const FormModal = ({
                 type="submit"
                 disabled={loading}
                 onClick={onSubmit}
-                className="w-full sm:w-auto order-1 sm:order-2 px-4 py-2 sm:px-5 sm:py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg sm:rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all disabled:opacity-50 font-medium   flex items-center justify-center gap-2 text-sm sm:text-black"
+                className="w-full sm:w-auto order-1 sm:order-2 px-4 py-2 sm:px-5 sm:py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg sm:rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all disabled:opacity-50 font-medium   flex items-center justify-center gap-2 text-sm sm:text-white"
               >
                 {loading && <Loader2 size={16} className="sm:w-[18px] sm:h-[18px] animate-spin" />}
                 {loading ? 'Saving...' : submitLabel}

@@ -149,7 +149,7 @@ export default function OwnerDashboard() {
     </div>
     <button
       onClick={() => setShowWithdrawModal(true)}
-      className="mt-3 sm:mt-5 w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-3 bg-blue-600 rounded-lg sm:rounded-xl text-sm sm:text-black font-medium text-white transition"
+      className="mt-3 sm:mt-5 w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-3 bg-blue-600 rounded-lg sm:rounded-xl text-sm sm:text-white font-medium text-white transition"
     >
       Withdraw Funds
     </button>
@@ -373,7 +373,7 @@ export default function OwnerDashboard() {
                 <button
                   type="submit"
                   disabled={withdrawLoading}
-                  className="px-3 sm:px-4 py-2 text-sm sm:text-black bg-blue-600 text-white hover:bg-blue-700 rounded-lg font-medium transition-colors disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2"
+                  className="px-3 sm:px-4 py-2 text-sm sm:text-white bg-blue-600 text-white hover:bg-blue-700 rounded-lg font-medium transition-colors disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2"
                 >
                   {withdrawLoading && <Loader2 size={14} className="sm:w-4 sm:h-4 animate-spin" />}
                   Withdraw

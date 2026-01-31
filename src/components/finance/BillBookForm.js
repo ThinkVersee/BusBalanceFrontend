@@ -1,3 +1,4 @@
+
 // components/finance/BillBookPage.js or pages/finance/billbook.js
 "use client";
 import React, { useState, useEffect } from "react";
@@ -20,15 +21,15 @@ export default function BillBookPage() {
   });
   const [ownedBuses, setOwnedBuses] = useState([]);
   const [incomeCategories, setIncomeCategories] = useState([]);
-  const [expenseCategories, setExpenseCategories] = useState([]); // EXPENSE only
-  const [maintenanceCategories, setMaintenanceCategories] = useState([]); // MAINTENANCE only
+  const [expenseCategories, setExpenseCategories] = useState([]);
+  const [maintenanceCategories, setMaintenanceCategories] = useState([]);
   const [showAddIncome, setShowAddIncome] = useState(false);
   const [showAddExpense, setShowAddExpense] = useState(false);
   const [showAddMaintenance, setShowAddMaintenance] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [expenseFiles, setExpenseFiles] = useState([]);
   const [records, setRecords] = useState([]);
-  const [summary, setSummary] = useState({}); // New: backend summary
+  const [summary, setSummary] = useState({});
   const [loadingRecords, setLoadingRecords] = useState(false);
   const [filterDate, setFilterDate] = useState("");
   const [filterBus, setFilterBus] = useState("");
@@ -89,16 +90,13 @@ export default function BillBookPage() {
         setOwnedBuses(busRes.data);
         const sorted = [...catRes.data].sort((a, b) => a.id - b.id);
         
-        // Initialize salary categories if they don't exist
         let expenseCats = sorted.filter((c) => c.transaction_type === "EXPENSE");
        
-        // Check if salary categories exist, if not, we'll need to create them dynamically
         const salaryCategories = ["Driver Salary", "Conductor Salary", "Cleaner Salary"];
         const existingSalaryCats = expenseCats.filter(cat =>
           salaryCategories.includes(cat.name)
         );
        
-        // If salary categories don't exist, we'll handle them dynamically in the frontend
         if (existingSalaryCats.length === 0) {
           console.log("No salary categories found in backend. They will be created dynamically.");
         }
@@ -137,14 +135,13 @@ export default function BillBookPage() {
         if (filterDate) params.date = filterDate;
         if (filterBus) params.bus = filterBus;
         
-        // Non-owners default to today's date if no filter
         if (!isOwner && !filterDate) {
           params.date = new Date().toISOString().split("T")[0];
         }
         
         const res = await axiosInstance.get("/finance/transactions/report/", { params });
         setRecords(res.data.transactions || []);
-        setSummary(res.data.summary || {}); // Important: pass summary
+        setSummary(res.data.summary || {});
       } catch (err) {
         console.error(err);
         setRecords([]);
@@ -158,7 +155,7 @@ export default function BillBookPage() {
     setOpenDates({});
   }, [activeTab, filterDate, filterBus, currentUser, isOwner]);
 
-  // Check for existing staff assignments for the selected date and bus
+  // Check for existing staff assignments
   useEffect(() => {
     const fetchStaffAssignments = async () => {
       if (!formData.date || !formData.bus) return;
@@ -257,7 +254,7 @@ export default function BillBookPage() {
     );
   };
 
-  // Live totals in New Entry form
+  // Live totals
   const totalIncome = incomeCategories.reduce((sum, c) => sum + (parseFloat(c.amount || 0) || 0), 0);
   const totalRegularExpense = expenseCategories.reduce((sum, c) => sum + (parseFloat(c.amount || 0) || 0), 0);
   const totalMaintenance = maintenanceCategories.reduce((sum, c) => sum + (parseFloat(c.amount || 0) || 0), 0);
@@ -326,7 +323,33 @@ export default function BillBookPage() {
     }
   };
 
-  // Save all entries with staff assignments - FIXED VERSION
+  // Group transactions by header properties
+  const groupTransactionsByHeader = (transactions) => {
+    const grouped = {};
+    
+    transactions.forEach((transaction) => {
+      // Create a key based on header properties
+      // For all transactions in this form, they should share the same header
+      const key = `header_${transaction.bus_id}_${transaction.date}`;
+      
+      if (!grouped[key]) {
+        grouped[key] = {
+          bus_id: transaction.bus_id,
+          date: transaction.date,
+          withdrawal_method: "", // Can be set from form
+          withdrawal_reference: "", // Can be set from form
+          description: "", // Can be set from form
+          items: []
+        };
+      }
+      
+      grouped[key].items.push(transaction);
+    });
+    
+    return Object.values(grouped);
+  };
+
+  // Save all entries with staff assignments - UPDATED VERSION
   const handleSave = async () => {
     if (!formData.date || !formData.bus) return alert("Please select date and bus");
     
@@ -345,7 +368,9 @@ export default function BillBookPage() {
           date: formData.date,
           bus_id: busId,
           transaction_type: "INCOME",
-          description: cat.name === "Daily Collection" ? "Daily collection from passengers" : ""
+          description: cat.name === "Daily Collection" ? "Daily collection from passengers" : "",
+          withdrawal_method: "", // Will be set from form
+          withdrawal_reference: "" // Will be set from form
         });
       }
     });
@@ -360,7 +385,9 @@ export default function BillBookPage() {
           date: formData.date,
           bus_id: busId,
           transaction_type: "EXPENSE",
-          description: cat.name
+          description: cat.name,
+          withdrawal_method: "", // Will be set from form
+          withdrawal_reference: "" // Will be set from form
         });
       }
     });
@@ -375,23 +402,37 @@ export default function BillBookPage() {
           date: formData.date,
           bus_id: busId,
           transaction_type: "MAINTENANCE",
-          description: cat.name
+          description: cat.name,
+          withdrawal_method: "", // Will be set from form
+          withdrawal_reference: "" // Will be set from form
         });
       }
     });
     
     if (transactions.length === 0) return alert("Please enter at least one amount");
     
-    // DEBUG: Log staff details
-    console.log("DEBUG - Staff details before save:", staffDetails);
-    console.log("DEBUG - Form data:", formData);
-    console.log("DEBUG - Bus ID:", busId);
+    // Group transactions by header (all should be in same group)
+    const groupedTransactions = groupTransactionsByHeader(transactions);
+    
+    // Prepare transactions array with header information
+    const transactionsWithHeader = [];
+    
+    groupedTransactions.forEach((group) => {
+      // Add header properties to each transaction item
+      group.items.forEach((item) => {
+        transactionsWithHeader.push({
+          ...item,
+          withdrawal_method: "", // From form field
+          withdrawal_reference: "", // From form field
+          description: "Daily transaction" // From form field
+        });
+      });
+    });
     
     // Prepare staff assignments
     const staffAssignments = [];
    
     if (staffDetails.driverName && formData.date && busId) {
-      console.log("DEBUG - Adding driver:", staffDetails.driverName);
       staffAssignments.push({
         bus_id: busId,
         date: formData.date,
@@ -401,7 +442,6 @@ export default function BillBookPage() {
     }
    
     if (staffDetails.conductorName && formData.date && busId) {
-      console.log("DEBUG - Adding conductor:", staffDetails.conductorName);
       staffAssignments.push({
         bus_id: busId,
         date: formData.date,
@@ -411,7 +451,6 @@ export default function BillBookPage() {
     }
    
     if (staffDetails.cleanerName && formData.date && busId) {
-      console.log("DEBUG - Adding cleaner:", staffDetails.cleanerName);
       staffAssignments.push({
         bus_id: busId,
         date: formData.date,
@@ -420,15 +459,12 @@ export default function BillBookPage() {
       });
     }
     
-    console.log("DEBUG - Final staffAssignments:", staffAssignments);
-    
     try {
       // Optional duplicate check endpoint
-      console.log("DEBUG - Sending duplicate check with staff_details:", JSON.stringify(staffAssignments));
       const checkRes = await axiosInstance.post(
         "/finance/transactions/bulk/?check_only=1",
         {
-          transactions,
+          transactions: transactionsWithHeader,
           staff_details: JSON.stringify(staffAssignments)
         }
       );
@@ -438,7 +474,7 @@ export default function BillBookPage() {
       }
       
       const form = new FormData();
-      form.append("transactions", JSON.stringify(transactions));
+      form.append("transactions", JSON.stringify(transactionsWithHeader));
       form.append("staff_details", JSON.stringify(staffAssignments));
      
       // Add files
@@ -450,13 +486,12 @@ export default function BillBookPage() {
         "/finance/transactions/bulk/",
         form,
         {
-         headers : { "Content-Type": "multipart/form-data" },
+          headers: { "Content-Type": "multipart/form-data" },
         }
       );
       
       const data = response.data;
      
-      // Show success message with detailed info
       let successMessage = `✅ Successfully saved!`;
       successMessage += `\n• Transactions created: ${data.transactions_created}`;
       successMessage += `\n• Staff assignments created: ${data.staff_assignments_created}`;
@@ -507,34 +542,26 @@ export default function BillBookPage() {
   return (
     <>
       <div className="min-h-screen pb-24 sm:pb-8">
-        {/* Header */}
-     <header className="bg-white rounded-xl sm:rounded-b-none border border-gray-200">
-  <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
-    <div className="flex items-center justify-between h-14 sm:h-20">
-      <div className="flex items-center gap-2 sm:gap-3">
+        <header className="bg-white rounded-xl sm:rounded-b-none border border-gray-200">
+          <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between h-14 sm:h-20">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="w-9 h-9 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg sm:rounded-xl flex items-center justify-center">
+                  <IndianRupee className="text-white w-4 h-4 sm:w-6 sm:h-6" />
+                </div>
+                <div>
+                  <h1 className="text-lg sm:text-2xl lg:text-3xl font-bold text-gray-900 leading-tight">
+                    Bill Book
+                  </h1>
+                  <p className="text-[11px] sm:text-sm text-gray-600 leading-tight">
+                    Manage daily income & expenses
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </header>
         
-        {/* Icon */}
-        <div className="w-9 h-9 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg sm:rounded-xl flex items-center justify-center">
-          <IndianRupee className="text-white w-4 h-4 sm:w-6 sm:h-6" />
-        </div>
-
-        {/* Text */}
-        <div>
-          <h1 className="text-lg sm:text-2xl lg:text-3xl font-bold text-gray-900 leading-tight">
-            Bill Book
-          </h1>
-          <p className="text-[11px] sm:text-sm text-gray-600 leading-tight">
-            Manage daily income & expenses
-          </p>
-        </div>
-
-      </div>
-    </div>
-  </div>
-</header>
-
-        
-        {/* Bottom Tab Navigation (Mobile) / Top Sticky (Desktop) */}
         <div className="fixed bottom-0 left-0 right-0 z-40 sm:sticky sm:top-20 bg-white rounded-b-xl backdrop-blur border border-gray-200">
           <div className="max-w-7xl mx-auto flex">
             {[
@@ -559,8 +586,7 @@ export default function BillBookPage() {
           </div>
         </div>
         
-        {/* Main Content */}
-        <main className="max-w-7xl mx-auto px-0    py-3 sm:py-8">
+        <main className="max-w-7xl mx-auto px-0 py-3 sm:py-8">
           {activeTab === "new" && (
             <NewEntryForm
               formData={formData}
@@ -592,7 +618,6 @@ export default function BillBookPage() {
               saving={saving}
               isOwner={isOwner}
               duplicateWarnings={duplicateWarnings}
-              // Pass staffDetails and setStaffDetails as props
               staffDetails={staffDetails}
               setStaffDetails={setStaffDetails}
               dailyCollection={dailyCollection}
@@ -604,7 +629,7 @@ export default function BillBookPage() {
             <RecordsTab
               ownedBuses={ownedBuses}
               records={records}
-              summary={summary} // ← Critical: pass backend summary
+              summary={summary}
               loadingRecords={loadingRecords}
               filterDate={filterDate}
               setFilterDate={setFilterDate}
